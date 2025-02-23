@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: costgraph
+  namespace: {{ .Values.namespace }}
+data:
+  config.yaml: |
+{{ include "chart.costgraph" . | indent 4 }}

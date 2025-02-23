@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: costgraph
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: costgraph
+  template:
+    metadata:
+      labels:
+        app: costgraph
+      annotations:
+        checksum/config: {{ include "chart.costgraphchatenv" . | sha256sum }}
+    spec:
+      volumes:
+        - name: costgraph-config
+          configMap:
+            name: costgraph
+      serviceAccountName: costgraph
+      restartPolicy: Always
+      {{- if .Values.costgraph.config.costgraph_feature_flags.superset }}
+      initContainers:
+        - name: wait-for-superset
+          image: curlimages/curl:latest
+          args:
+            - /bin/sh
+            - -c
+            - >
+              set -x;
+              while [ $(curl -L -sw '%{http_code}' "{{ .Values.costgraph.config.superset_address }}" -o /dev/null) -ne 200 ]; do
+                sleep 15;
+              done
+      {{- end }}
+      containers:
+        - name: costgraph
+          imagePullPolicy: Always
+          image: "{{ .Values.costgraph.backend.image }}:{{ .Values.costgraph.backend.tag }}"
+          ports:
+            - containerPort: {{ .Values.costgraph.backend.port }}
+          resources:
+            requests:
+              memory: "100Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "1"
+          volumeMounts:
+            - mountPath: /app/config.yaml
+              name: costgraph-config
+              subPath: config.yaml
+        - name: chat
+          imagePullPolicy: Always
+          env:
+{{- include "chart.costgraphchatenv" . | indent 12 }}
+          image: "{{ .Values.costgraph.chat.image }}:{{ .Values.costgraph.chat.tag }}"
+          ports:
+            - containerPort: {{ .Values.costgraph.chat.port }}
+          resources:
+            requests:
+              memory: "100Mi"
+              cpu: "250m"
+            limits:
+              memory: "2Gi"
+              cpu: "2"

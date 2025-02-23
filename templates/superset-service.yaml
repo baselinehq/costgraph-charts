@@ -1,0 +1,20 @@
+{{ if .Values.superset.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: superset
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: superset
+  {{ if .Values.costgraph.config.costgraph_feature_flags.superset }}
+  ports:
+    - protocol: TCP
+      port: 80
+      name: costgraph-superset
+      targetPort: {{ .Values.superset.port }}
+  {{ else }}
+  ports: []
+  {{ end }}
+  type: ClusterIP
+{{ end }}

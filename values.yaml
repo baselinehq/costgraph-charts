@@ -1,0 +1,59 @@
+namespace: costgraph
+
+domain: "demo.baselinehq.cloud"
+
+postgres:
+  image: "postgres"
+  tag: "14-alpine"
+  enabled: true
+  config:
+    postgres_db: costgraph
+    postgres_user: user
+    postgres_password: password
+    pg_data_directory: /var/lib/postgresql/data
+    postgres_host: db
+    postgres_port: 5432
+
+costgraph:
+  chat: 
+    image: "registry.baselinehq.cloud:5001/costgraph-chat"
+    tag: "v1"
+    port: 8000
+  backend:
+    image: "registry.baselinehq.cloud:5001/costgraph-backend"
+    tag: "v1"
+    port: 8090
+  worker_config:
+    prom_address: "http://prometheus-server.prometheus-system"
+    worker_count: 10
+    expected_utilisation_percent: 100
+  config:
+    superset_address: http://superset
+    costgraph_feature_flags:
+      superset: true
+      graph: true
+      chat: false
+    costgraph_instance_address: demo-cluster.costgraph.baselinehq.cloud
+    costgraph_instance_name: demo-cluster
+    costgraph_instance_master_domains: []
+    costgraph_instance_replication_provider: s3
+    fortknox_server_url: https://fortknox.baselinehq.cloud
+    fortknox_organisation_api_key: ""
+    openai_api_key: ""
+
+superset:
+  image: "registry.baselinehq.cloud:5001/costgraph-superset"
+  tag: "v1"
+  port: 8088
+  enabled: true
+  config:
+    superset_admin_username: admin
+    superset_admin_email: admin@costgraph-superset.com
+    superset_admin_password: admin
+    superset_secret_key: test123
+    superset_guest_username: guest
+    superset_guest_email: guest@public.internal
+    superset_guest_password: public
+    superset_guest_role: "Public"
+    server_worker_amount: "3"
+    superset_dashboard_zip: "/app/dashboard.zip"

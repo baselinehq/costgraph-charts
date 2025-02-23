@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: costgraph
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: costgraph
+  ports:
+    - protocol: TCP
+      port: {{ .Values.costgraph.backend.port }}
+      name: costgraph-api
+      targetPort: {{ .Values.costgraph.backend.port }}
+    - protocol: TCP
+      port: {{ .Values.costgraph.chat.port }}
+      name: costgraph-chat
+      targetPort: {{ .Values.costgraph.chat.port }}
+  type: ClusterIP

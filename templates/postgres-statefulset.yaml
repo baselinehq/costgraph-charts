@@ -1,0 +1,46 @@
+{{ if .Values.postgres.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: {{.Values.postgres.image}}:{{.Values.postgres.tag}}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: postgres
+          volumeMounts:
+            - mountPath: {{.Values.postgres.config.pg_data_directory}}
+              name: "postgres"
+          resources:
+            requests:
+              memory: "100Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "2"
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+  serviceName: postgres
+{{ end }}

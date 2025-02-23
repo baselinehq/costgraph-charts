@@ -1,0 +1,39 @@
+{{ if .Values.superset.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: superset
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: superset
+  template:
+    metadata:
+      labels:
+        app: superset
+      annotations:
+        checksum/supersetenv: {{ include "chart.supersetenv" . | sha256sum }}
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: superset
+          image: "{{ .Values.superset.image }}:{{ .Values.superset.tag }}"
+          imagePullPolicy: Always
+          env:
+            - name: SUPERSET_CONFIG_PATH
+              value: /app/config.py
+            - name: SUPERSET_PORT
+              value: "{{ .Values.superset.port }}"
+{{- include "chart.supersetenv" . | indent 12 }}
+          ports:
+            - containerPort: {{ .Values.superset.port }}
+          resources:
+            requests:
+              memory: "500Mi"
+              cpu: "1"
+            limits:
+              memory: "1Gi"
+              cpu: "2"
+{{ end }}
