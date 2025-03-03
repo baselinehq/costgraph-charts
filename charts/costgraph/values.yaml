@@ -26,7 +26,7 @@ costgraph:
   worker_config:
     prom_address: "http://prometheus-server.prometheus-system"
     worker_count: 10
-    expected_utilisation_percent: 100
+    expected_utilisation_percent: 50
   config:
     superset_address: http://superset
     costgraph_feature_flags:
