@@ -1,9 +1,4 @@
 {{- define "chart.costgraph" }}
-# Worker configurations for the controller
-{{- with .Values.costgraph.worker_config }}
-{{ toYaml . }}
-{{- end }}
-
 # Port to expose the backend
 port: {{ .Values.costgraph.backend.port }}
 
@@ -32,8 +27,9 @@ port: {{ .Values.costgraph.backend.port }}
 {{- range $key, $val := .Values.postgres.config }}
 - name: {{ $key | upper }}
   value: {{ $val | quote }}
-{{- end -}}
+{{- end }}
 
+# Superset configuration
 {{- range $key, $val := .Values.superset.config }}
 - name: {{ $key | upper }}
   value: {{ $val | quote }}
@@ -47,7 +43,7 @@ port: {{ .Values.costgraph.backend.port }}
 - name: "OPENAI_API_KEY"
   value: {{ .Values.costgraph.config.openai_api_key }}
 - name: "COSTGRAPH_CHAT_WS_BACKEND"
-  value: http://costgraph-chat-ws.{{ .Values.domain }}
+  value: https://costgraph-chat-ws.{{ .Values.domain }}
 {{- range $key, $val := .Values.postgres.config }}
 - name: {{ $key | upper }}
   value: {{ $val | quote }}

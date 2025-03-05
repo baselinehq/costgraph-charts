@@ -51,6 +51,7 @@ spec:
             - mountPath: /app/config.yaml
               name: costgraph-config
               subPath: config.yaml
+        {{- if .Values.costgraph.config.costgraph_feature_flags.chat }}
         - name: chat
           imagePullPolicy: Always
           env:
@@ -65,3 +66,4 @@ spec:
             limits:
               memory: "2Gi"
               cpu: "2"
+        {{end}}

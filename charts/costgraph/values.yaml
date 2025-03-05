@@ -23,11 +23,10 @@ costgraph:
     image: "registry.baselinehq.cloud:5001/costgraph-backend"
     tag: "v1"
     port: 8090
-  worker_config:
-    prom_address: "http://prometheus-server.prometheus-system"
+  config:
+    prometheus_endpoint: "http://prometheus-server.prometheus-system"
     worker_count: 10
     expected_utilisation_percent: 50
-  config:
     superset_address: http://superset
     costgraph_feature_flags:
       superset: true

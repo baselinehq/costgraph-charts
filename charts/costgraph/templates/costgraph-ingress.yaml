@@ -35,7 +35,7 @@ spec:
         - costgraph.{{ .Values.domain }}
         {{- end }}
         - costgraph-backend.{{ .Values.domain }}
-      secretName: costgraph-demo-http
+      secretName: costgraph-http
 ---
 {{- if .Values.costgraph.config.costgraph_feature_flags.chat }}
 apiVersion: networking.k8s.io/v1
@@ -73,5 +73,5 @@ spec:
   tls:
     - hosts:
         - costgraph-chat-ws.{{ .Values.domain }}
-      secretName: costgraph-demo-wss
+      secretName: costgraph-wss
 {{- end }}
