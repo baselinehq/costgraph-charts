@@ -16,11 +16,11 @@ postgres:
 
 costgraph:
   chat: 
-    image: "registry.baselinehq.cloud:5001/costgraph-chat"
+    image: "tiemma/costgraph-chat"
     tag: "v1"
     port: 8000
   backend:
-    image: "registry.baselinehq.cloud:5001/costgraph-backend"
+    image: "tiemma/costgraph-backend"
     tag: "v1"
     port: 8090
   config:
@@ -37,11 +37,11 @@ costgraph:
     costgraph_instance_master_domains: []
     costgraph_instance_replication_provider: s3
     fortknox_server_url: https://fortknox.baselinehq.cloud
-    fortknox_organisation_api_key: ""
+    api_key: ""
     openai_api_key: ""
 
 superset:
-  image: "registry.baselinehq.cloud:5001/costgraph-superset"
+  image: "tiemma/costgraph-superset"
   tag: "v1"
   port: 8088
   enabled: true
