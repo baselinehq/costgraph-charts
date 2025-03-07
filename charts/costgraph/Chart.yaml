@@ -2,5 +2,5 @@ apiVersion: v2
 name: costgraph
 description: Find out how much your Kubernetes cluster costs can reduce
 type: application
-version: 0.1.4
+version: 0.1.5
 appVersion: 0.0.1
