@@ -10,5 +10,5 @@ data:
   POSTGRES_DB: "{{ .Values.postgres.config.postgres_db }}"
   POSTGRES_USER: "{{ .Values.postgres.config.postgres_user }}"
   POSTGRES_PASSWORD: "{{.Values.postgres.config.postgres_password}}"
-  PGDATA: "{{.Values.postgres.config.pg_data_directory}}"
+  PGDATA: "{{.Values.postgres.config.pg_data_directory}}/pgdata"
 {{ end }}

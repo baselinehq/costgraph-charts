@@ -17,6 +17,16 @@ spec:
         checksum/supersetenv: {{ include "chart.supersetenv" . | sha256sum }}
     spec:
       restartPolicy: Always
+      initContainers:
+        - name: wait-for-postgres
+          image: curlimages/curl:latest
+          args:
+            - /bin/sh
+            - -c
+            - >
+              set -x;
+              nc -z -n -v {{ .Values.postgres.config.postgres_host }} {{ .Values.postgres.config.postgres_port }};
+              sleep 15
       containers:
         - name: superset
           image: "{{ .Values.superset.image }}:{{ .Values.superset.tag }}"

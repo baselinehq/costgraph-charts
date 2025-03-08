@@ -10,7 +10,7 @@ postgres:
     postgres_db: costgraph
     postgres_user: user
     postgres_password: password
-    pg_data_directory: /var/lib/postgresql/data/pgdata
+    pg_data_directory: /var/lib/postgresql/data
     postgres_host: db
     postgres_port: 5432
 
