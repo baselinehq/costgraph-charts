@@ -3,6 +3,10 @@ kind: Service
 metadata:
   name: costgraph
   namespace: {{ .Values.namespace }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ .Values.costgraph.config.prometheus_metrics_port }}"
+    prometheus.io/path: "/metrics"
 spec:
   selector:
     app: costgraph
@@ -11,10 +15,16 @@ spec:
       port: {{ .Values.costgraph.backend.port }}
       name: costgraph-api
       targetPort: {{ .Values.costgraph.backend.port }}
+{{- if .Values.costgraph.config.costgraph_feature_flags.prometheus }}
+    - protocol: TCP
+      port: {{ .Values.costgraph.config.prometheus_metrics_port }}
+      name: costgraph-metrics
+      targetPort: {{ .Values.costgraph.config.prometheus_metrics_port }}
+{{- end }}
 {{- if .Values.costgraph.config.costgraph_feature_flags.chat }}
     - protocol: TCP
       port: {{ .Values.costgraph.chat.port }}
       name: costgraph-chat
       targetPort: {{ .Values.costgraph.chat.port }}
-{{ end }}
+{{- end }}
   type: ClusterIP

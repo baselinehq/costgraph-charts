@@ -32,6 +32,7 @@ costgraph:
       superset: true
       graph: true
       chat: false
+      prometheus: true
     costgraph_instance_address: demo-cluster.costgraph.baselinehq.cloud
     costgraph_instance_name: demo-cluster
     costgraph_instance_master_domains: []
@@ -39,6 +40,7 @@ costgraph:
     fortknox_server_url: https://fortknox.baselinehq.cloud
     api_key: ""
     openai_api_key: ""
+    prometheus_metrics_port: 9090
 
 superset:
   image: "ghcr.io/baselinehq/costgraph-superset"

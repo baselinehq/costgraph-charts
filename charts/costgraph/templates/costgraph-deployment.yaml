@@ -40,6 +40,9 @@ spec:
           image: "{{ .Values.costgraph.backend.image }}:{{ .Values.costgraph.backend.tag }}"
           ports:
             - containerPort: {{ .Values.costgraph.backend.port }}
+            {{- if .Values.costgraph.config.costgraph_feature_flags.prometheus }}
+            - containerPort: {{ .Values.costgraph.config.prometheus_metrics_port }}
+            {{- end }}
           resources:
             requests:
               memory: "100Mi"
