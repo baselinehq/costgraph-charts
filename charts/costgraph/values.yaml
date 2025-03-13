@@ -6,6 +6,13 @@ postgres:
   image: "postgres"
   tag: "14-alpine"
   enabled: true
+  resources:
+    requests:
+      memory: "100Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "2"
   config:
     postgres_db: costgraph
     postgres_user: user
@@ -19,10 +26,24 @@ costgraph:
     image: "ghcr.io/baselinehq/costgraph-chat"
     tag: "latest"
     port: 8000
+    resources:
+      requests:
+        memory: "100Mi"
+        cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "2"
   backend:
     image: "ghcr.io/baselinehq/costgraph-operator"
     tag: "latest"
     port: 8090
+    resources:
+      requests:
+        memory: "100Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "1"
   config:
     prometheus_endpoint: "http://prometheus-server.prometheus-system"
     worker_count: 10
@@ -33,8 +54,7 @@ costgraph:
       graph: true
       chat: false
       prometheus: true
-    costgraph_instance_address: demo-cluster.costgraph.baselinehq.cloud
-    costgraph_instance_name: demo-cluster
+    costgraph_instance_name: ""
     costgraph_instance_master_domains: []
     costgraph_instance_replication_provider: s3
     fortknox_server_url: https://fortknox.baselinehq.cloud
@@ -47,6 +67,13 @@ superset:
   tag: "latest"
   port: 8088
   enabled: true
+  resources:
+    requests:
+      memory: "500Mi"
+      cpu: "1"
+    limits:
+      memory: "1Gi"
+      cpu: "2"
   config:
     superset_admin_username: admin
     superset_admin_email: admin@costgraph-superset.com

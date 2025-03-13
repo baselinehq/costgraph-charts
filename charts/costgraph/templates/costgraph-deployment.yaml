@@ -44,12 +44,7 @@ spec:
             - containerPort: {{ .Values.costgraph.config.prometheus_metrics_port }}
             {{- end }}
           resources:
-            requests:
-              memory: "100Mi"
-              cpu: "250m"
-            limits:
-              memory: "512Mi"
-              cpu: "1"
+{{- .Values.costgraph.backend.resources | toYaml | nindent 12 }}
           volumeMounts:
             - mountPath: /app/config.yaml
               name: costgraph-config
@@ -63,10 +58,5 @@ spec:
           ports:
             - containerPort: {{ .Values.costgraph.chat.port }}
           resources:
-            requests:
-              memory: "100Mi"
-              cpu: "250m"
-            limits:
-              memory: "2Gi"
-              cpu: "2"
+{{- .Values.costgraph.chat.resources | toYaml | nindent 12 }}
         {{end}}
