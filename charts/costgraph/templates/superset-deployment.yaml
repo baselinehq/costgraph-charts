@@ -40,10 +40,5 @@ spec:
           ports:
             - containerPort: {{ .Values.superset.port }}
           resources:
-            requests:
-              memory: "500Mi"
-              cpu: "1"
-            limits:
-              memory: "1Gi"
-              cpu: "2"
+{{- .Values.superset.resources | toYaml | nindent 12 }}
 {{ end }}
