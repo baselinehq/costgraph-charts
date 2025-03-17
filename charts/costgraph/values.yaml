@@ -6,6 +6,9 @@ postgres:
   image: "postgres"
   tag: "14-alpine"
   enabled: true
+  pvc:
+    enabled: false
+    size: "10Gi"
   resources:
     requests:
       memory: "100Mi"
