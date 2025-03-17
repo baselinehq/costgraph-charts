@@ -1,6 +1,6 @@
-{{ if and (eq .Values.postgres.enabled true) (eq .Values.postgres.pvc.enabled false) }}
+{{ if .Values.postgres.enabled }}
 apiVersion: apps/v1
-kind: Deployment
+kind: {{ if .Values.postgres.pvc.enabled }} "StatefulSet" {{ else }} "Deployment" {{ end }}
 metadata:
   name: postgres
   namespace: {{ .Values.namespace }}
@@ -27,4 +27,19 @@ spec:
                 name: postgres
           resources:
 {{- .Values.postgres.resources | toYaml | nindent 12 }}
+{{- if .Values.postgres.pvc.enabled }}
+          volumeMounts:
+            - mountPath: {{.Values.postgres.config.pg_data_directory}}
+              name: "postgres"
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.postgres.pvc.size }}
+  serviceName: postgres
+{{ end }}
 {{ end }}
