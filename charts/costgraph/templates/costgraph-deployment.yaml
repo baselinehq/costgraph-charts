@@ -15,6 +15,10 @@ spec:
       annotations:
         checksum/config: {{ include "chart.costgraphchatenv" . | sha256sum }}
     spec:
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 12 }}
+      {{- end }}
       volumes:
         - name: costgraph-config
           configMap:

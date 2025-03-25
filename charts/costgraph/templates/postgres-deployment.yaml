@@ -16,6 +16,10 @@ spec:
       labels:
         app: postgres
     spec:
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 12 }}
+      {{- end }}
       containers:
         - name: postgres
           image: {{.Values.postgres.image}}:{{.Values.postgres.tag}}

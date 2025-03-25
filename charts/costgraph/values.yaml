@@ -2,6 +2,22 @@ namespace: costgraph
 
 domain: "demo.baselinehq.cloud"
 
+affinity:
+  # run on linux arm64 or amd64 nodes
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/os
+              operator: In
+              values:
+                - linux
+            - key: kubernetes.io/arch
+              operator: In
+              values:
+                - arm64
+                - amd64
+
 postgres:
   image: "postgres"
   tag: "14-alpine"

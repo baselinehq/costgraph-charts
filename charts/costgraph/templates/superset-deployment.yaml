@@ -17,6 +17,10 @@ spec:
         checksum/supersetenv: {{ include "chart.supersetenv" . | sha256sum }}
     spec:
       restartPolicy: Always
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 12 }}
+      {{- end }}
       initContainers:
         - name: wait-for-postgres
           image: curlimages/curl:latest
