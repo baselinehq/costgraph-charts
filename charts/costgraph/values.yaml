@@ -1,6 +1,8 @@
 namespace: costgraph
 
 domain: "demo.baselinehq.cloud"
+os: linux
+arch: amd64
 
 affinity:
   # run on linux arm64 or amd64 nodes

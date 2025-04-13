@@ -33,7 +33,7 @@ spec:
               sleep 15
       containers:
         - name: superset
-          image: "{{ .Values.superset.image }}:{{ .Values.superset.tag }}"
+          image: "{{ .Values.superset.image }}:{{ .Values.superset.tag }}-{{ .Values.os }}-{{ .Values.arch }}"
           imagePullPolicy: Always
           env:
             - name: SUPERSET_CONFIG_PATH

@@ -41,7 +41,7 @@ spec:
       containers:
         - name: costgraph
           imagePullPolicy: Always
-          image: "{{ .Values.costgraph.backend.image }}:{{ .Values.costgraph.backend.tag }}"
+          image: "{{ .Values.costgraph.backend.image }}:{{ .Values.costgraph.backend.tag }}-{{ .Values.os }}-{{ .Values.arch }}"
           ports:
             - containerPort: {{ .Values.costgraph.backend.port }}
             {{- if .Values.costgraph.config.costgraph_feature_flags.prometheus }}
