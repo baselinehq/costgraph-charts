@@ -12,9 +12,9 @@ spec:
     app: costgraph
   ports:
     - protocol: TCP
-      port: {{ .Values.costgraph.backend.port }}
+      port: {{ .Values.costgraph.operator.port }}
       name: costgraph-api
-      targetPort: {{ .Values.costgraph.backend.port }}
+      targetPort: {{ .Values.costgraph.operator.port }}
 {{- if .Values.costgraph.config.costgraph_feature_flags.prometheus }}
     - protocol: TCP
       port: {{ .Values.costgraph.config.prometheus_metrics_port }}

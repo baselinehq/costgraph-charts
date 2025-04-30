@@ -1,6 +1,6 @@
 namespace: costgraph
 
-domain: "demo.baselinehq.cloud"
+domain: "costgraph.internal"
 os: linux
 arch: amd64
 
@@ -54,9 +54,9 @@ costgraph:
       limits:
         memory: "2Gi"
         cpu: "2"
-  backend:
+  operator:
     image: "ghcr.io/baselinehq/costgraph-operator"
-    tag: "latest"
+    tag: "sha-0968246"
     port: 8090
     resources:
       requests:
@@ -87,7 +87,7 @@ costgraph:
 
 superset:
   image: "ghcr.io/baselinehq/costgraph-superset"
-  tag: "latest"
+  tag: "latest-linux-amd64"
   port: 8088
   enabled: true
   resources:

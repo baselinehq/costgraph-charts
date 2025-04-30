@@ -28,7 +28,7 @@ spec:
               service:
                 name: costgraph
                 port:
-                  number: {{ .Values.costgraph.backend.port }}
+                  number: {{ .Values.costgraph.operator.port }}
   tls:
     - hosts:
         {{ if .Values.costgraph.config.costgraph_feature_flags.superset -}}
