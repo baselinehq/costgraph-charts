@@ -56,7 +56,7 @@ costgraph:
         cpu: "2"
   operator:
     image: "ghcr.io/baselinehq/costgraph-operator"
-    tag: "sha-0968246"
+    tag: "latest-linux-amd64"
     port: 8090
     resources:
       requests:
