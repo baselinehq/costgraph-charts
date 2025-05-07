@@ -35,6 +35,13 @@ jobs:
         with:
           source: ./
           destination: ./_site
+      - name: Pull Helm repo artifacts
+        run: |
+          git clone --depth 1 --branch gh-pages "https://github.com/${{ github.repository }}" gh-pages
+          mkdir -p _site
+          cp gh-pages/index.yaml _site/
+          cp gh-pages/*.tgz      _site/ || true
+          touch _site/.nojekyll
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
 
