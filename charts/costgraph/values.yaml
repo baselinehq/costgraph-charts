@@ -47,6 +47,11 @@ costgraph:
     image: "ghcr.io/baselinehq/costgraph-chat"
     tag: "latest"
     port: 8000
+    ingress:
+      annotations: {}
+      tls:
+        enabled: false
+        secret_name: ""
     resources:
       requests:
         memory: "100Mi"
@@ -90,6 +95,11 @@ superset:
   tag: "latest-linux-amd64"
   port: 8088
   enabled: true
+  ingress:
+    annotations: {}
+    tls:
+      enabled: false
+      secret_name: ""
   resources:
     requests:
       memory: "500Mi"
