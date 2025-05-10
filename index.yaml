@@ -3,6 +3,16 @@ entries:
   costgraph:
   - apiVersion: v2
     appVersion: 0.0.1
+    created: "2025-05-10T23:51:02.704809837Z"
+    description: Find out how much your Kubernetes cluster costs can reduce
+    digest: 8f38e773726b8fa567180bde522ea88f10e101a25bb3c606500e0f25452e357e
+    name: costgraph
+    type: application
+    urls:
+    - costgraph-0.1.15.tgz
+    version: 0.1.15
+  - apiVersion: v2
+    appVersion: 0.0.1
     created: "2025-03-25T10:35:05.852210837Z"
     description: Find out how much your Kubernetes cluster costs can reduce
     digest: d03f8812d0c09123ab3e7206d821f2dde0e5a3a52f065b33f700fa33f89dbd41
@@ -131,4 +141,4 @@ entries:
     urls:
     - costgraph-0.1.2.tgz
     version: 0.1.2
-generated: "2025-03-25T10:35:05.852316646Z"
+generated: "2025-05-10T23:51:02.704919542Z"
