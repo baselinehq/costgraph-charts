@@ -63,6 +63,24 @@ costgraph:
     image: "ghcr.io/baselinehq/costgraph-operator"
     tag: "latest-linux-amd64"
     port: 8090
+    env: []
+# Specify the environment variables for the costgraph operator
+#        - name: "POSTGRES_HOST"
+#          value: "postgres"
+#        - name: "POSTGRES_PORT"
+#          value: "5432"
+#        - name: "POSTGRES_DB"
+#          value: "costgraph"
+#        - name: "POSTGRES_USER"
+#          valueFrom:
+#            secretKeyRef:
+#              name: postgres
+#              key: postgres_user
+#        - name: "POSTGRES_PASSWORD"
+#          valueFrom:
+#            secretKeyRef:
+#              name: postgres
+#              key: postgres_password
     resources:
       requests:
         memory: "100Mi"
