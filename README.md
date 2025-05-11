@@ -15,5 +15,6 @@ This will generate a diagram of the costgraph operator and its dependencies. The
 Create a new values file that contains the configuration you'd like to deploy
 
 ```bash
-helm template . -f <values-file> | tee | kubectl apply --dry-run=client -f -
+cd charts/<chart-name>
+helm template . -f <your-values-file> | tee | kubectl apply --dry-run=client -f -
 ```
