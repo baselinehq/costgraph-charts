@@ -1,6 +1,6 @@
 # costgraph
 
-![Version: 0.1.17](https://img.shields.io/badge/Version-0.1.17-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.1](https://img.shields.io/badge/AppVersion-0.0.1-informational?style=flat-square)
+![Version: 0.1.18](https://img.shields.io/badge/Version-0.1.18-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.1](https://img.shields.io/badge/AppVersion-0.0.1-informational?style=flat-square)
 
 Find out how much your Kubernetes cluster costs can reduce
 
@@ -51,7 +51,6 @@ Find out how much your Kubernetes cluster costs can reduce
 | costgraph.operator.resources.requests.memory | string | `"100Mi"` |  |
 | costgraph.operator.tag | string | `"latest-linux-amd64"` |  |
 | domain | string | `"costgraph.internal"` |  |
-| namespace | string | `"costgraph"` |  |
 | os | string | `"linux"` |  |
 | postgres.config.pg_data_directory | string | `"/var/lib/postgresql/data"` |  |
 | postgres.config.postgres_db | string | `"costgraph"` |  |

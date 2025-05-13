@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: costgraph
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace }}
   annotations:
 {{ .Values.superset.ingress.annotations | toYaml | indent 4 }}
 spec:
@@ -44,7 +44,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: costgraph-ws
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace }}
   annotations:
 {{ .Values.costgraph.chat.ingress.annotations | toYaml | indent 4 }}
 spec:

@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: {{ if .Values.postgres.pvc.enabled }} "StatefulSet" {{ else }} "Deployment" {{ end }}
 metadata:
   name: postgres
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace }}
   annotations:
     checksum/supersetenv: {{ include "chart.supersetenv" . | sha256sum }}
 spec:
