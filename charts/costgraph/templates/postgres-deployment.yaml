@@ -31,7 +31,17 @@ spec:
                 name: postgres
           resources:
 {{- .Values.postgres.resources | toYaml | nindent 12 }}
-{{- if .Values.postgres.pvc.enabled }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.postgres.config.postgres_port }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.postgres.config.postgres_port }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      {{- if .Values.postgres.pvc.enabled }}
           volumeMounts:
             - mountPath: {{.Values.postgres.config.pg_data_directory}}
               name: "postgres"

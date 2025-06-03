@@ -43,6 +43,20 @@ spec:
 {{- include "chart.supersetenv" . | indent 12 }}
           ports:
             - containerPort: {{ .Values.superset.port }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.superset.port }}
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.superset.port }}
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            failureThreshold: 5
           resources:
 {{- .Values.superset.resources | toYaml | nindent 12 }}
 {{ end }}

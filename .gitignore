@@ -1,4 +1,4 @@
 ### Helm template
 # Chart dependencies
 **/charts/*.tgz
-values-costgraph.yaml
+values-*.yaml
