@@ -81,14 +81,14 @@ spec:
       {{- .Values.costgraph.chat.resources | toYaml | nindent 12 }}
           livenessProbe:
             httpGet:
-              path: /
+              path: /ping
               port: {{ .Values.costgraph.chat.port }}
             initialDelaySeconds: 10
             periodSeconds: 10
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /
+              path: /ping
               port: {{ .Values.costgraph.chat.port }}
             initialDelaySeconds: 10
             periodSeconds: 5
