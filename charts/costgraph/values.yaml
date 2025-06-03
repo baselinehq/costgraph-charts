@@ -59,7 +59,7 @@ costgraph:
         cpu: "2"
   operator:
     image: "ghcr.io/baselinehq/costgraph-operator"
-    tag: "latest-linux-amd64"
+    tag: "v0.1.0"
     port: 8090
     env: []
 # Specify the environment variables for the costgraph operator
@@ -108,7 +108,7 @@ costgraph:
 
 superset:
   image: "ghcr.io/baselinehq/costgraph-superset"
-  tag: "latest-linux-amd64"
+  tag: "v0.1.0"
   port: 8088
   enabled: true
   ingress:
