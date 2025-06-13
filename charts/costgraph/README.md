@@ -1,8 +1,8 @@
 # costgraph
 
-![Version: 0.1.19](https://img.shields.io/badge/Version-0.1.19-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.1.20](https://img.shields.io/badge/Version-0.1.20-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.2](https://img.shields.io/badge/AppVersion-0.1.2-informational?style=flat-square)
 
-Find out how much your Kubernetes cluster costs can reduce
+Distributed observability for modern workloads on Kubernetes
 
 ## Values
 
@@ -49,7 +49,7 @@ Find out how much your Kubernetes cluster costs can reduce
 | costgraph.operator.resources.limits.memory | string | `"512Mi"` |  |
 | costgraph.operator.resources.requests.cpu | string | `"250m"` |  |
 | costgraph.operator.resources.requests.memory | string | `"100Mi"` |  |
-| costgraph.operator.tag | string | `"v0.1.0"` |  |
+| costgraph.operator.tag | string | `"v0.1.2"` |  |
 | domain | string | `"costgraph.internal"` |  |
 | os | string | `"linux"` |  |
 | postgres.config.pg_data_directory | string | `"/var/lib/postgresql/data"` |  |
