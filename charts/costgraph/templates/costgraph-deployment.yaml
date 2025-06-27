@@ -25,19 +25,16 @@ spec:
             name: costgraph
       serviceAccountName: costgraph
       restartPolicy: Always
-      {{- if .Values.costgraph.config.costgraph_feature_flags.superset }}
       initContainers:
-        - name: wait-for-superset
+        - name: wait-for-postgres
           image: curlimages/curl:latest
           args:
             - /bin/sh
             - -c
             - >
               set -x;
-              while [ $(curl -L -sw '%{http_code}' "{{ .Values.costgraph.config.superset_address }}" -o /dev/null) -ne 200 ]; do
-                sleep 15;
-              done
-      {{- end }}
+              nc -z -n -v {{ .Values.postgres.config.postgres_host }} {{ .Values.postgres.config.postgres_port }};
+              sleep 15
       containers:
         - name: costgraph
           imagePullPolicy: Always
