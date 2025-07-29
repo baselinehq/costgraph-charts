@@ -2,6 +2,16 @@ apiVersion: v1
 entries:
   costgraph:
   - apiVersion: v2
+    appVersion: 0.1.5
+    created: "2025-07-29T16:00:25.829255053Z"
+    description: Distributed observability for modern workloads on Kubernetes
+    digest: 7aec8bd089248b2c905cbd191bfba5b0b8ed85f2cc3674fb4bf6ce518b4a2952
+    name: costgraph
+    type: application
+    urls:
+    - costgraph-0.1.23.tgz
+    version: 0.1.23
+  - apiVersion: v2
     appVersion: 0.1.4
     created: "2025-06-20T15:58:34.854772534Z"
     description: Distributed observability for modern workloads on Kubernetes
@@ -211,4 +221,4 @@ entries:
     urls:
     - costgraph-0.1.2.tgz
     version: 0.1.2
-generated: "2025-06-20T15:58:34.854937333Z"
+generated: "2025-07-29T16:00:25.829428105Z"
