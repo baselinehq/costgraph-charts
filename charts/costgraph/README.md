@@ -1,6 +1,6 @@
 # costgraph
 
-![Version: 0.1.22](https://img.shields.io/badge/Version-0.1.22-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.4](https://img.shields.io/badge/AppVersion-0.1.4-informational?style=flat-square)
+![Version: 0.1.23](https://img.shields.io/badge/Version-0.1.23-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.5](https://img.shields.io/badge/AppVersion-0.1.5-informational?style=flat-square)
 
 Distributed observability for modern workloads on Kubernetes
 
@@ -49,7 +49,7 @@ Distributed observability for modern workloads on Kubernetes
 | costgraph.operator.resources.limits.memory | string | `"512Mi"` |  |
 | costgraph.operator.resources.requests.cpu | string | `"250m"` |  |
 | costgraph.operator.resources.requests.memory | string | `"100Mi"` |  |
-| costgraph.operator.tag | string | `"v0.1.4"` |  |
+| costgraph.operator.tag | string | `"v0.1.5"` |  |
 | domain | string | `"costgraph.internal"` |  |
 | os | string | `"linux"` |  |
 | postgres.config.pg_data_directory | string | `"/var/lib/postgresql/data"` |  |
