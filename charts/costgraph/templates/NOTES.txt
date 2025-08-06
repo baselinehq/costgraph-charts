@@ -1,0 +1,29 @@
+{{ $.Chart.Name }} has been installed. Check its status by running:
+  kubectl --namespace {{ .Release.Namespace }} -n {{ .Release.Name }} get pods -l "release={{ $.Release.Name }}"
+
+To expose Superset via Ingress, apply the following configuration:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: costgraph
+  namespace: {{ .Release.Namespace }}
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: costgraph.{{ .Values.domain }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: costgraph
+            port:
+              number: 80
+```
+
+After applying the Ingress, access Superset at: http://costgraph.{{ .Values.domain }}
+
+For further configuration visit https://docs.baselinehq.cloud/costgraph/configuration/kubernetes to view the helm reference!
