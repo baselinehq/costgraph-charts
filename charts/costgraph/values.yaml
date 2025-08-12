@@ -59,7 +59,7 @@ costgraph:
         cpu: "2"
   operator:
     image: "ghcr.io/baselinehq/costgraph-operator"
-    tag: "v0.1.5"
+    tag: "v0.1.6"
     port: 8090
     env: []
 # Specify the environment variables for the costgraph operator
