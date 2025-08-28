@@ -1,0 +1,7 @@
+{{ $.Chart.Name }} has been installed. Check its status by running:
+  kubectl --namespace {{ .Release.Namespace }} -n {{ .Release.Name }} get pods -l "release={{ $.Release.Name }}"
+
+
+You can now access the CostGraph superset dashboard at: http://costgraph.{{ .Values.domain }}
+
+For further configuration visit https://docs.baselinehq.cloud/costgraph/configuration/kubernetes to view the helm reference!

@@ -17,4 +17,4 @@ Create a new values file that contains the configuration you'd like to deploy
 ```bash
 cd charts/<chart-name>
 helm template . -f <your-values-file> | tee | kubectl apply --dry-run=client -f -
-```
+``
