@@ -35,17 +35,3 @@ port: {{ .Values.costgraph.operator.port }}
   value: {{ $val | quote }}
 {{- end -}}
 {{ end -}}
-
-
----
-# Configuration template for costgraph chat environment variables
-{{- define "chart.costgraphchatenv" }}
-- name: "OPENAI_API_KEY"
-  value: {{ .Values.costgraph.config.openai_api_key }}
-- name: "COSTGRAPH_CHAT_WS_BACKEND"
-  value: https://costgraph-chat-ws.{{ .Values.domain }}
-{{- range $key, $val := .Values.postgres.config }}
-- name: {{ $key | upper }}
-  value: {{ $val | quote }}
-{{- end -}}
-{{ end -}}

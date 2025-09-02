@@ -3,6 +3,15 @@ kind: Deployment
 metadata:
   name: costgraph
   namespace: {{ .Release.Namespace }}
+  {{-  with .Values.costgraph.operator.annotations }}
+  labels:
+      {{- toYaml . | nindent 4 }}
+  {{- end }}
+  annotations:
+    checksum/config: {{ include "chart.costgraph" . | sha256sum }}
+{{-  with .Values.costgraph.operator.annotations }}
+    {{- toYaml . | nindent 4 }}
+{{- end }}
 spec:
   replicas: 1
   selector:
@@ -12,8 +21,6 @@ spec:
     metadata:
       labels:
         app: costgraph
-      annotations:
-        checksum/config: {{ include "chart.costgraphchatenv" . | sha256sum }}
     spec:
       {{- with .Values.affinity }}
       affinity:
@@ -25,6 +32,7 @@ spec:
             name: costgraph
       serviceAccountName: costgraph
       restartPolicy: Always
+      {{ if .Values.costgraph.config.costgraph_feature_flags.superset }}
       initContainers:
         - name: wait-for-postgres
           image: curlimages/curl:latest
@@ -35,6 +43,7 @@ spec:
               set -x;
               nc -z -n -v {{ .Values.postgres.config.postgres_host }} {{ .Values.postgres.config.postgres_port }};
               sleep 15
+        {{ end }}
       containers:
         - name: costgraph
           imagePullPolicy: Always
@@ -45,9 +54,9 @@ spec:
             - containerPort: {{ .Values.costgraph.config.prometheus_metrics_port }}
             {{- end }}
           env:
-      {{- .Values.costgraph.operator.env | toYaml | nindent 12 }}
+      {{ .Values.costgraph.operator.env | toYaml | nindent 12 }}
           resources:
-      {{- .Values.costgraph.operator.resources | toYaml | nindent 12 }}
+      {{ .Values.costgraph.operator.resources | toYaml | nindent 12 }}
           volumeMounts:
             - mountPath: /app/config.yaml
               name: costgraph-config
@@ -57,37 +66,12 @@ spec:
               path: /health
               port: {{ .Values.costgraph.operator.port }}
             initialDelaySeconds: 10
-            periodSeconds: 10
+            periodSeconds: 60
             failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /health
               port: {{ .Values.costgraph.operator.port }}
             initialDelaySeconds: 10
-            periodSeconds: 5
+            periodSeconds: 60
             failureThreshold: 3
-        {{- if .Values.costgraph.config.costgraph_feature_flags.chat }}
-        - name: chat
-          imagePullPolicy: Always
-          env:
-      {{- include "chart.costgraphchatenv" . | indent 12 }}
-          image: "{{ .Values.costgraph.chat.image }}:{{ .Values.costgraph.chat.tag }}"
-          ports:
-            - containerPort: {{ .Values.costgraph.chat.port }}
-          resources:
-      {{- .Values.costgraph.chat.resources | toYaml | nindent 12 }}
-          livenessProbe:
-            httpGet:
-              path: /ping
-              port: {{ .Values.costgraph.chat.port }}
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /ping
-              port: {{ .Values.costgraph.chat.port }}
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            failureThreshold: 3
-        {{end}}

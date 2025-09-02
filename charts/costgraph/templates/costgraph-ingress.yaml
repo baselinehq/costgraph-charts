@@ -1,3 +1,4 @@
+{{- if .Values.costgraph.config.costgraph_feature_flags.superset }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -7,7 +8,6 @@ metadata:
 {{ .Values.superset.ingress.annotations | toYaml | indent 4 }}
 spec:
   rules:
-    {{- if .Values.costgraph.config.costgraph_feature_flags.superset }}
     - host: costgraph.{{ .Values.domain }}
       http:
         paths:
@@ -18,51 +18,10 @@ spec:
                 name: superset
                 port:
                   number: 80
-    {{ end }}
-    - host: costgraph-backend.{{ .Values.domain }}
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: costgraph
-                port:
-                  number: {{ .Values.costgraph.operator.port }}
   {{- if .Values.superset.ingress.tls.enabled }}
   tls:
     - hosts:
-        {{ if .Values.costgraph.config.costgraph_feature_flags.superset -}}
         - costgraph.{{ .Values.domain }}
-        {{- end }}
-        - costgraph-backend.{{ .Values.domain }}
       secretName: {{ .Values.superset.ingress.tls.secret_name }}
   {{end}}
----
-{{- if .Values.costgraph.config.costgraph_feature_flags.chat }}
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: costgraph-ws
-  namespace: {{ .Release.Namespace }}
-  annotations:
-{{ .Values.costgraph.chat.ingress.annotations | toYaml | indent 4 }}
-spec:
-  rules:
-    - host: costgraph-chat-ws.{{ .Values.domain }}
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: costgraph
-                port:
-                  number: {{ .Values.costgraph.chat.port }}
-  {{- if .Values.costgraph.chat.ingress.tls.enabled }}
-  tls:
-    - hosts:
-        - costgraph-chat-ws.{{ .Values.domain }}
-      secretName: {{ .Values.costgraph.chat.ingress.tls.secret_name }}
-  {{ end }}
-{{- end }}
+{{ end }}
