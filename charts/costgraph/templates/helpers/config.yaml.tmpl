@@ -2,11 +2,6 @@
 # Port to expose the backend
 port: {{ .Values.costgraph.operator.port }}
 
-# Superset configuration
-{{- with .Values.superset.config }}
-{{ toYaml . }}
-{{- end }}
-
 # Database configuration
 {{- with .Values.postgres.config }}
 {{ toYaml . }}
