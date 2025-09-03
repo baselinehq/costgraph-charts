@@ -1,9 +1,7 @@
 domain: "costgraph.internal"
-os: linux
-arch: amd64
 
 affinity:
-  # run on linux arm64 or amd64 nodes
+  # run on linux amd64 nodes
   nodeAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
       nodeSelectorTerms:
@@ -15,13 +13,12 @@ affinity:
             - key: kubernetes.io/arch
               operator: In
               values:
-                - arm64
                 - amd64
 
 postgres:
   image: "postgres"
   tag: "14-alpine"
-  enabled: true
+  enabled: false
   pvc:
     enabled: false
     size: "10Gi"
@@ -41,26 +38,12 @@ postgres:
     postgres_port: 5432
 
 costgraph:
-  chat: 
-    image: "ghcr.io/baselinehq/costgraph-chat"
-    tag: "latest"
-    port: 8000
-    ingress:
-      annotations: {}
-      tls:
-        enabled: false
-        secret_name: ""
-    resources:
-      requests:
-        memory: "100Mi"
-        cpu: "250m"
-      limits:
-        memory: "2Gi"
-        cpu: "2"
   operator:
     image: "ghcr.io/baselinehq/costgraph-operator"
-    tag: "v0.1.6"
+    tag: "v0.1.7"
     port: 8090
+    labels: {}
+    annotations: {}
     env: []
 # Specify the environment variables for the costgraph operator
 #        - name: "POSTGRES_HOST"
@@ -87,30 +70,39 @@ costgraph:
         memory: "512Mi"
         cpu: "1"
   config:
+    # This is the endpoint of the prometheus server
+    # It can have the protocol, host and port, e.g. http://prometheus-server.prometheus-system:9090
+    # or just the host if it's running on default port 80 with http protocol
+    # or https protocol on default port 443
+    # If you are using a different port, make sure to include it in the URL
     prometheus_endpoint: "http://prometheus-server.prometheus-system"
     worker_count: 10
     expected_utilisation_percent:
       cpu: 80
       memory: 80
-    superset_address: http://superset
     costgraph_feature_flags:
-      superset: true
+      superset: false
       graph: true
-      chat: false
       prometheus: true
+      disable_iqr: false
     costgraph_instance_name: ""
     costgraph_instance_master_domains: []
     costgraph_instance_replication_provider: s3
     fortknox_server_url: https://fortknox.baselinehq.cloud
     api_key: ""
-    openai_api_key: ""
+    # This is the port where our prometheus metrics exporter is listening on, not for the endpoint
     prometheus_metrics_port: 9090
+    debug: false
+    reconcile_time: 5m
+    metric_window_days: 45
+    # This can be either "kube_state_metrics" (default) or "gcp_managed_prometheus"
+    prometheus_provider: ""
 
 superset:
   image: "ghcr.io/baselinehq/costgraph-superset"
   tag: "v0.1.0"
   port: 8088
-  enabled: true
+  enabled: false
   ingress:
     annotations: {}
     tls:

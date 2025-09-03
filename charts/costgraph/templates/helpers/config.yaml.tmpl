@@ -2,11 +2,6 @@
 # Port to expose the backend
 port: {{ .Values.costgraph.operator.port }}
 
-# Superset configuration
-{{- with .Values.superset.config }}
-{{ toYaml . }}
-{{- end }}
-
 # Database configuration
 {{- with .Values.postgres.config }}
 {{ toYaml . }}
@@ -31,20 +26,6 @@ port: {{ .Values.costgraph.operator.port }}
 
 # Superset configuration
 {{- range $key, $val := .Values.superset.config }}
-- name: {{ $key | upper }}
-  value: {{ $val | quote }}
-{{- end -}}
-{{ end -}}
-
-
----
-# Configuration template for costgraph chat environment variables
-{{- define "chart.costgraphchatenv" }}
-- name: "OPENAI_API_KEY"
-  value: {{ .Values.costgraph.config.openai_api_key }}
-- name: "COSTGRAPH_CHAT_WS_BACKEND"
-  value: https://costgraph-chat-ws.{{ .Values.domain }}
-{{- range $key, $val := .Values.postgres.config }}
 - name: {{ $key | upper }}
   value: {{ $val | quote }}
 {{- end -}}

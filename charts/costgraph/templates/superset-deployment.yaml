@@ -4,6 +4,8 @@ kind: Deployment
 metadata:
   name: superset
   namespace: {{ .Release.Namespace }}
+  annotations:
+    checksum/supersetenv: {{ include "chart.supersetenv" . | sha256sum }}
 spec:
   replicas: 1
   selector:
@@ -13,13 +15,11 @@ spec:
     metadata:
       labels:
         app: superset
-      annotations:
-        checksum/supersetenv: {{ include "chart.supersetenv" . | sha256sum }}
     spec:
       restartPolicy: Always
       {{- with .Values.affinity }}
       affinity:
-        {{- toYaml . | nindent 12 }}
+        {{ toYaml . | nindent 12 }}
       {{- end }}
       initContainers:
         - name: wait-for-postgres
@@ -59,4 +59,4 @@ spec:
             failureThreshold: 5
           resources:
 {{- .Values.superset.resources | toYaml | nindent 12 }}
-{{ end }}
+{{- end }}

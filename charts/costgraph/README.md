@@ -1,6 +1,6 @@
 # costgraph
 
-![Version: 0.1.24](https://img.shields.io/badge/Version-0.1.24-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.6](https://img.shields.io/badge/AppVersion-0.1.6-informational?style=flat-square)
+![Version: 0.1.25](https://img.shields.io/badge/Version-0.1.25-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.7](https://img.shields.io/badge/AppVersion-0.1.7-informational?style=flat-square)
 
 Distributed observability for modern workloads on Kubernetes
 
@@ -13,52 +13,43 @@ Distributed observability for modern workloads on Kubernetes
 | affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values[0] | string | `"linux"` |  |
 | affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].key | string | `"kubernetes.io/arch"` |  |
 | affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].operator | string | `"In"` |  |
-| affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[0] | string | `"arm64"` |  |
-| affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[1] | string | `"amd64"` |  |
-| arch | string | `"amd64"` |  |
-| costgraph.chat.image | string | `"ghcr.io/baselinehq/costgraph-chat"` |  |
-| costgraph.chat.ingress.annotations | object | `{}` |  |
-| costgraph.chat.ingress.tls.enabled | bool | `false` |  |
-| costgraph.chat.ingress.tls.secret_name | string | `""` |  |
-| costgraph.chat.port | int | `8000` |  |
-| costgraph.chat.resources.limits.cpu | string | `"2"` |  |
-| costgraph.chat.resources.limits.memory | string | `"2Gi"` |  |
-| costgraph.chat.resources.requests.cpu | string | `"250m"` |  |
-| costgraph.chat.resources.requests.memory | string | `"100Mi"` |  |
-| costgraph.chat.tag | string | `"latest"` |  |
+| affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[0] | string | `"amd64"` |  |
 | costgraph.config.api_key | string | `""` |  |
-| costgraph.config.costgraph_feature_flags.chat | bool | `false` |  |
+| costgraph.config.costgraph_feature_flags.disable_iqr | bool | `false` |  |
 | costgraph.config.costgraph_feature_flags.graph | bool | `true` |  |
 | costgraph.config.costgraph_feature_flags.prometheus | bool | `true` |  |
-| costgraph.config.costgraph_feature_flags.superset | bool | `true` |  |
+| costgraph.config.costgraph_feature_flags.superset | bool | `false` |  |
 | costgraph.config.costgraph_instance_master_domains | list | `[]` |  |
 | costgraph.config.costgraph_instance_name | string | `""` |  |
 | costgraph.config.costgraph_instance_replication_provider | string | `"s3"` |  |
+| costgraph.config.debug | bool | `false` |  |
 | costgraph.config.expected_utilisation_percent.cpu | int | `80` |  |
 | costgraph.config.expected_utilisation_percent.memory | int | `80` |  |
 | costgraph.config.fortknox_server_url | string | `"https://fortknox.baselinehq.cloud"` |  |
-| costgraph.config.openai_api_key | string | `""` |  |
+| costgraph.config.metric_window_days | int | `45` |  |
 | costgraph.config.prometheus_endpoint | string | `"http://prometheus-server.prometheus-system"` |  |
 | costgraph.config.prometheus_metrics_port | int | `9090` |  |
-| costgraph.config.superset_address | string | `"http://superset"` |  |
+| costgraph.config.prometheus_provider | string | `""` |  |
+| costgraph.config.reconcile_time | string | `"5m"` |  |
 | costgraph.config.worker_count | int | `10` |  |
+| costgraph.operator.annotations | object | `{}` |  |
 | costgraph.operator.env | list | `[]` |  |
 | costgraph.operator.image | string | `"ghcr.io/baselinehq/costgraph-operator"` |  |
+| costgraph.operator.labels | object | `{}` |  |
 | costgraph.operator.port | int | `8090` |  |
 | costgraph.operator.resources.limits.cpu | string | `"1"` |  |
 | costgraph.operator.resources.limits.memory | string | `"512Mi"` |  |
 | costgraph.operator.resources.requests.cpu | string | `"250m"` |  |
 | costgraph.operator.resources.requests.memory | string | `"100Mi"` |  |
-| costgraph.operator.tag | string | `"v0.1.6"` |  |
+| costgraph.operator.tag | string | `"v0.1.7"` |  |
 | domain | string | `"costgraph.internal"` |  |
-| os | string | `"linux"` |  |
 | postgres.config.pg_data_directory | string | `"/var/lib/postgresql/data"` |  |
 | postgres.config.postgres_db | string | `"costgraph"` |  |
 | postgres.config.postgres_host | string | `"db"` |  |
 | postgres.config.postgres_password | string | `"password"` |  |
 | postgres.config.postgres_port | int | `5432` |  |
 | postgres.config.postgres_user | string | `"user"` |  |
-| postgres.enabled | bool | `true` |  |
+| postgres.enabled | bool | `false` |  |
 | postgres.image | string | `"postgres"` |  |
 | postgres.pvc.enabled | bool | `false` |  |
 | postgres.pvc.size | string | `"10Gi"` |  |
@@ -77,7 +68,7 @@ Distributed observability for modern workloads on Kubernetes
 | superset.config.superset_guest_role | string | `"Public"` |  |
 | superset.config.superset_guest_username | string | `"guest"` |  |
 | superset.config.superset_secret_key | string | `"test123"` |  |
-| superset.enabled | bool | `true` |  |
+| superset.enabled | bool | `false` |  |
 | superset.image | string | `"ghcr.io/baselinehq/costgraph-superset"` |  |
 | superset.ingress.annotations | object | `{}` |  |
 | superset.ingress.tls.enabled | bool | `false` |  |

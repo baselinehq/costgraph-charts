@@ -55,5 +55,5 @@ spec:
           requests:
             storage: {{ .Values.postgres.pvc.size }}
   serviceName: postgres
-{{ end }}
-{{ end }}
+{{- end }}
+{{- end }}
