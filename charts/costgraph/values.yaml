@@ -105,6 +105,7 @@ superset:
   enabled: false
   ingress:
     annotations: {}
+    ingress_class_name: ""
     tls:
       enabled: false
       secret_name: ""

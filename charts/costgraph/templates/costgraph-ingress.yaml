@@ -7,6 +7,7 @@ metadata:
   annotations:
 {{ .Values.superset.ingress.annotations | toYaml | indent 4 }}
 spec:
+  ingressClassName: {{ .Values.superset.ingress.ingress_class_name }}
   rules:
     - host: costgraph.{{ .Values.domain }}
       http:
