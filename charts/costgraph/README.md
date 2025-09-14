@@ -1,6 +1,6 @@
 # costgraph
 
-![Version: 0.1.25](https://img.shields.io/badge/Version-0.1.25-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.7](https://img.shields.io/badge/AppVersion-0.1.7-informational?style=flat-square)
+![Version: 0.1.26](https://img.shields.io/badge/Version-0.1.26-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.7](https://img.shields.io/badge/AppVersion-0.1.7-informational?style=flat-square)
 
 Distributed observability for modern workloads on Kubernetes
 
@@ -71,6 +71,7 @@ Distributed observability for modern workloads on Kubernetes
 | superset.enabled | bool | `false` |  |
 | superset.image | string | `"ghcr.io/baselinehq/costgraph-superset"` |  |
 | superset.ingress.annotations | object | `{}` |  |
+| superset.ingress.ingress_class_name | string | `""` |  |
 | superset.ingress.tls.enabled | bool | `false` |  |
 | superset.ingress.tls.secret_name | string | `""` |  |
 | superset.port | int | `8088` |  |
