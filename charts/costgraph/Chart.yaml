@@ -3,4 +3,4 @@ name: costgraph
 description: Distributed observability for modern workloads on Kubernetes
 type: application
 version: 0.1.27
-appVersion: 0.1.7
+appVersion: 0.1.8
