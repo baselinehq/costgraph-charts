@@ -40,7 +40,7 @@ postgres:
 costgraph:
   operator:
     image: "ghcr.io/baselinehq/costgraph-operator"
-    tag: "v0.1.7"
+    tag: "v0.1.8"
     port: 8090
     labels: {}
     annotations: {}
