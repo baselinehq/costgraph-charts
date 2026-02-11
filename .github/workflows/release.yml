@@ -21,6 +21,24 @@ jobs:
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
+      - name: Add Helm Dependency Repositories
+        run: |
+          for chart in charts/*/Chart.yaml; do
+            if [ -f "$chart" ]; then
+              echo "Processing $chart"
+              # Extract repository URLs from dependencies
+              yq eval '.dependencies[].repository' "$chart" 2>/dev/null | while read -r repo_url; do
+                if [ -n "$repo_url" ] && [ "$repo_url" != "null" ]; then
+                  # Extract repo name from URL (e.g., bitnami from https://charts.bitnami.com/bitnami)
+                  repo_name=$(echo "$repo_url" | sed -E 's|https?://[^/]+/(.+)/?|\1|' | sed 's|/|-|g')
+                  echo "Adding repository: $repo_name -> $repo_url"
+                  helm repo add "$repo_name" "$repo_url" || true
+                fi
+              done
+            fi
+          done
+          helm repo update
+
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.6.0
         with:
