@@ -1,0 +1,75 @@
+{{- if .Values.operatorPrometheus.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "costgraph-operator.prometheusName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "costgraph-operator.prometheusLabels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.operatorPrometheus.replicas }}
+  selector:
+    matchLabels:
+      {{- include "costgraph-operator.prometheusSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.operatorPrometheus.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "costgraph-operator.prometheusLabels" . | nindent 8 }}
+        {{- with .Values.operatorPrometheus.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "costgraph-operator.serviceAccountName" . }}
+      {{- with .Values.operatorPrometheus.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: operator-prometheus
+          image: "{{ .Values.operatorPrometheus.image.repository }}:{{ .Values.operatorPrometheus.image.tag }}"
+          imagePullPolicy: {{ .Values.operatorPrometheus.image.pullPolicy }}
+          env:
+            - name: CLUSTER_NAME
+              value: {{ .Values.global.clusterName | required "Cluster name must be provided"  | quote }}
+            - name: API_KEY
+              value: {{ .Values.global.apiKey | required "Costgraph API Key must be provided"  | quote }}
+            - name: PROMETHEUS_URL
+              value: "{{.Release.Name}}-kube-state-metrics.{{.Release.Namespace}}.svc.cluster.local:8080"
+            - name: REMOTE_WRITE_URL
+              value: {{ .Values.operatorPrometheus.config.remoteWriteURL | quote }}
+            - name: REMOTE_WRITE_PATH
+              value: {{ .Values.operatorPrometheus.config.remoteWritePath | quote }}
+            - name: PROMETHEUS_API_PROVIDER
+              value: {{ .Values.operatorPrometheus.config.prometheusAPIProvider | quote }}
+            - name: PROMETHEUS_API_VERSION
+              value: {{ .Values.operatorPrometheus.config.prometheusAPIVersion | quote }}
+            - name: HTTP_TIMEOUT
+              value: {{ .Values.operatorPrometheus.config.httpTimeout | quote }}
+            {{- with .Values.operatorPrometheus.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.operatorPrometheus.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.operatorPrometheus.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.operatorPrometheus.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.operatorPrometheus.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

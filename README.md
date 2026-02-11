@@ -5,8 +5,8 @@ Helm chart definitions to deploy costgraph to the clusters.
 # Generating diagrams
 ```bash
 pip install KubeDiagrams
-helm-diagrams ./charts/costgraph
-mv local-costgraph.png ./images/diagram.png
+helm-diagrams ./charts/costgraph-operator
+mv costgraph-operator.png ./images/diagram.png
 ```
 This will generate a diagram of the costgraph operator and its dependencies. The diagram will be saved in the `images` directory as `diagram.png`.
 ![](images/diagram.png)
