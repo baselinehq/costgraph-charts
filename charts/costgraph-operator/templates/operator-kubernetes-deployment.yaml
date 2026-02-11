@@ -1,0 +1,69 @@
+{{- if .Values.operatorKubernetes.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "costgraph-operator.kubernetesName" . }}
+  namespace: {{ include "costgraph-operator.namespace" . }}
+  labels:
+    {{- include "costgraph-operator.kubernetesLabels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.operatorKubernetes.replicas }}
+  selector:
+    matchLabels:
+      {{- include "costgraph-operator.kubernetesSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.operatorKubernetes.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "costgraph-operator.kubernetesLabels" . | nindent 8 }}
+        {{- with .Values.operatorKubernetes.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "costgraph-operator.serviceAccountName" . }}
+      {{- with .Values.operatorKubernetes.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: operator-kubernetes
+          image: "{{ .Values.operatorKubernetes.image.repository }}:{{ .Values.operatorKubernetes.image.tag }}"
+          imagePullPolicy: {{ .Values.operatorKubernetes.image.pullPolicy }}
+          ports:
+            - name: pprof
+              containerPort: 6666
+              protocol: TCP
+          env:
+            - name: CLUSTER_NAME
+              value: {{ .Values.global.clusterName | required "Cluster name must be provided" | quote }}
+            - name: API_KEY
+              value: {{ .Values.global.apiKey | required "Costgraph API Key must be provided" | quote }}
+            - name: OPERATOR_VERSION
+              value: {{ .Values.operatorKubernetes.image.tag | quote }}
+            {{- with .Values.operatorKubernetes.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.operatorKubernetes.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.operatorKubernetes.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.operatorKubernetes.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.operatorKubernetes.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

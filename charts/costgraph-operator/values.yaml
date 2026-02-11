@@ -1,0 +1,72 @@
+# Default values for costgraph-operator.
+
+# Global configuration shared across all operator components.
+global:
+  clusterName: ""
+  apiKey: ""
+  namespace: "costgraph"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+# --------------------------------------------------------------------------
+# kube-state-metrics (subchart from prometheus-community)
+# See: https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-state-metrics
+# --------------------------------------------------------------------------
+kube-state-metrics:
+  enabled: true
+
+# --------------------------------------------------------------------------
+# costgraph-operator-kubernetes deployment
+# --------------------------------------------------------------------------
+operatorKubernetes:
+  enabled: true
+  image:
+    repository: ghcr.io/baselinehq/costgraph-operator-kubernetes
+    tag: "sha-e05bf28"
+    pullPolicy: IfNotPresent
+  # This should always be 1
+  replicas: 1
+  config:
+    operatorVersion: "1.0.0"
+  resources: {}
+  securityContext: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  podAnnotations: {}
+  podLabels: {}
+  env: []
+
+# --------------------------------------------------------------------------
+# costgraph-operator-prometheus deployment
+# --------------------------------------------------------------------------
+operatorPrometheus:
+  enabled: true
+  image:
+    repository: ghcr.io/baselinehq/costgraph-operator-prometheus
+    tag: "sha-f9545ac"
+    pullPolicy: IfNotPresent
+  # This should always be 1
+  replicas: 1
+  config:
+    remoteWriteURL: "https://tsdb.baselinehq.cloud"
+    remoteWritePath: "/api/v1/write"
+    prometheusAPIProvider: "prometheus"
+    prometheusAPIVersion: "kube-state-metrics"
+    httpTimeout: "30s"
+  resources: {}
+  securityContext: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  podAnnotations: {}
+  podLabels: {}
+  env: []
