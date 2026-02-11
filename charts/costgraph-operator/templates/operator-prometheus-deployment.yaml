@@ -42,7 +42,11 @@ spec:
             - name: API_KEY
               value: {{ .Values.global.apiKey | required "Costgraph API Key must be provided"  | quote }}
             - name: PROMETHEUS_URL
+<<<<<<< HEAD
               value: "{{.Release.Name}}-kube-state-metrics.{{- include "costgraph-operator.namespace" . -}}.svc.cluster.local:8080"
+=======
+              value: "{{.Release.Name}}-kube-state-metrics.{{.Release.Namespace}}.svc.cluster.local:8080"
+>>>>>>> 36ff8e2 (feat: new charts for operator redesign)
             - name: REMOTE_WRITE_URL
               value: {{ .Values.operatorPrometheus.config.remoteWriteURL | quote }}
             - name: REMOTE_WRITE_PATH
