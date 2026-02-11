@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "costgraph-operator.kubernetesName" . }}
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "costgraph-operator.namespace" . }}
   labels:
     {{- include "costgraph-operator.kubernetesLabels" . | nindent 4 }}
 spec:

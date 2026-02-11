@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "costgraph-operator.prometheusName" . }}
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "costgraph-operator.namespace" . }}
   labels:
     {{- include "costgraph-operator.prometheusLabels" . | nindent 4 }}
 spec:
@@ -42,7 +42,7 @@ spec:
             - name: API_KEY
               value: {{ .Values.global.apiKey | required "Costgraph API Key must be provided"  | quote }}
             - name: PROMETHEUS_URL
-              value: "{{.Release.Name}}-kube-state-metrics.{{.Release.Namespace}}.svc.cluster.local:8080"
+              value: "{{.Release.Name}}-kube-state-metrics.{{- include "costgraph-operator.namespace" . -}}.svc.cluster.local:8080"
             - name: REMOTE_WRITE_URL
               value: {{ .Values.operatorPrometheus.config.remoteWriteURL | quote }}
             - name: REMOTE_WRITE_PATH

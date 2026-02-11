@@ -62,6 +62,14 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
+Namespace helper
+*/}}
+{{- define "costgraph-operator.namespace" -}}
+{{- default .Release.Namespace .Values.namespace }}
+{{- end }}
+*/}}
+
+{{/*
 ------------------------------------------------------------------------------
 costgraph-operator-kubernetes helpers
 ------------------------------------------------------------------------------

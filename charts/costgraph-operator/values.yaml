@@ -4,6 +4,7 @@
 global:
   clusterName: ""
   apiKey: ""
+  namespace: "costgraph"
 
 imagePullSecrets: []
 nameOverride: ""
