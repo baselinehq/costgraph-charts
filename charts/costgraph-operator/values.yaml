@@ -5,6 +5,9 @@ global:
   clusterName: ""
   apiKey: ""
   namespace: "costgraph"
+  # Flag to enable use of our custom image in the cadvisor chart
+  security:
+    allowInsecureImages: true
 
 imagePullSecrets: []
 nameOverride: ""
@@ -22,6 +25,17 @@ serviceAccount:
 # --------------------------------------------------------------------------
 kube-state-metrics:
   enabled: true
+
+# --------------------------------------------------------------------------
+# cadvisor (subchart from bitnami)
+# See: https://github.com/bitnami/charts/tree/main/bitnami/cadvisor
+# --------------------------------------------------------------------------
+cadvisor:
+  enabled: true
+  image:
+    registry: ghcr.io
+    repository: baselinehq/cadvisor
+    tag: "v0.56.2-baseline"
 
 # --------------------------------------------------------------------------
 # costgraph-operator-kubernetes deployment
