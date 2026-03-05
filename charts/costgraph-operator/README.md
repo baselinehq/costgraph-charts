@@ -8,16 +8,19 @@ A Helm chart for the Costgraph operator
 
 | Repository | Name | Version |
 |------------|------|---------|
+| https://charts.bitnami.com/bitnami | cadvisor | 0.1.* |
 | https://prometheus-community.github.io/helm-charts | kube-state-metrics | 5.27.* |
 
 ## Values
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| cadvisor | object | `{"enabled":true,"image":{"registry":"ghcr.io","repository":"baselinehq/cadvisor","tag":"v0.56.2-baseline"}}` | ------------------------------------------------------------------------ |
 | fullnameOverride | string | `""` |  |
 | global.apiKey | string | `""` |  |
 | global.clusterName | string | `""` |  |
 | global.namespace | string | `"costgraph"` |  |
+| global.security.allowInsecureImages | bool | `true` |  |
 | imagePullSecrets | list | `[]` |  |
 | kube-state-metrics | object | `{"enabled":true}` | ------------------------------------------------------------------------ |
 | nameOverride | string | `""` |  |
