@@ -1,6 +1,6 @@
 # costgraph-operator
 
-![Version: 0.1.2](https://img.shields.io/badge/Version-0.1.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.16.1](https://img.shields.io/badge/AppVersion-1.16.1-informational?style=flat-square)
+![Version: 0.1.3](https://img.shields.io/badge/Version-0.1.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.16.1](https://img.shields.io/badge/AppVersion-1.16.1-informational?style=flat-square)
 
 A Helm chart for the Costgraph operator
 
@@ -9,6 +9,7 @@ A Helm chart for the Costgraph operator
 | Repository | Name | Version |
 |------------|------|---------|
 | https://charts.bitnami.com/bitnami | cadvisor | 0.1.* |
+| https://nvidia.github.io/dcgm-exporter/helm-charts | dcgm-exporter | 3.* |
 | https://prometheus-community.github.io/helm-charts | kube-state-metrics | 5.27.* |
 
 ## Values
@@ -16,6 +17,7 @@ A Helm chart for the Costgraph operator
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | cadvisor | object | `{"enabled":true,"image":{"registry":"ghcr.io","repository":"baselinehq/cadvisor","tag":"v0.56.3-baseline"}}` | ------------------------------------------------------------------------ |
+| dcgm-exporter | object | `{"enabled":false,"nodeSelector":{"accelerator":"nvidia"},"podAnnotations":{},"podLabels":{},"resources":{},"serviceMonitor":{"enabled":false},"tolerations":[]}` | ------------------------------------------------------------------------ |
 | fullnameOverride | string | `""` |  |
 | global.apiKey | string | `""` |  |
 | global.clusterName | string | `""` |  |
@@ -24,8 +26,8 @@ A Helm chart for the Costgraph operator
 | imagePullSecrets | list | `[]` |  |
 | kube-state-metrics | object | `{"enabled":true}` | ------------------------------------------------------------------------ |
 | nameOverride | string | `""` |  |
-| operatorKubernetes | object | `{"affinity":{},"config":{"operatorVersion":"1.0.0"},"enabled":true,"env":[],"image":{"pullPolicy":"IfNotPresent","repository":"ghcr.io/baselinehq/costgraph-operator-kubernetes","tag":"sha-e05bf28"},"nodeSelector":{},"podAnnotations":{},"podLabels":{},"replicas":1,"resources":{},"securityContext":{},"tolerations":[]}` | ------------------------------------------------------------------------ |
-| operatorPrometheus | object | `{"affinity":{},"config":{"httpTimeout":"30s","prometheusAPIProvider":"prometheus","prometheusAPIVersion":"kube-state-metrics","remoteWritePath":"/api/v1/write","remoteWriteURL":"https://tsdb.baselinehq.cloud"},"enabled":true,"env":[],"image":{"pullPolicy":"IfNotPresent","repository":"ghcr.io/baselinehq/costgraph-operator-prometheus","tag":"sha-f9545ac"},"nodeSelector":{},"podAnnotations":{},"podLabels":{},"replicas":1,"resources":{},"securityContext":{},"tolerations":[]}` | ------------------------------------------------------------------------ |
+| operatorKubernetes | object | `{"affinity":{},"config":{"operatorVersion":"1.0.0"},"enabled":true,"env":[],"image":{"pullPolicy":"IfNotPresent","repository":"ghcr.io/baselinehq/costgraph-operator-kubernetes","tag":"sha-128782e"},"nodeSelector":{},"podAnnotations":{},"podLabels":{},"replicas":1,"resources":{},"securityContext":{},"tolerations":[]}` | ------------------------------------------------------------------------ |
+| operatorPrometheus | object | `{"affinity":{},"config":{"cAdvisorLabelSelector":"","cAdvisorNamespace":"","dcgmLabelSelector":"","dcgmNamespace":"","httpTimeout":"30s","ksmLabelSelector":"","ksmNamespace":"","prometheusAPIProvider":"prometheus","prometheusAPIVersion":"kube-state-metrics","remoteWritePath":"/api/v1/write","remoteWriteURL":"https://tsdb.baselinehq.cloud"},"enabled":true,"env":[],"image":{"pullPolicy":"IfNotPresent","repository":"ghcr.io/baselinehq/costgraph-operator-prometheus","tag":"sha-f9545ac"},"nodeSelector":{},"podAnnotations":{},"podLabels":{},"replicas":1,"resources":{},"securityContext":{},"tolerations":[]}` | ------------------------------------------------------------------------ |
 | serviceAccount.annotations | object | `{}` |  |
 | serviceAccount.automount | bool | `true` |  |
 | serviceAccount.create | bool | `true` |  |
