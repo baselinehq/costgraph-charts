@@ -92,12 +92,12 @@ operatorPrometheus:
   enabled: true
   image:
     repository: ghcr.io/baselinehq/costgraph-operator-prometheus
-    tag: "sha-f9545ac"
+    tag: "sha-e46282c"
     pullPolicy: IfNotPresent
   # This should always be 1
   replicas: 1
   config:
-    remoteWriteURL: "https://tsdb.baselinehq.cloud"
+    remoteWriteURL: "https://tsdb.costgraph.ai"
     remoteWritePath: "/api/v1/write"
     prometheusAPIProvider: "prometheus"
     prometheusAPIVersion: "kube-state-metrics"
