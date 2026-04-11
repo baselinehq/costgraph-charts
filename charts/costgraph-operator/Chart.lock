@@ -5,5 +5,8 @@ dependencies:
 - name: cadvisor
   repository: https://charts.bitnami.com/bitnami
   version: 0.1.13
-digest: sha256:c26e65b8c0e137114855071616095d639bce503d01438bb65c0aee6b5197d757
-generated: "2026-03-05T17:51:05.641137209Z"
+- name: dcgm-exporter
+  repository: https://nvidia.github.io/dcgm-exporter/helm-charts
+  version: 3.6.1
+digest: sha256:474efb7f651f1c46ce542208729fa02a37631ca2cba115b04c03491aa1e00da1
+generated: "2026-03-31T18:58:02.958888381+01:00"

@@ -53,6 +53,30 @@ spec:
               value: {{ .Values.operatorPrometheus.config.prometheusAPIVersion | quote }}
             - name: HTTP_TIMEOUT
               value: {{ .Values.operatorPrometheus.config.httpTimeout | quote }}
+            {{- with .Values.operatorPrometheus.config.cAdvisorNamespace }}
+            - name: K8S_CADVISOR_NAMESPACE
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.operatorPrometheus.config.cAdvisorLabelSelector }}
+            - name: K8S_CADVISOR_LABEL_SELECTOR
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.operatorPrometheus.config.ksmNamespace }}
+            - name: K8S_KSM_NAMESPACE
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.operatorPrometheus.config.ksmLabelSelector }}
+            - name: K8S_KSM_LABEL_SELECTOR
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.operatorPrometheus.config.dcgmNamespace }}
+            - name: K8S_DCGM_NAMESPACE
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.operatorPrometheus.config.dcgmLabelSelector }}
+            - name: K8S_DCGM_LABEL_SELECTOR
+              value: {{ . | quote }}
+            {{- end }}
             {{- with .Values.operatorPrometheus.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
