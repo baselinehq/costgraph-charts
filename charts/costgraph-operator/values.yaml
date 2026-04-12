@@ -38,13 +38,39 @@ cadvisor:
     tag: "v0.56.3-baseline"
 
 # --------------------------------------------------------------------------
+# dcgm-exporter (subchart from NVIDIA)
+# See: https://github.com/NVIDIA/dcgm-exporter/tree/main/deployment/chart
+# Enable this when GPU nodes are present in the cluster. The exporter runs
+# as a DaemonSet on GPU nodes and exposes DCGM metrics for Prometheus.
+# --------------------------------------------------------------------------
+dcgm-exporter:
+  enabled: false
+  serviceMonitor:
+    # Set to true if you have the Prometheus Operator installed and want
+    # automatic scrape config generated.
+    enabled: false
+  # Restrict the DaemonSet to GPU nodes only.
+  nodeSelector:
+    accelerator: nvidia
+  # GPU nodes are commonly tainted — add matching tolerations here.
+  tolerations: []
+  # Example toleration for the standard NVIDIA GPU taint:
+  # tolerations:
+  #   - key: nvidia.com/gpu
+  #     operator: Exists
+  #     effect: NoSchedule
+  resources: {}
+  podAnnotations: {}
+  podLabels: {}
+
+# --------------------------------------------------------------------------
 # costgraph-operator-kubernetes deployment
 # --------------------------------------------------------------------------
 operatorKubernetes:
   enabled: true
   image:
     repository: ghcr.io/baselinehq/costgraph-operator-kubernetes
-    tag: "sha-e05bf28"
+    tag: "sha-128782e"
     pullPolicy: IfNotPresent
   # This should always be 1
   replicas: 1
@@ -66,16 +92,28 @@ operatorPrometheus:
   enabled: true
   image:
     repository: ghcr.io/baselinehq/costgraph-operator-prometheus
-    tag: "sha-f9545ac"
+    tag: "sha-e46282c"
     pullPolicy: IfNotPresent
   # This should always be 1
   replicas: 1
   config:
-    remoteWriteURL: "https://tsdb.baselinehq.cloud"
+    remoteWriteURL: "https://tsdb.costgraph.ai"
     remoteWritePath: "/api/v1/write"
     prometheusAPIProvider: "prometheus"
     prometheusAPIVersion: "kube-state-metrics"
     httpTimeout: "30s"
+    # Namespace and label selector used to discover cAdvisor pods.
+    # Override when deploying cAdvisor outside the default namespace or with custom labels.
+    cAdvisorNamespace: ""
+    cAdvisorLabelSelector: ""
+    # Namespace and label selector used to discover kube-state-metrics pods.
+    # Override when deploying KSM outside the default namespace or with custom labels.
+    ksmNamespace: ""
+    ksmLabelSelector: ""
+    # Namespace and label selector used to discover NVIDIA DCGM exporter pods.
+    # Only relevant when dcgm-exporter.enabled is true.
+    dcgmNamespace: ""
+    dcgmLabelSelector: ""
   resources: {}
   securityContext: {}
   nodeSelector: {}
