@@ -39,6 +39,10 @@ spec:
           env:
             - name: CLUSTER_NAME
               value: {{ .Values.global.clusterName | required "Cluster name must be provided"  | quote }}
+            {{- with .Values.global.backendURL }}
+            - name: BACKEND_URL
+              value: {{ . | quote }}
+            {{- end }}
             - name: API_KEY
               valueFrom:
                 secretKeyRef:
