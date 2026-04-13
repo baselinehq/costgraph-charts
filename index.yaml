@@ -264,6 +264,29 @@ entries:
   costgraph-operator:
   - apiVersion: v2
     appVersion: 1.16.1
+    created: "2026-04-13T11:23:37.89209627Z"
+    dependencies:
+    - condition: kube-state-metrics.enabled
+      name: kube-state-metrics
+      repository: https://prometheus-community.github.io/helm-charts
+      version: 5.27.*
+    - condition: cadvisor.enabled
+      name: cadvisor
+      repository: https://charts.bitnami.com/bitnami
+      version: 0.1.*
+    - condition: dcgm-exporter.enabled
+      name: dcgm-exporter
+      repository: https://nvidia.github.io/dcgm-exporter/helm-charts
+      version: 3.*
+    description: A Helm chart for the Costgraph operator
+    digest: 8387b18331a5f4a66d9961246de5c058756de311e3301025014a47bf87c57c8b
+    name: costgraph-operator
+    type: application
+    urls:
+    - costgraph-operator-0.1.4.tgz
+    version: 0.1.4
+  - apiVersion: v2
+    appVersion: 1.16.1
     created: "2026-04-12T06:34:09.804636643Z"
     dependencies:
     - condition: kube-state-metrics.enabled
@@ -338,4 +361,4 @@ entries:
     urls:
     - costgraph-operator-0.1.0.tgz
     version: 0.1.0
-generated: "2026-04-12T06:34:09.804704009Z"
+generated: "2026-04-13T11:23:37.89218757Z"
