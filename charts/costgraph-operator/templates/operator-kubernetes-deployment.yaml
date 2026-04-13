@@ -44,7 +44,10 @@ spec:
             - name: CLUSTER_NAME
               value: {{ .Values.global.clusterName | required "Cluster name must be provided" | quote }}
             - name: API_KEY
-              value: {{ .Values.global.apiKey | required "Costgraph API Key must be provided" | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "costgraph-operator.apiKeySecretName" . }}
+                  key: {{ include "costgraph-operator.apiKeySecretKey" . }}
             - name: OPERATOR_VERSION
               value: {{ .Values.operatorKubernetes.image.tag | quote }}
             {{- with .Values.operatorKubernetes.env }}

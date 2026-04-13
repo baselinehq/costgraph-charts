@@ -3,7 +3,15 @@
 # Global configuration shared across all operator components.
 global:
   clusterName: ""
+  # apiKey is used to create a Secret when existingSecret is not set.
+  # Do not commit a real key here; prefer existingSecret in production.
   apiKey: ""
+  # existingSecret: name of a pre-existing Secret that contains the API key.
+  # When set, no Secret is created by this chart and apiKey is ignored.
+  existingSecret: ""
+  # existingSecretKey: key within existingSecret that holds the API key value.
+  # Defaults to "apiKey" when not specified.
+  existingSecretKey: ""
   namespace: "costgraph"
   # Flag to enable use of our custom image in the cadvisor chart
   security:

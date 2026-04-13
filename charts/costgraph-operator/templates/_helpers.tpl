@@ -70,6 +70,26 @@ Namespace helper
 */}}
 
 {{/*
+Resolve the name of the Secret holding the API key.
+Uses an existing secret when global.existingSecret is set; otherwise uses
+the Secret created by this chart.
+*/}}
+{{- define "costgraph-operator.apiKeySecretName" -}}
+{{- if .Values.global.existingSecret -}}
+{{- .Values.global.existingSecret -}}
+{{- else -}}
+{{- include "costgraph-operator.fullname" . -}}-credentials
+{{- end -}}
+{{- end }}
+
+{{/*
+Resolve the key within the API-key Secret.
+*/}}
+{{- define "costgraph-operator.apiKeySecretKey" -}}
+{{- default "apiKey" .Values.global.existingSecretKey -}}
+{{- end }}
+
+{{/*
 
 ------------------------------------------------------------------------------
 costgraph-operator-kubernetes helpers
