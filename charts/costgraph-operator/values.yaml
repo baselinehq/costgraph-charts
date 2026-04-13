@@ -46,7 +46,7 @@ cadvisor:
   image:
     registry: ghcr.io
     repository: baselinehq/cadvisor
-    tag: "v0.56.3-baseline"
+    tag: "0.56.3-baseline"
 
 # --------------------------------------------------------------------------
 # dcgm-exporter (subchart from NVIDIA)
