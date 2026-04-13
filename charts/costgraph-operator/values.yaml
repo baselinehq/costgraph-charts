@@ -12,6 +12,9 @@ global:
   # existingSecretKey: key within existingSecret that holds the API key value.
   # Defaults to "apiKey" when not specified.
   existingSecretKey: ""
+  # backendURL is the base URL of the Costgraph API. Leave empty to omit the
+  # BACKEND_URL env var and rely on the service's built-in default.
+  backendURL: "https://api.costgraph.ai"
   namespace: "costgraph"
   # Flag to enable use of our custom image in the cadvisor chart
   security:
