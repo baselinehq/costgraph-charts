@@ -78,15 +78,21 @@ the Secret created by this chart.
 {{- if .Values.global.existingSecret -}}
 {{- .Values.global.existingSecret -}}
 {{- else -}}
-{{- include "costgraph-operator.fullname" . -}}-credentials
+{{- printf "%s-credentials" (include "costgraph-operator.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 {{- end }}
 
 {{/*
 Resolve the key within the API-key Secret.
+When referencing a chart-managed secret the key is always "apiKey".
+existingSecretKey is only honoured when an existing secret is provided.
 */}}
 {{- define "costgraph-operator.apiKeySecretKey" -}}
+{{- if .Values.global.existingSecret -}}
 {{- default "apiKey" .Values.global.existingSecretKey -}}
+{{- else -}}
+apiKey
+{{- end -}}
 {{- end }}
 
 {{/*
