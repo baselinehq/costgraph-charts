@@ -1,6 +1,6 @@
 # costgraph-operator
 
-![Version: 0.1.6](https://img.shields.io/badge/Version-0.1.6-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.16.1](https://img.shields.io/badge/AppVersion-1.16.1-informational?style=flat-square)
+![Version: 0.1.7](https://img.shields.io/badge/Version-0.1.7-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.16.1](https://img.shields.io/badge/AppVersion-1.16.1-informational?style=flat-square)
 
 A Helm chart for the Costgraph operator
 
@@ -16,7 +16,7 @@ A Helm chart for the Costgraph operator
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| cadvisor | object | `{"enabled":true,"image":{"registry":"ghcr.io","repository":"baselinehq/cadvisor","tag":"v0.56.3-baseline"}}` | ------------------------------------------------------------------------ |
+| cadvisor | object | `{"enabled":true,"image":{"registry":"ghcr.io","repository":"baselinehq/cadvisor","tag":"0.56.3-baseline"}}` | ------------------------------------------------------------------------ |
 | dcgm-exporter | object | `{"enabled":false,"nodeSelector":{"accelerator":"nvidia"},"podAnnotations":{},"podLabels":{},"resources":{},"serviceMonitor":{"enabled":false},"tolerations":[]}` | ------------------------------------------------------------------------ |
 | fullnameOverride | string | `""` |  |
 | global.apiKey | string | `""` |  |
