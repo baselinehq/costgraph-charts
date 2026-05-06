@@ -8,5 +8,8 @@ dependencies:
 - name: dcgm-exporter
   repository: https://nvidia.github.io/dcgm-exporter/helm-charts
   version: 3.6.1
-digest: sha256:474efb7f651f1c46ce542208729fa02a37631ca2cba115b04c03491aa1e00da1
-generated: "2026-03-31T18:58:02.958888381+01:00"
+- name: prometheus-node-exporter
+  repository: https://prometheus-community.github.io/helm-charts
+  version: 4.55.0
+digest: sha256:c02cf544ad86455880c75e2bcc9f399f7cd53aedc7f0cc9802440e99b8b915c0
+generated: "2026-05-06T19:15:03.240206235-04:00"

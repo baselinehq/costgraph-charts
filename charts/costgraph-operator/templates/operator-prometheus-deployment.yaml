@@ -60,30 +60,27 @@ spec:
               value: {{ .Values.operatorPrometheus.config.prometheusAPIVersion | quote }}
             - name: HTTP_TIMEOUT
               value: {{ .Values.operatorPrometheus.config.httpTimeout | quote }}
-            {{- with .Values.operatorPrometheus.config.cAdvisorNamespace }}
-            - name: K8S_CADVISOR_NAMESPACE
-              value: {{ . | quote }}
+            {{- /*
+            Build SCRAPE_TARGETS env var as JSON from operatorPrometheus.scrapeTargets.
+            Each entry can use Helm template syntax in string fields (e.g. namespace)
+            and is rendered via tpl. Entries with enabled: false are excluded.
+            */}}
+            {{- $targets := list }}
+            {{- range .Values.operatorPrometheus.scrapeTargets }}
+              {{- $enabled := true }}
+              {{- if hasKey . "enabled" }}{{- $enabled = .enabled }}{{- end }}
+              {{- if $enabled }}
+                {{- $t := dict
+                    "name"          .name
+                    "namespace"     (tpl .namespace $)
+                    "labelSelector" (tpl .labelSelector $)
+                    "port"          (int .port) }}
+                {{- if .path }}{{- $_ := set $t "path" .path }}{{- end }}
+                {{- $targets = append $targets $t }}
+              {{- end }}
             {{- end }}
-            {{- with .Values.operatorPrometheus.config.cAdvisorLabelSelector }}
-            - name: K8S_CADVISOR_LABEL_SELECTOR
-              value: {{ . | quote }}
-            {{- end }}
-            {{- with .Values.operatorPrometheus.config.ksmNamespace }}
-            - name: K8S_KSM_NAMESPACE
-              value: {{ . | quote }}
-            {{- end }}
-            {{- with .Values.operatorPrometheus.config.ksmLabelSelector }}
-            - name: K8S_KSM_LABEL_SELECTOR
-              value: {{ . | quote }}
-            {{- end }}
-            {{- with .Values.operatorPrometheus.config.dcgmNamespace }}
-            - name: K8S_DCGM_NAMESPACE
-              value: {{ . | quote }}
-            {{- end }}
-            {{- with .Values.operatorPrometheus.config.dcgmLabelSelector }}
-            - name: K8S_DCGM_LABEL_SELECTOR
-              value: {{ . | quote }}
-            {{- end }}
+            - name: SCRAPE_TARGETS
+              value: {{ $targets | toJson | quote }}
             {{- with .Values.operatorPrometheus.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
