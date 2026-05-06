@@ -2,117 +2,121 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "costgraph-operator.prometheusName" . }}
-  namespace: {{ include "costgraph-operator.namespace" . }}
-  labels:
+    name: {{ include "costgraph-operator.prometheusName" . }}
+    namespace: {{ include "costgraph-operator.namespace" . }}
+    labels:
     {{- include "costgraph-operator.prometheusLabels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.operatorPrometheus.replicas }}
-  selector:
-    matchLabels:
+    replicas: {{ .Values.operatorPrometheus.replicas }}
+    selector:
+        matchLabels:
       {{- include "costgraph-operator.prometheusSelectorLabels" . | nindent 6 }}
-  template:
-    metadata:
+    template:
+        metadata:
       {{- with .Values.operatorPrometheus.podAnnotations }}
-      annotations:
+            annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      labels:
+            labels:
         {{- include "costgraph-operator.prometheusLabels" . | nindent 8 }}
         {{- with .Values.operatorPrometheus.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-    spec:
+        spec:
       {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
+            imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "costgraph-operator.serviceAccountName" . }}
+            serviceAccountName: {{ include "costgraph-operator.serviceAccountName" . }}
       {{- with .Values.operatorPrometheus.securityContext }}
-      securityContext:
+            securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      containers:
-        - name: operator-prometheus
-          image: "{{ .Values.operatorPrometheus.image.repository }}:{{ .Values.operatorPrometheus.image.tag }}"
-          imagePullPolicy: {{ .Values.operatorPrometheus.image.pullPolicy }}
-          env:
-            - name: CLUSTER_NAME
-              value: {{ .Values.global.clusterName | required "Cluster name must be provided"  | quote }}
+            containers:
+                - name: operator-prometheus
+                  image: "{{ .Values.operatorPrometheus.image.repository }}:{{ .Values.operatorPrometheus.image.tag }}"
+                  imagePullPolicy: {{ .Values.operatorPrometheus.image.pullPolicy }}
+                  env:
+                      - name: CLUSTER_NAME
+                        value: {{ .Values.global.clusterName | required "Cluster name must be provided"  | quote }}
             {{- with .Values.global.backendURL }}
-            - name: BACKEND_URL
-              value: {{ . | quote }}
+                      - name: BACKEND_URL
+                        value: {{ . | quote }}
             {{- end }}
-            - name: API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "costgraph-operator.apiKeySecretName" . }}
-                  key: {{ include "costgraph-operator.apiKeySecretKey" . }}
-            - name: PROMETHEUS_URL
-              value: "{{.Release.Name}}-kube-state-metrics.{{- include "costgraph-operator.namespace" . -}}.svc.cluster.local:8080"
-            - name: REMOTE_WRITE_URL
-              value: {{ .Values.operatorPrometheus.config.remoteWriteURL | quote }}
-            - name: REMOTE_WRITE_PATH
-              value: {{ .Values.operatorPrometheus.config.remoteWritePath | quote }}
-            - name: PROMETHEUS_API_PROVIDER
-              value: {{ .Values.operatorPrometheus.config.prometheusAPIProvider | quote }}
-            - name: PROMETHEUS_API_VERSION
-              value: {{ .Values.operatorPrometheus.config.prometheusAPIVersion | quote }}
-            - name: HTTP_TIMEOUT
-              value: {{ .Values.operatorPrometheus.config.httpTimeout | quote }}
+                      - name: API_KEY
+                        valueFrom:
+                            secretKeyRef:
+                                name: {{ include "costgraph-operator.apiKeySecretName" . }}
+                                key: {{ include "costgraph-operator.apiKeySecretKey" . }}
+                      - name: PROMETHEUS_URL
+                        value: "{{.Release.Name}}-kube-state-metrics.{{- include "costgraph-operator.namespace" . -}}.svc.cluster.local:8080"
+                      - name: REMOTE_WRITE_URL
+                        value: {{ .Values.operatorPrometheus.config.remoteWriteURL | quote }}
+                      - name: REMOTE_WRITE_PATH
+                        value: {{ .Values.operatorPrometheus.config.remoteWritePath | quote }}
+                      - name: PROMETHEUS_API_PROVIDER
+                        value: {{ .Values.operatorPrometheus.config.prometheusAPIProvider | quote }}
+                      - name: PROMETHEUS_API_VERSION
+                        value: {{ .Values.operatorPrometheus.config.prometheusAPIVersion | quote }}
+                      - name: HTTP_TIMEOUT
+                        value: {{ .Values.operatorPrometheus.config.httpTimeout | quote }}
             {{- /*
             Build SCRAPE_TARGETS env var as JSON from operatorPrometheus.scrapeTargets.
-            Each entry's required fields are validated with `required` so misconfigured
-            values fail Helm rendering with a clear message instead of a cryptic
+            scrapeTargets is a map keyed by target name so callers can override
+            individual fields via `--set` without clobbering siblings.
+            Required fields are validated with `required` so misconfigured values
+            fail Helm rendering with a clear message instead of a cryptic
             tpl-on-nil error. String fields are coerced via toString before tpl so
-            non-string YAML values (e.g. an unquoted bare label) don't blow up tpl.
-            Entries with enabled: false are excluded.
+            non-string YAML values don't blow up tpl. Entries that are nil or non-map
+            (e.g. produced by `--set foo[3].x=y` against a map) are skipped
+            defensively. Entries with enabled: false are excluded.
             */}}
             {{- $targets := list }}
-            {{- range $i, $tgt := .Values.operatorPrometheus.scrapeTargets }}
-              {{- $enabled := true }}
-              {{- if hasKey $tgt "enabled" }}{{- $enabled = $tgt.enabled }}{{- end }}
-              {{- if $enabled }}
-                {{- $name := required (printf "operatorPrometheus.scrapeTargets[%d].name is required" $i) $tgt.name }}
-                {{- $namespace := required (printf "operatorPrometheus.scrapeTargets[%d] (%s): namespace is required" $i $name) $tgt.namespace }}
-                {{- $selector := required (printf "operatorPrometheus.scrapeTargets[%d] (%s): labelSelector is required" $i $name) $tgt.labelSelector }}
-                {{- $port := required (printf "operatorPrometheus.scrapeTargets[%d] (%s): port is required" $i $name) $tgt.port }}
-                {{- /*
-                Validate port bounds at render time. `int` coerces non-numeric input
-                to 0, so checking < 1 also catches strings like "foo" or true.
-                */}}
-                {{- $portInt := int $port }}
-                {{- if or (lt $portInt 1) (gt $portInt 65535) }}
-                  {{- fail (printf "operatorPrometheus.scrapeTargets[%d] (%s): port must be an integer between 1 and 65535, got %v" $i $name $port) }}
+            {{- range $name, $tgt := .Values.operatorPrometheus.scrapeTargets }}
+              {{- if and $tgt (kindIs "map" $tgt) }}
+                {{- $enabled := true }}
+                {{- if hasKey $tgt "enabled" }}{{- $enabled = $tgt.enabled }}{{- end }}
+                {{- if $enabled }}
+                  {{- $namespace := required (printf "operatorPrometheus.scrapeTargets.%s: namespace is required" $name) $tgt.namespace }}
+                  {{- $selector := required (printf "operatorPrometheus.scrapeTargets.%s: labelSelector is required" $name) $tgt.labelSelector }}
+                  {{- $port := required (printf "operatorPrometheus.scrapeTargets.%s: port is required" $name) $tgt.port }}
+                  {{- /*
+                  Validate port bounds at render time. `int` coerces non-numeric input
+                  to 0, so checking < 1 also catches strings like "foo" or true.
+                  */}}
+                  {{- $portInt := int $port }}
+                  {{- if or (lt $portInt 1) (gt $portInt 65535) }}
+                    {{- fail (printf "operatorPrometheus.scrapeTargets.%s: port must be an integer between 1 and 65535, got %v" $name $port) }}
+                  {{- end }}
+                  {{- $t := dict
+                      "name"          $name
+                      "namespace"     (tpl ($namespace | toString) $)
+                      "labelSelector" (tpl ($selector  | toString) $)
+                      "port"          $portInt }}
+                  {{- if $tgt.path }}{{- $_ := set $t "path" (tpl ($tgt.path | toString) $) }}{{- end }}
+                  {{- $targets = append $targets $t }}
                 {{- end }}
-                {{- $t := dict
-                    "name"          $name
-                    "namespace"     (tpl ($namespace | toString) $)
-                    "labelSelector" (tpl ($selector  | toString) $)
-                    "port"          $portInt }}
-                {{- if $tgt.path }}{{- $_ := set $t "path" (tpl ($tgt.path | toString) $) }}{{- end }}
-                {{- $targets = append $targets $t }}
               {{- end }}
             {{- end }}
-            - name: SCRAPE_TARGETS
-              value: {{ $targets | toJson | quote }}
+                      - name: SCRAPE_TARGETS
+                        value: {{ $targets | toJson | quote }}
             {{- with .Values.operatorPrometheus.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
           {{- with .Values.operatorPrometheus.resources }}
-          resources:
+                  resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
       {{- with .Values.operatorPrometheus.nodeSelector }}
-      nodeSelector:
+            nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.operatorPrometheus.affinity }}
-      affinity:
+            affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.operatorPrometheus.tolerations }}
-      tolerations:
+            tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
 {{- end }}
