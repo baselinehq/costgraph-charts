@@ -38,7 +38,7 @@ spec:
           imagePullPolicy: {{ .Values.operatorPrometheus.image.pullPolicy }}
           env:
             - name: CLUSTER_NAME
-              value: {{ .Values.global.clusterName | required "Cluster name must be provided"  | quote }}
+              value: {{ .Values.global.clusterName | required "Cluster name must be provided" | quote }}
             {{- with .Values.global.backendURL }}
             - name: BACKEND_URL
               value: {{ . | quote }}
@@ -70,6 +70,8 @@ spec:
             non-string YAML values don't blow up tpl. Entries that are nil or non-map
             (e.g. produced by `--set foo[3].x=y` against a map) are skipped
             defensively. Entries with enabled: false are excluded.
+            Validate port bounds at render time. `int` coerces non-numeric input
+            to 0, so checking < 1 also catches strings like "foo" or true.
             */}}
             {{- $targets := list }}
             {{- range $name, $tgt := .Values.operatorPrometheus.scrapeTargets }}
@@ -87,7 +89,7 @@ spec:
                   {{- $t := dict
                       "name"          $name
                       "namespace"     (tpl ($namespace | toString) $)
-                      "labelSelector" (tpl ($selector  | toString) $)
+                      "labelSelector" (tpl ($selector | toString) $)
                       "port"          $portInt }}
                   {{- if $tgt.path }}{{- $_ := set $t "path" (tpl ($tgt.path | toString) $) }}{{- end }}
                   {{- $targets = append $targets $t }}
