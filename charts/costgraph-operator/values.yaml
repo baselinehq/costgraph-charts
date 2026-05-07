@@ -130,37 +130,41 @@ operatorPrometheus:
     prometheusAPIVersion: "kube-state-metrics"
     httpTimeout: "30s"
   # ------------------------------------------------------------------------
-  # scrapeTargets: list of in-cluster /metrics endpoints to discover and push
+  # scrapeTargets: map of in-cluster /metrics endpoints to discover and push
   # to remote write. Adding a new metrics source no longer requires a new
   # operator image — just append an entry here.
   #
+  # Map keys are the target names (used in logs). A map (not a list) is used so
+  # callers can override individual fields via Helm `--set` without clobbering
+  # siblings, e.g.:
+  #   --set operatorPrometheus.scrapeTargets.node-exporter.namespace=monitoring
+  #
   # Each entry:
-  #   name          (required) — log identifier
   #   namespace     (required) — pod namespace
   #   labelSelector (required) — Kubernetes label selector for pod discovery
-  #   port          (required) — HTTP port the exporter listens on
+  #   port          (required) — HTTP port the exporter listens on, 1..65535
   #   path          (optional) — metrics path. Defaults to /metrics.
   #   enabled       (optional) — when false, the entry is omitted. Defaults to true.
   #
   # Templated as JSON into the SCRAPE_TARGETS env var on the deployment.
   # ------------------------------------------------------------------------
   scrapeTargets:
-    - name: cadvisor
+    cadvisor:
       enabled: true
       namespace: "{{ include \"costgraph-operator.namespace\" . }}"
       labelSelector: "app.kubernetes.io/name=cadvisor"
       port: 8080
-    - name: kube-state-metrics
+    kube-state-metrics:
       enabled: true
       namespace: "{{ include \"costgraph-operator.namespace\" . }}"
       labelSelector: "app.kubernetes.io/name=kube-state-metrics"
       port: 8080
-    - name: dcgm-exporter
+    dcgm-exporter:
       enabled: false
       namespace: "{{ include \"costgraph-operator.namespace\" . }}"
       labelSelector: "app.kubernetes.io/name=dcgm-exporter"
       port: 9400
-    - name: node-exporter
+    node-exporter:
       enabled: true
       namespace: "{{ include \"costgraph-operator.namespace\" . }}"
       labelSelector: "app.kubernetes.io/name=prometheus-node-exporter"
