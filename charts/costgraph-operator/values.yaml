@@ -75,6 +75,22 @@ dcgm-exporter:
   podLabels: {}
 
 # --------------------------------------------------------------------------
+# prometheus-node-exporter (subchart from prometheus-community)
+# See: https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-node-exporter
+# Runs as a DaemonSet exposing host-level metrics (CPU, memory, disk, network)
+# on port 9100 at /metrics.
+# --------------------------------------------------------------------------
+prometheus-node-exporter:
+  enabled: true
+  service:
+    port: 9100
+    targetPort: 9100
+  resources: {}
+  tolerations: []
+  podAnnotations: {}
+  podLabels: {}
+
+# --------------------------------------------------------------------------
 # costgraph-operator-kubernetes deployment
 # --------------------------------------------------------------------------
 operatorKubernetes:
@@ -103,7 +119,7 @@ operatorPrometheus:
   enabled: true
   image:
     repository: ghcr.io/baselinehq/costgraph-operator-prometheus
-    tag: "sha-e46282c"
+    tag: "sha-ef2bc40"
     pullPolicy: IfNotPresent
   # This should always be 1
   replicas: 1
@@ -113,18 +129,42 @@ operatorPrometheus:
     prometheusAPIProvider: "prometheus"
     prometheusAPIVersion: "kube-state-metrics"
     httpTimeout: "30s"
-    # Namespace and label selector used to discover cAdvisor pods.
-    # Override when deploying cAdvisor outside the default namespace or with custom labels.
-    cAdvisorNamespace: ""
-    cAdvisorLabelSelector: ""
-    # Namespace and label selector used to discover kube-state-metrics pods.
-    # Override when deploying KSM outside the default namespace or with custom labels.
-    ksmNamespace: ""
-    ksmLabelSelector: ""
-    # Namespace and label selector used to discover NVIDIA DCGM exporter pods.
-    # Only relevant when dcgm-exporter.enabled is true.
-    dcgmNamespace: ""
-    dcgmLabelSelector: ""
+  # ------------------------------------------------------------------------
+  # scrapeTargets: list of in-cluster /metrics endpoints to discover and push
+  # to remote write. Adding a new metrics source no longer requires a new
+  # operator image — just append an entry here.
+  #
+  # Each entry:
+  #   name          (required) — log identifier
+  #   namespace     (required) — pod namespace
+  #   labelSelector (required) — Kubernetes label selector for pod discovery
+  #   port          (required) — HTTP port the exporter listens on
+  #   path          (optional) — metrics path. Defaults to /metrics.
+  #   enabled       (optional) — when false, the entry is omitted. Defaults to true.
+  #
+  # Templated as JSON into the SCRAPE_TARGETS env var on the deployment.
+  # ------------------------------------------------------------------------
+  scrapeTargets:
+    - name: cadvisor
+      enabled: true
+      namespace: "{{ include \"costgraph-operator.namespace\" . }}"
+      labelSelector: "app.kubernetes.io/name=cadvisor"
+      port: 8080
+    - name: kube-state-metrics
+      enabled: true
+      namespace: "{{ include \"costgraph-operator.namespace\" . }}"
+      labelSelector: "app.kubernetes.io/name=kube-state-metrics"
+      port: 8080
+    - name: dcgm-exporter
+      enabled: false
+      namespace: "{{ include \"costgraph-operator.namespace\" . }}"
+      labelSelector: "app.kubernetes.io/name=dcgm-exporter"
+      port: 9400
+    - name: node-exporter
+      enabled: true
+      namespace: "{{ include \"costgraph-operator.namespace\" . }}"
+      labelSelector: "app.kubernetes.io/name=prometheus-node-exporter"
+      port: 9100
   resources: {}
   securityContext: {}
   nodeSelector: {}
