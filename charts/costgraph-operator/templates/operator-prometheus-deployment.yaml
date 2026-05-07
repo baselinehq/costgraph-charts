@@ -62,20 +62,27 @@ spec:
               value: {{ .Values.operatorPrometheus.config.httpTimeout | quote }}
             {{- /*
             Build SCRAPE_TARGETS env var as JSON from operatorPrometheus.scrapeTargets.
-            Each entry can use Helm template syntax in string fields (e.g. namespace)
-            and is rendered via tpl. Entries with enabled: false are excluded.
+            Each entry's required fields are validated with `required` so misconfigured
+            values fail Helm rendering with a clear message instead of a cryptic
+            tpl-on-nil error. String fields are coerced via toString before tpl so
+            non-string YAML values (e.g. an unquoted bare label) don't blow up tpl.
+            Entries with enabled: false are excluded.
             */}}
             {{- $targets := list }}
-            {{- range .Values.operatorPrometheus.scrapeTargets }}
+            {{- range $i, $tgt := .Values.operatorPrometheus.scrapeTargets }}
               {{- $enabled := true }}
-              {{- if hasKey . "enabled" }}{{- $enabled = .enabled }}{{- end }}
+              {{- if hasKey $tgt "enabled" }}{{- $enabled = $tgt.enabled }}{{- end }}
               {{- if $enabled }}
+                {{- $name := required (printf "operatorPrometheus.scrapeTargets[%d].name is required" $i) $tgt.name }}
+                {{- $namespace := required (printf "operatorPrometheus.scrapeTargets[%d] (%s): namespace is required" $i $name) $tgt.namespace }}
+                {{- $selector := required (printf "operatorPrometheus.scrapeTargets[%d] (%s): labelSelector is required" $i $name) $tgt.labelSelector }}
+                {{- $port := required (printf "operatorPrometheus.scrapeTargets[%d] (%s): port is required" $i $name) $tgt.port }}
                 {{- $t := dict
-                    "name"          .name
-                    "namespace"     (tpl .namespace $)
-                    "labelSelector" (tpl .labelSelector $)
-                    "port"          (int .port) }}
-                {{- if .path }}{{- $_ := set $t "path" .path }}{{- end }}
+                    "name"          $name
+                    "namespace"     (tpl ($namespace | toString) $)
+                    "labelSelector" (tpl ($selector  | toString) $)
+                    "port"          (int $port) }}
+                {{- if $tgt.path }}{{- $_ := set $t "path" (tpl ($tgt.path | toString) $) }}{{- end }}
                 {{- $targets = append $targets $t }}
               {{- end }}
             {{- end }}
