@@ -77,11 +77,19 @@ spec:
                 {{- $namespace := required (printf "operatorPrometheus.scrapeTargets[%d] (%s): namespace is required" $i $name) $tgt.namespace }}
                 {{- $selector := required (printf "operatorPrometheus.scrapeTargets[%d] (%s): labelSelector is required" $i $name) $tgt.labelSelector }}
                 {{- $port := required (printf "operatorPrometheus.scrapeTargets[%d] (%s): port is required" $i $name) $tgt.port }}
+                {{- /*
+                Validate port bounds at render time. `int` coerces non-numeric input
+                to 0, so checking < 1 also catches strings like "foo" or true.
+                */}}
+                {{- $portInt := int $port }}
+                {{- if or (lt $portInt 1) (gt $portInt 65535) }}
+                  {{- fail (printf "operatorPrometheus.scrapeTargets[%d] (%s): port must be an integer between 1 and 65535, got %v" $i $name $port) }}
+                {{- end }}
                 {{- $t := dict
                     "name"          $name
                     "namespace"     (tpl ($namespace | toString) $)
                     "labelSelector" (tpl ($selector  | toString) $)
-                    "port"          (int $port) }}
+                    "port"          $portInt }}
                 {{- if $tgt.path }}{{- $_ := set $t "path" (tpl ($tgt.path | toString) $) }}{{- end }}
                 {{- $targets = append $targets $t }}
               {{- end }}
