@@ -47,6 +47,13 @@ cadvisor:
     registry: ghcr.io
     repository: baselinehq/cadvisor
     tag: "0.56.3-baseline"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+  tolerations:
+    - operator: Exists
+
 
 # --------------------------------------------------------------------------
 # dcgm-exporter (subchart from NVIDIA)
@@ -70,7 +77,10 @@ dcgm-exporter:
   #   - key: nvidia.com/gpu
   #     operator: Exists
   #     effect: NoSchedule
-  resources: {}
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
   podAnnotations: {}
   podLabels: {}
 
@@ -85,8 +95,12 @@ prometheus-node-exporter:
   service:
     port: 9100
     targetPort: 9100
-  resources: {}
-  tolerations: []
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+  tolerations:
+    - operator: Exists
   podAnnotations: {}
   podLabels: {}
 
@@ -103,7 +117,10 @@ operatorKubernetes:
   replicas: 1
   config:
     operatorVersion: "1.0.0"
-  resources: {}
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
   securityContext: {}
   nodeSelector: {}
   tolerations: []
@@ -169,7 +186,10 @@ operatorPrometheus:
       namespace: "{{ include \"costgraph-operator.namespace\" . }}"
       labelSelector: "app.kubernetes.io/name=prometheus-node-exporter"
       port: 9100
-  resources: {}
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
   securityContext: {}
   nodeSelector: {}
   tolerations: []
