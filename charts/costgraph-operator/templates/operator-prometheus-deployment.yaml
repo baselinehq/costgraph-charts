@@ -87,11 +87,12 @@ spec:
                     {{- fail (printf "operatorPrometheus.scrapeTargets.%s: port must be an integer between 1 and 65535, got %v" $name $port) }}
                   {{- end }}
                   {{- $t := dict
-                      "name"          $name
-                      "namespace"     (tpl ($namespace | toString) $)
-                      "labelSelector" (tpl ($selector | toString) $)
-                      "port"          $portInt }}
+                      "name"           $name
+                      "namespace"      (tpl ($namespace | toString) $)
+                      "label_selector" (tpl ($selector | toString) $)
+                      "port"           $portInt }}
                   {{- if $tgt.path }}{{- $_ := set $t "path" (tpl ($tgt.path | toString) $) }}{{- end }}
+                  {{- if $tgt.nodeMetrics }}{{- $_ := set $t "node_metrics" true }}{{- end }}
                   {{- $targets = append $targets $t }}
                 {{- end }}
               {{- end }}

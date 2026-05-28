@@ -111,7 +111,7 @@ operatorKubernetes:
   enabled: true
   image:
     repository: ghcr.io/baselinehq/costgraph-operator-kubernetes
-    tag: "sha-128782e"
+    tag: "sha-991ba35"
     pullPolicy: IfNotPresent
   # This should always be 1
   replicas: 1
@@ -136,7 +136,7 @@ operatorPrometheus:
   enabled: true
   image:
     repository: ghcr.io/baselinehq/costgraph-operator-prometheus
-    tag: "sha-ef2bc40"
+    tag: "sha-ab42339"
     pullPolicy: IfNotPresent
   # This should always be 1
   replicas: 1
@@ -161,9 +161,14 @@ operatorPrometheus:
   #   labelSelector (required) — Kubernetes label selector for pod discovery
   #   port          (required) — HTTP port the exporter listens on, 1..65535
   #   path          (optional) — metrics path. Defaults to /metrics.
+  #   nodeMetrics   (optional) — true for exporters producing node-scoped
+  #                              metrics (cAdvisor, node-exporter, dcgm).
+  #                              Scraper stamps the node's hostname/id when set.
   #   enabled       (optional) — when false, the entry is omitted. Defaults to true.
   #
   # Templated as JSON into the SCRAPE_TARGETS env var on the deployment.
+  # Helm value keys are camelCase; emitted JSON keys are snake_case
+  # (label_selector, node_metrics) to match the operator config struct tags.
   # ------------------------------------------------------------------------
   scrapeTargets:
     cadvisor:
@@ -171,6 +176,7 @@ operatorPrometheus:
       namespace: "{{ include \"costgraph-operator.namespace\" . }}"
       labelSelector: "app.kubernetes.io/name=cadvisor"
       port: 8080
+      nodeMetrics: true
     kube-state-metrics:
       enabled: true
       namespace: "{{ include \"costgraph-operator.namespace\" . }}"
@@ -181,11 +187,13 @@ operatorPrometheus:
       namespace: "{{ include \"costgraph-operator.namespace\" . }}"
       labelSelector: "app.kubernetes.io/name=dcgm-exporter"
       port: 9400
+      nodeMetrics: true
     node-exporter:
       enabled: true
       namespace: "{{ include \"costgraph-operator.namespace\" . }}"
       labelSelector: "app.kubernetes.io/name=prometheus-node-exporter"
       port: 9100
+      nodeMetrics: true
   resources:
     requests:
       cpu: 100m
