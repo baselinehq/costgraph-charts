@@ -79,21 +79,37 @@ spec:
                 {{- $enabled := true }}
                 {{- if hasKey $tgt "enabled" }}{{- $enabled = $tgt.enabled }}{{- end }}
                 {{- if $enabled }}
-                  {{- $namespace := required (printf "operatorPrometheus.scrapeTargets.%s: namespace is required" $name) $tgt.namespace }}
-                  {{- $selector := required (printf "operatorPrometheus.scrapeTargets.%s: labelSelector is required" $name) $tgt.labelSelector }}
-                  {{- $port := required (printf "operatorPrometheus.scrapeTargets.%s: port is required" $name) $tgt.port }}
-                  {{- $portInt := int $port }}
-                  {{- if or (lt $portInt 1) (gt $portInt 65535) }}
-                    {{- fail (printf "operatorPrometheus.scrapeTargets.%s: port must be an integer between 1 and 65535, got %v" $name $port) }}
+                  {{- $kind := default "pod" $tgt.kind }}
+                  {{- if eq $kind "node" }}
+                    {{- /* Node targets scrape kubelets via the API-server node
+                    proxy; namespace/port do not apply. labelSelector is an
+                    optional node filter. */}}
+                    {{- $t := dict "name" $name "kind" "node" }}
+                    {{- if $tgt.labelSelector }}{{- $_ := set $t "label_selector" (tpl ($tgt.labelSelector | toString) $) }}{{- end }}
+                    {{- if $tgt.path }}{{- $_ := set $t "path" (tpl ($tgt.path | toString) $) }}{{- end }}
+                    {{- if $tgt.nodeMetrics }}{{- $_ := set $t "node_metrics" true }}{{- end }}
+                    {{- if $tgt.metricNamePrefixes }}{{- $_ := set $t "metric_name_prefixes" $tgt.metricNamePrefixes }}{{- end }}
+                    {{- $targets = append $targets $t }}
+                  {{- else if eq $kind "pod" }}
+                    {{- $namespace := required (printf "operatorPrometheus.scrapeTargets.%s: namespace is required" $name) $tgt.namespace }}
+                    {{- $selector := required (printf "operatorPrometheus.scrapeTargets.%s: labelSelector is required" $name) $tgt.labelSelector }}
+                    {{- $port := required (printf "operatorPrometheus.scrapeTargets.%s: port is required" $name) $tgt.port }}
+                    {{- $portInt := int $port }}
+                    {{- if or (lt $portInt 1) (gt $portInt 65535) }}
+                      {{- fail (printf "operatorPrometheus.scrapeTargets.%s: port must be an integer between 1 and 65535, got %v" $name $port) }}
+                    {{- end }}
+                    {{- $t := dict
+                        "name"           $name
+                        "namespace"      (tpl ($namespace | toString) $)
+                        "label_selector" (tpl ($selector | toString) $)
+                        "port"           $portInt }}
+                    {{- if $tgt.path }}{{- $_ := set $t "path" (tpl ($tgt.path | toString) $) }}{{- end }}
+                    {{- if $tgt.nodeMetrics }}{{- $_ := set $t "node_metrics" true }}{{- end }}
+                    {{- if $tgt.metricNamePrefixes }}{{- $_ := set $t "metric_name_prefixes" $tgt.metricNamePrefixes }}{{- end }}
+                    {{- $targets = append $targets $t }}
+                  {{- else }}
+                    {{- fail (printf "operatorPrometheus.scrapeTargets.%s: kind must be \"pod\" or \"node\", got %v" $name $kind) }}
                   {{- end }}
-                  {{- $t := dict
-                      "name"           $name
-                      "namespace"      (tpl ($namespace | toString) $)
-                      "label_selector" (tpl ($selector | toString) $)
-                      "port"           $portInt }}
-                  {{- if $tgt.path }}{{- $_ := set $t "path" (tpl ($tgt.path | toString) $) }}{{- end }}
-                  {{- if $tgt.nodeMetrics }}{{- $_ := set $t "node_metrics" true }}{{- end }}
-                  {{- $targets = append $targets $t }}
                 {{- end }}
               {{- end }}
             {{- end }}
