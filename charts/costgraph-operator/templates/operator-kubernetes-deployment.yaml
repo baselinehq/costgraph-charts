@@ -38,7 +38,7 @@ spec:
           imagePullPolicy: {{ .Values.operatorKubernetes.image.pullPolicy }}
           ports:
             - name: pprof
-              containerPort: 6666
+              containerPort: 6060
               protocol: TCP
           env:
             - name: CLUSTER_NAME

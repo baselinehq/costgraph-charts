@@ -111,7 +111,7 @@ operatorKubernetes:
   enabled: true
   image:
     repository: ghcr.io/baselinehq/costgraph-operator-kubernetes
-    tag: "sha-991ba35"
+    tag: "sha-0a2f012"
     pullPolicy: IfNotPresent
   # This should always be 1
   replicas: 1
@@ -136,7 +136,7 @@ operatorPrometheus:
   enabled: true
   image:
     repository: ghcr.io/baselinehq/costgraph-operator-prometheus
-    tag: "sha-bcc1020"
+    tag: "sha-5916bd9"
     pullPolicy: IfNotPresent
   # This should always be 1
   replicas: 1
