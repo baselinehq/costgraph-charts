@@ -36,6 +36,10 @@ spec:
         - name: operator-prometheus
           image: "{{ .Values.operatorPrometheus.image.repository }}:{{ .Values.operatorPrometheus.image.tag }}"
           imagePullPolicy: {{ .Values.operatorPrometheus.image.pullPolicy }}
+          ports:
+            - name: pprof
+              containerPort: 6060
+              protocol: TCP
           env:
             - name: CLUSTER_NAME
               value: {{ .Values.global.clusterName | required "Cluster name must be provided" | quote }}
