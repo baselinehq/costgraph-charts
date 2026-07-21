@@ -1,6 +1,7 @@
 apiVersion: v2
 name: costgraph
-description: Distributed observability for modern workloads on Kubernetes
+description: DEPRECATED - replaced by the costgraph-operator chart
 type: application
-version: 0.1.27
+deprecated: true
+version: 0.1.28
 appVersion: 0.1.8

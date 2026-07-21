@@ -1,6 +1,15 @@
 # costgraph-charts
 Helm chart definitions to deploy costgraph to the clusters.
 
+| Chart | Status | Deploys |
+|-------|--------|---------|
+| [`costgraph-operator`](./charts/costgraph-operator) | Active | `costgraph-operator-kubernetes`, `costgraph-operator-prometheus` and their exporters |
+| [`costgraph`](./charts/costgraph) | **Deprecated** | Single-binary `costgraph-operator`, replaced by the chart above |
+
+The single-binary operator has been broken out into domain-specific operators,
+each versioned and released independently. New installations must use the
+`costgraph-operator` chart. See [RELEASING.md](./RELEASING.md).
+
 
 # Generating diagrams
 ```bash
