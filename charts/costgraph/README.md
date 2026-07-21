@@ -1,27 +1,10 @@
 # costgraph
 
-![Version: 0.1.28](https://img.shields.io/badge/Version-0.1.28-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.8](https://img.shields.io/badge/AppVersion-0.1.8-informational?style=flat-square) ![Deprecated](https://img.shields.io/badge/Status-Deprecated-red?style=flat-square)
+> **:exclamation: This Helm Chart is deprecated!**
 
-> **Deprecated.** This chart deploys the single-binary CostGraph operator, which
-> has been replaced by domain-specific operators - `costgraph-operator-kubernetes`
-> for cluster inventory and `costgraph-operator-prometheus` for metrics. Both are
-> shipped by the [`costgraph-operator`](../costgraph-operator) chart.
->
-> This chart receives no further releases. Existing installations keep running;
-> migrate with:
->
-> ```shell
-> helm uninstall costgraph -n <namespace>
-> helm install costgraph-operator costgraph/costgraph-operator \
->   --namespace costgraph --create-namespace \
->   --set global.clusterName=<your-cluster-name> \
->   --set global.apiKey=<your-api-key>
-> ```
->
-> Values are not compatible between the two charts. See the
-> [operator documentation](https://docs.costgraph.ai/costgraph/operator/overview).
+![Version: 0.1.28](https://img.shields.io/badge/Version-0.1.28-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.8](https://img.shields.io/badge/AppVersion-0.1.8-informational?style=flat-square)
 
-Distributed observability for modern workloads on Kubernetes
+DEPRECATED - replaced by the costgraph-operator chart
 
 ## Values
 
