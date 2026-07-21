@@ -92,9 +92,12 @@ dcgm-exporter:
 # --------------------------------------------------------------------------
 prometheus-node-exporter:
   enabled: true
+  # Defaults to 9101 because the subchart binds hostPort, so the upstream
+  # default of 9100 collides with a node exporter the cluster already runs.
+  # The operator scrape target follows this port, so set it here only.
   service:
-    port: 9100
-    targetPort: 9100
+    port: 9101
+    targetPort: 9101
   resources:
     requests:
       cpu: 100m
@@ -111,7 +114,7 @@ operatorKubernetes:
   enabled: true
   image:
     repository: ghcr.io/baselinehq/costgraph-operator-kubernetes
-    tag: "sha-0a2f012"
+    tag: "v0.1.0"
     pullPolicy: IfNotPresent
   # This should always be 1
   replicas: 1
@@ -136,7 +139,7 @@ operatorPrometheus:
   enabled: true
   image:
     repository: ghcr.io/baselinehq/costgraph-operator-prometheus
-    tag: "sha-5916bd9"
+    tag: "v0.1.0"
     pullPolicy: IfNotPresent
   # This should always be 1
   replicas: 1
@@ -206,7 +209,7 @@ operatorPrometheus:
       enabled: true
       namespace: "{{ include \"costgraph-operator.namespace\" . }}"
       labelSelector: "app.kubernetes.io/name=prometheus-node-exporter"
-      port: 9100
+      port: '{{ index .Values "prometheus-node-exporter" "service" "port" }}'
       nodeMetrics: true
     kubelet:
       enabled: true
