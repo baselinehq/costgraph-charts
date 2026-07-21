@@ -6,6 +6,30 @@
 
 DEPRECATED - replaced by the costgraph-operator chart
 
+This chart deploys the single-binary CostGraph operator, which has been replaced
+by domain-specific operators - `costgraph-operator-kubernetes` for cluster
+inventory and `costgraph-operator-prometheus` for metrics. Both are shipped by
+the [`costgraph-operator`](../costgraph-operator) chart.
+
+Existing installations keep running and keep reporting, but this chart receives
+no further releases and will not pick up new features or fixes.
+
+## Migrating
+
+The two charts do not share a values schema, so migration is a reinstall rather
+than a `helm upgrade`:
+
+```bash
+helm uninstall costgraph -n <namespace>
+helm install costgraph-operator costgraph/costgraph-operator \
+  --namespace costgraph --create-namespace \
+  --set global.clusterName=<your-cluster-name> \
+  --set global.apiKey=<your-api-key>
+```
+
+Configuration equivalents are documented in the
+[operator configuration reference](https://docs.costgraph.ai/costgraph/operator/configuration).
+
 ## Values
 
 | Key | Type | Default | Description |
