@@ -30,12 +30,13 @@ Conventional Commit format on every pull request.
 
 ## Prerequisites
 
-Each operator repository needs a `RELEASE_TOKEN` secret holding a PAT or
-GitHub App token with `contents: write` and `pull-requests: write`.
+Release Please authenticates with the `GO_GET_TOKEN` secret already present in
+both operator repositories. It must not use the default `GITHUB_TOKEN`: tags
+pushed with it do not trigger other workflows, so the `Docker` workflow would
+never fire and no image would be published for the release.
 
-Release Please must not use the default `GITHUB_TOKEN`: tags pushed with it do
-not trigger other workflows, so the `Docker` workflow would never fire and no
-image would be published for the release.
+The token needs `contents: write` and `pull-requests: write`. If releases stop
+producing images, check that it has not expired.
 
 ## Binary release flow (automated)
 
