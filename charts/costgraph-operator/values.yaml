@@ -92,8 +92,9 @@ dcgm-exporter:
 # --------------------------------------------------------------------------
 prometheus-node-exporter:
   enabled: true
-  # Runs on 9101 because the subchart binds hostPort, so the default 9100
-  # collides with a node-exporter the cluster already runs.
+  # Defaults to 9101 because the subchart binds hostPort, so the upstream
+  # default of 9100 collides with a node exporter the cluster already runs.
+  # The operator scrape target follows this port, so set it here only.
   service:
     port: 9101
     targetPort: 9101
@@ -208,7 +209,7 @@ operatorPrometheus:
       enabled: true
       namespace: "{{ include \"costgraph-operator.namespace\" . }}"
       labelSelector: "app.kubernetes.io/name=prometheus-node-exporter"
-      port: 9101
+      port: '{{ index .Values "prometheus-node-exporter" "service" "port" }}'
       nodeMetrics: true
     kubelet:
       enabled: true
