@@ -28,6 +28,15 @@ Both repositories squash-merge, so the **PR title becomes the commit
 subject** and is what drives the release. A `PR Title` check enforces the
 Conventional Commit format on every pull request.
 
+## Prerequisites
+
+Each operator repository needs a `RELEASE_TOKEN` secret holding a PAT or
+GitHub App token with `contents: write` and `pull-requests: write`.
+
+Release Please must not use the default `GITHUB_TOKEN`: tags pushed with it do
+not trigger other workflows, so the `Docker` workflow would never fire and no
+image would be published for the release.
+
 ## Binary release flow (automated)
 
 1. Merge a PR into `main`. The `Release Please` workflow opens (or updates)
