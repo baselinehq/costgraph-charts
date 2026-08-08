@@ -1,0 +1,110 @@
+{{- if .Values.flowtrace.enabled }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "costgraph-operator.flowtraceName" . }}
+  namespace: {{ include "costgraph-operator.namespace" . }}
+  labels:
+    {{- include "costgraph-operator.flowtraceLabels" . | nindent 4 }}
+spec:
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ .Values.flowtrace.maxUnavailable }}
+  selector:
+    matchLabels:
+      {{- include "costgraph-operator.flowtraceSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.flowtrace.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "costgraph-operator.flowtraceLabels" . | nindent 8 }}
+        {{- with .Values.flowtrace.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # No Kubernetes API access is needed: the node name arrives via the
+      # downward API, cluster/tenant/instance ids come from the Costgraph
+      # backend over HTTPS, and container identity is read from the host
+      # procfs. Withholding the token keeps a privileged per-node pod off the
+      # chart's cluster-wide read ClusterRole.
+      automountServiceAccountToken: false
+      {{- with .Values.flowtrace.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: flowtrace
+          image: "{{ .Values.flowtrace.image.repository }}:{{ .Values.flowtrace.image.tag }}"
+          imagePullPolicy: {{ .Values.flowtrace.image.pullPolicy }}
+          command: ["/costgraph_flowtrace"]
+          securityContext:
+            privileged: true
+            # Overrides the image's USER nonroot. Resolving container identity
+            # reads other processes' /proc entries (cgroup, ns/net, net/tcp),
+            # which needs root even with full capabilities.
+            runAsUser: 0
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: CLUSTER_NAME
+              value: {{ .Values.global.clusterName | required "Cluster name must be provided" | quote }}
+            {{- with .Values.global.backendURL }}
+            - name: BACKEND_URL
+              value: {{ . | quote }}
+            {{- end }}
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "costgraph-operator.apiKeySecretName" . }}
+                  key: {{ include "costgraph-operator.apiKeySecretKey" . }}
+            - name: REMOTE_WRITE_URL
+              value: {{ .Values.flowtrace.config.remoteWriteURL | quote }}
+            - name: REMOTE_WRITE_PATH
+              value: {{ .Values.flowtrace.config.remoteWritePath | quote }}
+            - name: FLOWTRACE_PUSH_INTERVAL
+              value: {{ .Values.flowtrace.config.pushInterval | quote }}
+            - name: FLOWTRACE_INCLUDE_HOST_FLOWS
+              value: {{ .Values.flowtrace.config.includeHostFlows | quote }}
+            - name: HTTP_TIMEOUT
+              value: {{ .Values.flowtrace.config.httpTimeout | quote }}
+            - name: PROC_FS_PATH
+              value: /host/proc
+            {{- with .Values.flowtrace.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            - name: proc
+              mountPath: /host/proc
+              readOnly: true
+          {{- with .Values.flowtrace.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: proc
+          hostPath:
+            path: /proc
+            type: Directory
+      {{- with .Values.flowtrace.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.flowtrace.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.flowtrace.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

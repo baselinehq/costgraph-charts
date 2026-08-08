@@ -143,3 +143,27 @@ app.kubernetes.io/name: {{ include "costgraph-operator.prometheusName" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/component: operator-prometheus
 {{- end }}
+
+{{/*
+------------------------------------------------------------------------------
+costgraph-operator-flowtrace helpers
+------------------------------------------------------------------------------
+*/}}
+{{- define "costgraph-operator.flowtraceName" -}}
+{{- printf "%s-flowtrace" (include "costgraph-operator.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{- define "costgraph-operator.flowtraceLabels" -}}
+helm.sh/chart: {{ include "costgraph-operator.chart" . }}
+{{ include "costgraph-operator.flowtraceSelectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
+{{- define "costgraph-operator.flowtraceSelectorLabels" -}}
+app.kubernetes.io/name: {{ include "costgraph-operator.flowtraceName" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: flowtrace
+{{- end }}
