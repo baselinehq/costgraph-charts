@@ -1,0 +1,40 @@
+name: Chart Version
+
+# No paths filter: a skipped workflow never reports a status, which would hang
+# every non-chart PR if this is a required check.
+on:
+  pull_request:
+
+jobs:
+  version-bump:
+    name: Chart version bumped
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          rc=0
+          # README.md is excluded: helm-docs regenerates and pushes it into the
+          # PR branch, so counting it would demand a bump for docs-only changes.
+          charts=$(git diff --name-only "$BASE_SHA" HEAD -- charts/ ':!charts/*/README.md' \
+            | awk -F/ 'NF > 2 { print $1 "/" $2 }' | sort -u)
+
+          for chart in $charts; do
+            [ -f "$chart/Chart.yaml" ] || continue                       # deleted
+            git cat-file -e "$BASE_SHA:$chart/Chart.yaml" 2>/dev/null || continue  # new chart
+            base=$(git show "$BASE_SHA:$chart/Chart.yaml" | yq -r '.version')
+            head=$(yq -r '.version' "$chart/Chart.yaml")
+
+            if [ "$base" -le "$head" ]; then
+              echo "::error file=$chart/Chart.yaml::$chart changed but version is still $head — bump it or the release publishes nothing."
+              rc=1
+            else
+              echo "$chart: $base -> $head"
+            fi
+          done
+          exit $rc
