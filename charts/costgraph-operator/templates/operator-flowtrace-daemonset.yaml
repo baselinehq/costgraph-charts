@@ -1,0 +1,138 @@
+{{- /*
+Host filesystem mount points. Each is referenced twice — once as a volumeMount
+path and once as the env var the binary reads it from — and a mismatch between
+the two fails silently (an empty walk, not an error), so they are bound once
+here rather than repeated as literals.
+*/}}
+{{- $procMount := "/host/proc" }}
+{{- $cgroupMount := "/host/sys/fs/cgroup" }}
+{{- if .Values.flowtrace.enabled }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "costgraph-operator.flowtraceName" . }}
+  namespace: {{ include "costgraph-operator.namespace" . }}
+  labels:
+    {{- include "costgraph-operator.flowtraceLabels" . | nindent 4 }}
+spec:
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ .Values.flowtrace.maxUnavailable }}
+  selector:
+    matchLabels:
+      {{- include "costgraph-operator.flowtraceSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.flowtrace.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "costgraph-operator.flowtraceLabels" . | nindent 8 }}
+        {{- with .Values.flowtrace.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # No Kubernetes API access is needed: the node name arrives via the
+      # downward API, cluster/tenant/instance ids come from the Costgraph
+      # backend over HTTPS, and container identity is resolved by matching each
+      # flow's cgroup id against the host cgroup filesystem. Withholding the
+      # token keeps a privileged per-node pod off the chart's cluster-wide
+      # read ClusterRole.
+      automountServiceAccountToken: false
+      {{- with .Values.flowtrace.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: flowtrace
+          image: "{{ .Values.flowtrace.image.repository }}:{{ .Values.flowtrace.image.tag }}"
+          imagePullPolicy: {{ .Values.flowtrace.image.pullPolicy }}
+          command: ["/costgraph_operator_flowtrace"]
+          securityContext:
+            privileged: true
+            # Overrides the image's USER nonroot. Resolving container identity
+            # reads other processes' /proc entries (cgroup, ns/net, net/tcp),
+            # which needs root even with full capabilities.
+            runAsUser: 0
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: CLUSTER_NAME
+              value: {{ .Values.global.clusterName | required "Cluster name must be provided" | quote }}
+            {{- with .Values.global.backendURL }}
+            - name: BACKEND_URL
+              value: {{ . | quote }}
+            {{- end }}
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "costgraph-operator.apiKeySecretName" . }}
+                  key: {{ include "costgraph-operator.apiKeySecretKey" . }}
+            - name: REMOTE_WRITE_URL
+              value: {{ .Values.flowtrace.config.remoteWriteURL | quote }}
+            - name: REMOTE_WRITE_PATH
+              value: {{ .Values.flowtrace.config.remoteWritePath | quote }}
+            - name: FLOWTRACE_PUSH_INTERVAL
+              value: {{ .Values.flowtrace.config.pushInterval | quote }}
+            - name: FLOWTRACE_INCLUDE_HOST_FLOWS
+              value: {{ .Values.flowtrace.config.includeHostFlows | quote }}
+            - name: HTTP_TIMEOUT
+              value: {{ .Values.flowtrace.config.httpTimeout | quote }}
+            - name: PROC_FS_PATH
+              value: {{ $procMount | quote }}
+            - name: HOST_CGROUP_FS
+              value: {{ $cgroupMount | quote }}
+            {{- with .Values.flowtrace.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            - name: proc
+              mountPath: {{ $procMount }}
+              readOnly: true
+            - name: cgroup
+              mountPath: {{ $cgroupMount }}
+              readOnly: true
+              # Hybrid nodes keep the cgroup2 hierarchy in a separate mount at
+              # <root>/unified with tmpfs above it. hostPath defaults to
+              # mountPropagation: None, which hides submounts, so the walk would
+              # find an empty directory and every flow would resolve to no
+              # container. HostToContainer makes the submount visible.
+              mountPropagation: HostToContainer
+          {{- with .Values.flowtrace.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: proc
+          hostPath:
+            path: /proc
+            type: Directory
+        # Directory rather than DirectoryOrCreate: creating an empty mount point
+        # would make a missing cgroupfs look like a node with no containers,
+        # which fails silently. Mount the parent rather than <root>/unified so
+        # one volume covers both the pure-v2 and hybrid layouts.
+        - name: cgroup
+          hostPath:
+            path: /sys/fs/cgroup
+            type: Directory
+      {{- with .Values.flowtrace.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.flowtrace.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.flowtrace.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
