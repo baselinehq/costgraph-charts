@@ -139,7 +139,7 @@ operatorPrometheus:
   enabled: true
   image:
     repository: ghcr.io/baselinehq/costgraph-operator-prometheus
-    tag: "v0.1.0"
+    tag: "v0.2.0"
     pullPolicy: IfNotPresent
   # This should always be 1
   replicas: 1
@@ -232,15 +232,19 @@ operatorPrometheus:
 # --------------------------------------------------------------------------
 # costgraph flowtrace daemonset (eBPF network flow tracing)
 # Runs the flowtrace binary from the costgraph-operator-prometheus image on
-# every node. Requires a BTF-enabled kernel (CONFIG_DEBUG_INFO_BTF) — pods on
-# nodes without it will CrashLoopBackOff. Gate with nodeSelector if the fleet
-# is mixed.
+# every node. Two node requirements, both checked at startup and refused rather
+# than run degraded, so an unsuitable node CrashLoopBackOffs:
+#   - a BTF-enabled kernel (CONFIG_DEBUG_INFO_BTF) for the fentry programs.
+#   - a cgroup v2 hierarchy for container attribution. Cgroup ids come from the
+#     default (v2) hierarchy, so on a v1-only node every socket reports the v2
+#     root and the whole node collapses to a single identity.
+# Gate with nodeSelector if the fleet is mixed.
 # --------------------------------------------------------------------------
 flowtrace:
   enabled: false
   image:
     repository: ghcr.io/baselinehq/costgraph-operator-prometheus
-    tag: "v0.1.0"
+    tag: "v0.2.0"
     pullPolicy: IfNotPresent
   config:
     remoteWriteURL: "https://tsdb.costgraph.ai"

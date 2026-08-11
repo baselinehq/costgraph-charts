@@ -1,3 +1,11 @@
+{{- /*
+Host filesystem mount points. Each is referenced twice — once as a volumeMount
+path and once as the env var the binary reads it from — and a mismatch between
+the two fails silently (an empty walk, not an error), so they are bound once
+here rather than repeated as literals.
+*/}}
+{{- $procMount := "/host/proc" }}
+{{- $cgroupMount := "/host/sys/fs/cgroup" }}
 {{- if .Values.flowtrace.enabled }}
 apiVersion: apps/v1
 kind: DaemonSet
@@ -32,9 +40,10 @@ spec:
       {{- end }}
       # No Kubernetes API access is needed: the node name arrives via the
       # downward API, cluster/tenant/instance ids come from the Costgraph
-      # backend over HTTPS, and container identity is read from the host
-      # procfs. Withholding the token keeps a privileged per-node pod off the
-      # chart's cluster-wide read ClusterRole.
+      # backend over HTTPS, and container identity is resolved by matching each
+      # flow's cgroup id against the host cgroup filesystem. Withholding the
+      # token keeps a privileged per-node pod off the chart's cluster-wide
+      # read ClusterRole.
       automountServiceAccountToken: false
       {{- with .Values.flowtrace.priorityClassName }}
       priorityClassName: {{ . }}
@@ -78,14 +87,25 @@ spec:
             - name: HTTP_TIMEOUT
               value: {{ .Values.flowtrace.config.httpTimeout | quote }}
             - name: PROC_FS_PATH
-              value: /host/proc
+              value: {{ $procMount | quote }}
+            - name: CGROUP_FS_PATH
+              value: {{ $cgroupMount | quote }}
             {{- with .Values.flowtrace.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
           volumeMounts:
             - name: proc
-              mountPath: /host/proc
+              mountPath: {{ $procMount }}
               readOnly: true
+            - name: cgroup
+              mountPath: {{ $cgroupMount }}
+              readOnly: true
+              # Hybrid nodes keep the cgroup2 hierarchy in a separate mount at
+              # <root>/unified with tmpfs above it. hostPath defaults to
+              # mountPropagation: None, which hides submounts, so the walk would
+              # find an empty directory and every flow would resolve to no
+              # container. HostToContainer makes the submount visible.
+              mountPropagation: HostToContainer
           {{- with .Values.flowtrace.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
@@ -94,6 +114,14 @@ spec:
         - name: proc
           hostPath:
             path: /proc
+            type: Directory
+        # Directory rather than DirectoryOrCreate: creating an empty mount point
+        # would make a missing cgroupfs look like a node with no containers,
+        # which fails silently. Mount the parent rather than <root>/unified so
+        # one volume covers both the pure-v2 and hybrid layouts.
+        - name: cgroup
+          hostPath:
+            path: /sys/fs/cgroup
             type: Directory
       {{- with .Values.flowtrace.nodeSelector }}
       nodeSelector:
