@@ -26,10 +26,11 @@ jobs:
 
           for chart in $charts; do
             [ -f "$chart/Chart.yaml" ] || continue                       # deleted
-            base=$(git show "$BASE_SHA:$chart/Chart.yaml" | yq -r '.version') || continue  # new chart
+            git cat-file -e "$BASE_SHA:$chart/Chart.yaml" 2>/dev/null || continue  # new chart
+            base=$(git show "$BASE_SHA:$chart/Chart.yaml" | yq -r '.version')
             head=$(yq -r '.version' "$chart/Chart.yaml")
 
-            if [ "$base" = "$head" ]; then
+            if [ "$base" -le "$head" ]; then
               echo "::error file=$chart/Chart.yaml::$chart changed but version is still $head — bump it or the release publishes nothing."
               rc=1
             else
