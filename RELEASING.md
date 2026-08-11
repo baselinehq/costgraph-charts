@@ -57,7 +57,7 @@ release PR unmerged.
 
 1. Confirm both image tags exist in GHCR.
 2. In `charts/costgraph-operator/values.yaml`, set
-   `kubernetes.image.tag` and `prometheus.image.tag` to the new `vX.Y.Z`
+   `operatorKubernetes.image.tag`, `operatorPrometheus.image.tag` and `flowtrace.image.tag` to the new `vX.Y.Z`
    values. Never pin `sha-` tags in a released chart.
 3. Bump `version` in `charts/costgraph-operator/Chart.yaml`. Bump
    `appVersion` when the operator binaries move.
