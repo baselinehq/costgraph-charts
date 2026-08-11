@@ -53,7 +53,7 @@ spec:
         - name: flowtrace
           image: "{{ .Values.flowtrace.image.repository }}:{{ .Values.flowtrace.image.tag }}"
           imagePullPolicy: {{ .Values.flowtrace.image.pullPolicy }}
-          command: ["/costgraph_flowtrace"]
+          command: ["/costgraph_operator_flowtrace"]
           securityContext:
             privileged: true
             # Overrides the image's USER nonroot. Resolving container identity
@@ -88,7 +88,7 @@ spec:
               value: {{ .Values.flowtrace.config.httpTimeout | quote }}
             - name: PROC_FS_PATH
               value: {{ $procMount | quote }}
-            - name: CGROUP_FS_PATH
+            - name: HOST_CGROUP_FS
               value: {{ $cgroupMount | quote }}
             {{- with .Values.flowtrace.env }}
             {{- toYaml . | nindent 12 }}
