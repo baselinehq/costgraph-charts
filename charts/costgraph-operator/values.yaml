@@ -31,6 +31,82 @@ serviceAccount:
   name: ""
 
 # --------------------------------------------------------------------------
+# rbac
+#
+# The operator reads what its ClusterRole allows and nothing else: resources it
+# cannot list are skipped at startup. This role is therefore the whole data
+# collection policy, and it is the only place to change what CostGraph sees.
+#
+# Built-in resources are granted by name. Kubernetes RBAC is additive with no
+# deny rule, so enumerating core/v1 is the only way Secrets, ConfigMaps and
+# ServiceAccounts stay unreachable at the API server rather than merely
+# unrequested.
+#
+# Custom resources are granted per API group, discovered from the cluster at
+# render time. A CRD installed after the release is not granted until the next
+# helm upgrade.
+# --------------------------------------------------------------------------
+rbac:
+  # grantCustomResources: read every custom resource whose API group is not
+  # listed in deniedAPIGroups. Set false to collect built-in resources only.
+  grantCustomResources: true
+
+  # deniedAPIGroups: never granted, at any version. Secret-adjacent groups
+  # (credential material, or references and auth config for it) and cluster
+  # machinery that carries no cost or topology signal.
+  deniedAPIGroups:
+    # Credential material, or the references and backend auth config for it.
+    - acme.cert-manager.io
+    - authentication.k8s.io
+    - authorization.k8s.io
+    - cert-manager.io
+    - certificates.k8s.io
+    - external-secrets.io
+    - generators.external-secrets.io
+    - notification.toolkit.fluxcd.io
+    - rbac.authorization.k8s.io
+    - traefik.io
+    - velero.io
+    # Cluster machinery: no cost or topology signal, high row churn.
+    - admissionregistration.k8s.io
+    - apiextensions.k8s.io
+    - apiregistration.k8s.io
+    - coordination.k8s.io
+    - events.k8s.io
+    - flowcontrol.apiserver.k8s.io
+    - internal.apiserver.k8s.io
+    - longhorn.io
+    - metrics.k8s.io
+    # node.k8s.io is RuntimeClass, not Nodes. Nodes are core/v1 and granted.
+    - node.k8s.io
+    - scheduling.k8s.io
+    - storagemigration.k8s.io
+
+  # builtinAPIGroups: covered resource by resource in the rules above, so they
+  # are excluded from the discovered custom-resource grant. Changing this list
+  # without changing those rules grants nothing new.
+  builtinAPIGroups:
+    - apps
+    - autoscaling
+    - batch
+    - discovery.k8s.io
+    - networking.k8s.io
+    - policy
+    - storage.k8s.io
+
+  # extraRules: appended to the ClusterRole verbatim. A denied group is denied
+  # whole, because RBAC cannot subtract one resource from a wildcard. Name the
+  # resources you want back here instead. For example, to collect Traefik
+  # routing topology while leaving Middleware, which can hold inline basic-auth
+  # credentials, out of reach:
+  #
+  # extraRules:
+  #   - apiGroups: ["traefik.io"]
+  #     resources: ["ingressroutes", "ingressroutetcps", "serverstransports"]
+  #     verbs: ["get", "watch", "list"]
+  extraRules: []
+
+# --------------------------------------------------------------------------
 # kube-state-metrics (subchart from prometheus-community)
 # See: https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-state-metrics
 # --------------------------------------------------------------------------

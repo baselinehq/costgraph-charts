@@ -167,3 +167,28 @@ app.kubernetes.io/name: {{ include "costgraph-operator.flowtraceName" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/component: flowtrace
 {{- end }}
+
+{{/*
+Custom resource API groups to grant, as a YAML array.
+
+Every group the cluster serves, minus core, minus the groups the built-in rules
+already cover resource by resource, minus rbac.deniedAPIGroups. Discovery
+happens at render time, so a CRD installed later is not granted until the next
+helm upgrade.
+*/}}
+{{- define "costgraph-operator.grantedAPIGroups" -}}
+{{- $denied := concat .Values.rbac.deniedAPIGroups .Values.rbac.builtinAPIGroups -}}
+{{- $groups := list -}}
+{{- range .Capabilities.APIVersions -}}
+{{- $group := splitList "/" . | first -}}
+{{/* Capabilities carries both "group/version" and "group/version/Kind", so a
+     core kind arrives as "v1/Pod" and its leading segment is a version, not a
+     group. Core is enumerated by the rules that use this helper. */}}
+{{- if not (regexMatch "^v[0-9]+((alpha|beta)[0-9]+)?$" $group) -}}
+{{- if not (has $group $denied) -}}
+{{- $groups = append $groups $group -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- $groups | uniq | sortAlpha | toYaml -}}
+{{- end }}
