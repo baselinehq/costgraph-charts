@@ -59,12 +59,15 @@ rbac:
 
   # requireClusterDiscovery: fail the render when no custom resource API group
   # is found, which means the chart was rendered without cluster access and
-  # would silently collect nothing beyond core Kubernetes. Set false only for a
-  # cluster that genuinely has no CRDs.
+  # would silently collect nothing beyond core Kubernetes. Only applies when
+  # grantCustomResources is true, since nothing depends on discovery otherwise.
+  # Set false only for a cluster that genuinely has no CRDs.
   requireClusterDiscovery: true
 
-  # excludeAPIGroups: removed from the allowlist at render time, at every API
-  # version. The single place that defines what CostGraph may never read.
+  # excludeAPIGroups: filters the generated custom-resource grant at render
+  # time, at every API version. This is the default policy, not a hard ceiling:
+  # extraRules below is applied verbatim and can deliberately grant back a
+  # resource from an excluded group.
   excludeAPIGroups:
     # Credential material, or the references and backend auth config for it.
     - acme.cert-manager.io

@@ -235,7 +235,7 @@ Helm merges any --api-versions it is given with its built-in set, so the test
 is whether a group appeared that Kubernetes itself does not ship.
 */}}
 {{- define "costgraph-operator.assertClusterDiscovery" -}}
-{{- if .Values.rbac.requireClusterDiscovery -}}
+{{- if and .Values.rbac.requireClusterDiscovery .Values.rbac.grantCustomResources -}}
 {{- $builtin := include "costgraph-operator.kubernetesAPIGroups" . | fromYamlArray -}}
 {{- $found := false -}}
 {{- range .Capabilities.APIVersions -}}
