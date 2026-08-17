@@ -171,22 +171,33 @@ app.kubernetes.io/component: flowtrace
 {{/*
 Custom resource API groups to grant, as a YAML array.
 
-Every group the cluster serves, minus core, minus the groups the built-in rules
-already cover resource by resource, minus rbac.deniedAPIGroups. Discovery
-happens at render time, so a CRD installed later is not granted until the next
-helm upgrade.
+rbac.customResourceAPIGroups, plus every other group the cluster serves when
+rbac.discoverAdditionalAPIGroups is on, minus core, minus the groups the
+built-in rules already cover resource by resource, minus rbac.excludeAPIGroups.
+
+Discovery needs cluster access at render time. `helm install` and `helm upgrade`
+have it; plain `helm template` falls back to Helm's built-in capability set,
+which carries no CRD groups at all. The static list is what keeps collection
+independent of that, and of install ordering.
 */}}
 {{- define "costgraph-operator.grantedAPIGroups" -}}
-{{- $denied := concat .Values.rbac.deniedAPIGroups .Values.rbac.builtinAPIGroups -}}
+{{- $excluded := concat .Values.rbac.excludeAPIGroups .Values.rbac.builtinAPIGroups -}}
 {{- $groups := list -}}
+{{- range .Values.rbac.customResourceAPIGroups -}}
+{{- if not (has . $excluded) -}}
+{{- $groups = append $groups . -}}
+{{- end -}}
+{{- end -}}
+{{- if .Values.rbac.discoverAdditionalAPIGroups -}}
 {{- range .Capabilities.APIVersions -}}
 {{- $group := splitList "/" . | first -}}
 {{/* Capabilities carries both "group/version" and "group/version/Kind", so a
      core kind arrives as "v1/Pod" and its leading segment is a version, not a
      group. Core is enumerated by the rules that use this helper. */}}
 {{- if not (regexMatch "^v[0-9]+((alpha|beta)[0-9]+)?$" $group) -}}
-{{- if not (has $group $denied) -}}
+{{- if not (has $group $excluded) -}}
 {{- $groups = append $groups $group -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}

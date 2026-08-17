@@ -38,23 +38,53 @@ serviceAccount:
 # collection policy, and it is the only place to change what CostGraph sees.
 #
 # Built-in resources are granted by name. Kubernetes RBAC is additive with no
-# deny rule, so enumerating core/v1 is the only way Secrets, ConfigMaps and
-# ServiceAccounts stay unreachable at the API server rather than merely
-# unrequested.
+# deny rule and matches on exact names, so enumerating core/v1 is the only way
+# Secrets, ConfigMaps and ServiceAccounts stay unreachable at the API server
+# rather than merely unrequested.
 #
-# Custom resources are granted per API group, discovered from the cluster at
-# render time. A CRD installed after the release is not granted until the next
-# helm upgrade.
+# The exclude lists below are applied by Helm when the chart renders. They
+# subtract from the generated allowlist and never appear in the ClusterRole.
+# They are not a runtime deny: a wildcard added anywhere in the role would
+# override them, because the API server has no deny rule to apply.
 # --------------------------------------------------------------------------
 rbac:
-  # grantCustomResources: read every custom resource whose API group is not
-  # listed in deniedAPIGroups. Set false to collect built-in resources only.
+  # grantCustomResources: read custom resources whose API group is granted
+  # below. Set false to collect built-in resources only.
   grantCustomResources: true
 
-  # deniedAPIGroups: never granted, at any version. Secret-adjacent groups
-  # (credential material, or references and auth config for it) and cluster
-  # machinery that carries no cost or topology signal.
-  deniedAPIGroups:
+  # customResourceAPIGroups: granted whether or not the CRDs exist when the
+  # chart renders, so collection does not depend on install ordering or on the
+  # renderer having cluster access. Naming a group with no CRDs installed
+  # grants access to nothing.
+  customResourceAPIGroups:
+    - argoproj.io
+    - cilium.io
+    - crd.k8s.amazonaws.com
+    - eks.amazonaws.com
+    - elbv2.k8s.aws
+    - externaldns.k8s.io
+    - gateway.networking.k8s.io
+    - image.toolkit.fluxcd.io
+    - karpenter.azure.com
+    - karpenter.k8s.aws
+    - karpenter.sh
+    - kustomize.toolkit.fluxcd.io
+    - monitoring.coreos.com
+    - networking.k8s.aws
+    - postgresql.cnpg.io
+    - source.toolkit.fluxcd.io
+    - vpcresources.k8s.aws
+
+  # discoverAdditionalAPIGroups: also grant every other API group the cluster
+  # serves, minus excludeAPIGroups. Discovery needs cluster access at render
+  # time: `helm install` and `helm upgrade` have it, plain `helm template` and
+  # some GitOps renderers do not. When it is unavailable this silently adds
+  # nothing, which is why customResourceAPIGroups above is not derived from it.
+  discoverAdditionalAPIGroups: true
+
+  # excludeAPIGroups: removed from the allowlist at render time, at every API
+  # version, whether named above or discovered.
+  excludeAPIGroups:
     # Credential material, or the references and backend auth config for it.
     - acme.cert-manager.io
     - authentication.k8s.io
@@ -63,6 +93,7 @@ rbac:
     - certificates.k8s.io
     - external-secrets.io
     - generators.external-secrets.io
+    - helm.toolkit.fluxcd.io
     - notification.toolkit.fluxcd.io
     - rbac.authorization.k8s.io
     - traefik.io
@@ -82,9 +113,10 @@ rbac:
     - scheduling.k8s.io
     - storagemigration.k8s.io
 
-  # builtinAPIGroups: covered resource by resource in the rules above, so they
-  # are excluded from the discovered custom-resource grant. Changing this list
-  # without changing those rules grants nothing new.
+  # builtinAPIGroups: covered resource by resource in the ClusterRole, so they
+  # are excluded from the custom-resource grant to keep a wildcard from
+  # widening them. Changing this list without changing those rules grants
+  # nothing new.
   builtinAPIGroups:
     - apps
     - autoscaling
@@ -94,11 +126,11 @@ rbac:
     - policy
     - storage.k8s.io
 
-  # extraRules: appended to the ClusterRole verbatim. A denied group is denied
-  # whole, because RBAC cannot subtract one resource from a wildcard. Name the
-  # resources you want back here instead. For example, to collect Traefik
-  # routing topology while leaving Middleware, which can hold inline basic-auth
-  # credentials, out of reach:
+  # extraRules: appended to the ClusterRole verbatim. An excluded group is
+  # excluded whole, because RBAC cannot subtract one resource from a wildcard.
+  # Name the resources you want back here instead. For example, to collect
+  # Traefik routing topology while leaving Middleware, which can hold inline
+  # basic-auth credentials, out of reach:
   #
   # extraRules:
   #   - apiGroups: ["traefik.io"]
@@ -112,6 +144,35 @@ rbac:
 # --------------------------------------------------------------------------
 kube-state-metrics:
   enabled: true
+  # The subchart generates its ClusterRole from this list, so a resource left
+  # out is never granted. Trimmed from the upstream default: secrets,
+  # configmaps, certificatesigningrequests, leases and the webhook
+  # configurations. CostGraph consumes none of their series, and the upstream
+  # default would otherwise grant the metrics agent read access to every Secret
+  # in the cluster in order to emit metadata we never use.
+  collectors:
+    - cronjobs
+    - daemonsets
+    - deployments
+    - endpoints
+    - horizontalpodautoscalers
+    - ingresses
+    - jobs
+    - limitranges
+    - namespaces
+    - networkpolicies
+    - nodes
+    - persistentvolumeclaims
+    - persistentvolumes
+    - poddisruptionbudgets
+    - pods
+    - replicasets
+    - replicationcontrollers
+    - resourcequotas
+    - services
+    - statefulsets
+    - storageclasses
+    - volumeattachments
 
 # --------------------------------------------------------------------------
 # cadvisor (subchart from bitnami)
