@@ -42,48 +42,29 @@ serviceAccount:
 # Secrets, ConfigMaps and ServiceAccounts stay unreachable at the API server
 # rather than merely unrequested.
 #
-# The exclude lists below are applied by Helm when the chart renders. They
-# subtract from the generated allowlist and never appear in the ClusterRole.
-# They are not a runtime deny: a wildcard added anywhere in the role would
-# override them, because the API server has no deny rule to apply.
+# Custom resources are granted per API group, discovered from the cluster when
+# the chart renders. Everything the cluster serves is granted except the groups
+# named in excludeAPIGroups.
+#
+# excludeAPIGroups is applied by Helm at render time. It subtracts from the
+# generated allowlist and never appears in the ClusterRole. It is not a runtime
+# deny: a wildcard added anywhere in the role would override it, because the
+# API server has no deny rule to apply.
 # --------------------------------------------------------------------------
 rbac:
-  # grantCustomResources: read custom resources whose API group is granted
-  # below. Set false to collect built-in resources only.
+  # grantCustomResources: read custom resources in every discovered API group
+  # that excludeAPIGroups does not name. Set false to collect built-in
+  # resources only.
   grantCustomResources: true
 
-  # customResourceAPIGroups: granted whether or not the CRDs exist when the
-  # chart renders, so collection does not depend on install ordering or on the
-  # renderer having cluster access. Naming a group with no CRDs installed
-  # grants access to nothing.
-  customResourceAPIGroups:
-    - argoproj.io
-    - cilium.io
-    - crd.k8s.amazonaws.com
-    - eks.amazonaws.com
-    - elbv2.k8s.aws
-    - externaldns.k8s.io
-    - gateway.networking.k8s.io
-    - image.toolkit.fluxcd.io
-    - karpenter.azure.com
-    - karpenter.k8s.aws
-    - karpenter.sh
-    - kustomize.toolkit.fluxcd.io
-    - monitoring.coreos.com
-    - networking.k8s.aws
-    - postgresql.cnpg.io
-    - source.toolkit.fluxcd.io
-    - vpcresources.k8s.aws
-
-  # discoverAdditionalAPIGroups: also grant every other API group the cluster
-  # serves, minus excludeAPIGroups. Discovery needs cluster access at render
-  # time: `helm install` and `helm upgrade` have it, plain `helm template` and
-  # some GitOps renderers do not. When it is unavailable this silently adds
-  # nothing, which is why customResourceAPIGroups above is not derived from it.
-  discoverAdditionalAPIGroups: true
+  # requireClusterDiscovery: fail the render when no custom resource API group
+  # is found, which means the chart was rendered without cluster access and
+  # would silently collect nothing beyond core Kubernetes. Set false only for a
+  # cluster that genuinely has no CRDs.
+  requireClusterDiscovery: true
 
   # excludeAPIGroups: removed from the allowlist at render time, at every API
-  # version, whether named above or discovered.
+  # version. The single place that defines what CostGraph may never read.
   excludeAPIGroups:
     # Credential material, or the references and backend auth config for it.
     - acme.cert-manager.io

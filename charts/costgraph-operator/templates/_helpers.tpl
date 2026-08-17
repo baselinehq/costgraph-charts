@@ -169,26 +169,44 @@ app.kubernetes.io/component: flowtrace
 {{- end }}
 
 {{/*
-Custom resource API groups to grant, as a YAML array.
+API groups that ship with Kubernetes itself. Helm's built-in capability set
+contains exactly these, so seeing nothing outside this list means
+.Capabilities.APIVersions was never populated from a cluster.
+*/}}
+{{- define "costgraph-operator.kubernetesAPIGroups" -}}
+- admissionregistration.k8s.io
+- apiextensions.k8s.io
+- apiregistration.k8s.io
+- apps
+- authentication.k8s.io
+- authorization.k8s.io
+- autoscaling
+- batch
+- certificates.k8s.io
+- coordination.k8s.io
+- discovery.k8s.io
+- events.k8s.io
+- extensions
+- flowcontrol.apiserver.k8s.io
+- internal.apiserver.k8s.io
+- networking.k8s.io
+- node.k8s.io
+- policy
+- rbac.authorization.k8s.io
+- resource.k8s.io
+- scheduling.k8s.io
+- storage.k8s.io
+- storagemigration.k8s.io
+{{- end }}
 
-rbac.customResourceAPIGroups, plus every other group the cluster serves when
-rbac.discoverAdditionalAPIGroups is on, minus core, minus the groups the
-built-in rules already cover resource by resource, minus rbac.excludeAPIGroups.
-
-Discovery needs cluster access at render time. `helm install` and `helm upgrade`
-have it; plain `helm template` falls back to Helm's built-in capability set,
-which carries no CRD groups at all. The static list is what keeps collection
-independent of that, and of install ordering.
+{{/*
+Every API group the cluster serves, minus core, minus the groups the built-in
+rules already cover resource by resource, minus rbac.excludeAPIGroups.
+Returned as a YAML array.
 */}}
 {{- define "costgraph-operator.grantedAPIGroups" -}}
 {{- $excluded := concat .Values.rbac.excludeAPIGroups .Values.rbac.builtinAPIGroups -}}
 {{- $groups := list -}}
-{{- range .Values.rbac.customResourceAPIGroups -}}
-{{- if not (has . $excluded) -}}
-{{- $groups = append $groups . -}}
-{{- end -}}
-{{- end -}}
-{{- if .Values.rbac.discoverAdditionalAPIGroups -}}
 {{- range .Capabilities.APIVersions -}}
 {{- $group := splitList "/" . | first -}}
 {{/* Capabilities carries both "group/version" and "group/version/Kind", so a
@@ -200,6 +218,36 @@ independent of that, and of install ordering.
 {{- end -}}
 {{- end -}}
 {{- end -}}
-{{- end -}}
 {{- $groups | uniq | sortAlpha | toYaml -}}
+{{- end }}
+
+{{/*
+Abort when the chart is rendered without cluster discovery.
+
+Helm populates .Capabilities.APIVersions from the cluster only when the
+renderer can reach one. `helm install` and `helm upgrade` can. Plain
+`helm template`, client-side `--dry-run`, Kustomize chart inflation and Argo CD
+before v2.10 fall back to Helm's built-in set, which contains no custom
+resource groups at all. The operator would install cleanly and silently
+collect nothing outside core Kubernetes, so fail loudly instead.
+
+Helm merges any --api-versions it is given with its built-in set, so the test
+is whether a group appeared that Kubernetes itself does not ship.
+*/}}
+{{- define "costgraph-operator.assertClusterDiscovery" -}}
+{{- if .Values.rbac.requireClusterDiscovery -}}
+{{- $builtin := include "costgraph-operator.kubernetesAPIGroups" . | fromYamlArray -}}
+{{- $found := false -}}
+{{- range .Capabilities.APIVersions -}}
+{{- $group := splitList "/" . | first -}}
+{{- if not (regexMatch "^v[0-9]+((alpha|beta)[0-9]+)?$" $group) -}}
+{{- if not (has $group $builtin) -}}
+{{- $found = true -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- if not $found -}}
+{{- fail "costgraph-operator: no custom resource API groups were discovered, so this chart was rendered without cluster access and would collect nothing beyond core Kubernetes. Render with `helm install`/`helm upgrade`, or pass --api-versions (Argo CD does this from v2.10; older versions do not). If this cluster genuinely has no CRDs, set rbac.requireClusterDiscovery=false." -}}
+{{- end -}}
+{{- end -}}
 {{- end }}
