@@ -169,9 +169,49 @@ app.kubernetes.io/component: flowtrace
 {{- end }}
 
 {{/*
-API groups that ship with Kubernetes itself. Helm's built-in capability set
-contains exactly these, so seeing nothing outside this list means
-.Capabilities.APIVersions was never populated from a cluster.
+Read rules for the built-in Kubernetes resources CostGraph collects.
+
+The single source for both the ClusterRole rules and the set of groups the
+discovered custom-resource grant must not re-widen. core/v1 is deliberately
+absent: it is enumerated separately because it holds Secrets, ConfigMaps and
+ServiceAccounts, which must never be granted.
+*/}}
+{{- define "costgraph-operator.builtinRules" -}}
+- apiGroups: ["apps"]
+  resources: ["daemonsets", "deployments", "replicasets", "statefulsets"]
+- apiGroups: ["autoscaling"]
+  resources: ["horizontalpodautoscalers"]
+- apiGroups: ["batch"]
+  resources: ["cronjobs", "jobs"]
+- apiGroups: ["discovery.k8s.io"]
+  resources: ["endpointslices"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingressclasses", "ingresses", "networkpolicies"]
+- apiGroups: ["policy"]
+  resources: ["poddisruptionbudgets"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["csidrivers", "csinodes", "storageclasses", "volumeattachments", "volumeattributesclasses"]
+{{- end }}
+
+{{/*
+The API groups covered by builtinRules, derived so the two cannot drift.
+*/}}
+{{- define "costgraph-operator.builtinAPIGroups" -}}
+{{- $groups := list -}}
+{{- range include "costgraph-operator.builtinRules" . | fromYamlArray -}}
+{{- $groups = concat $groups .apiGroups -}}
+{{- end -}}
+{{- $groups | uniq | sortAlpha | toYaml -}}
+{{- end }}
+
+{{/*
+API groups that ship with Kubernetes itself.
+
+Helm's built-in capability set contains exactly these, so seeing nothing
+outside this list means .Capabilities.APIVersions was never populated from a
+cluster. Entries here intentionally repeat names in rbac.excludeAPIGroups: this
+list answers "what does upstream ship", not "what may CostGraph read". Keep
+them separate, or excluding a new vendor group would break the discovery check.
 */}}
 {{- define "costgraph-operator.kubernetesAPIGroups" -}}
 - admissionregistration.k8s.io
@@ -200,25 +240,36 @@ contains exactly these, so seeing nothing outside this list means
 {{- end }}
 
 {{/*
-Every API group the cluster serves, minus core, minus the groups the built-in
-rules already cover resource by resource, minus rbac.excludeAPIGroups.
-Returned as a YAML array.
+Every API group the cluster serves, minus core. Returned as a YAML array.
+
+Capabilities carries both "group/version" and "group/version/Kind", so a core
+kind arrives as "v1/Pod" and its leading segment is a version, not a group.
 */}}
-{{- define "costgraph-operator.grantedAPIGroups" -}}
-{{- $excluded := concat .Values.rbac.excludeAPIGroups .Values.rbac.builtinAPIGroups -}}
+{{- define "costgraph-operator.discoveredAPIGroups" -}}
 {{- $groups := list -}}
 {{- range .Capabilities.APIVersions -}}
 {{- $group := splitList "/" . | first -}}
-{{/* Capabilities carries both "group/version" and "group/version/Kind", so a
-     core kind arrives as "v1/Pod" and its leading segment is a version, not a
-     group. Core is enumerated by the rules that use this helper. */}}
 {{- if not (regexMatch "^v[0-9]+((alpha|beta)[0-9]+)?$" $group) -}}
-{{- if not (has $group $excluded) -}}
 {{- $groups = append $groups $group -}}
 {{- end -}}
 {{- end -}}
-{{- end -}}
 {{- $groups | uniq | sortAlpha | toYaml -}}
+{{- end }}
+
+{{/*
+Custom resource API groups to grant: everything discovered, minus the groups
+builtinRules already covers resource by resource, minus rbac.excludeAPIGroups.
+*/}}
+{{- define "costgraph-operator.grantedAPIGroups" -}}
+{{- $builtin := include "costgraph-operator.builtinAPIGroups" . | fromYamlArray -}}
+{{- $excluded := concat .Values.rbac.excludeAPIGroups $builtin -}}
+{{- $groups := list -}}
+{{- range include "costgraph-operator.discoveredAPIGroups" . | fromYamlArray -}}
+{{- if not (has . $excluded) -}}
+{{- $groups = append $groups . -}}
+{{- end -}}
+{{- end -}}
+{{- $groups | toYaml -}}
 {{- end }}
 
 {{/*
@@ -228,25 +279,22 @@ Helm populates .Capabilities.APIVersions from the cluster only when the
 renderer can reach one. `helm install` and `helm upgrade` can. Plain
 `helm template`, client-side `--dry-run`, Kustomize chart inflation and Argo CD
 before v2.10 fall back to Helm's built-in set, which contains no custom
-resource groups at all. The operator would install cleanly and silently
-collect nothing outside core Kubernetes, so fail loudly instead.
+resource groups at all. The operator would install cleanly and silently collect
+nothing outside core Kubernetes, so fail loudly instead.
 
 Helm merges any --api-versions it is given with its built-in set, so the test
 is whether a group appeared that Kubernetes itself does not ship.
 */}}
 {{- define "costgraph-operator.assertClusterDiscovery" -}}
 {{- if and .Values.rbac.requireClusterDiscovery .Values.rbac.grantCustomResources -}}
-{{- $builtin := include "costgraph-operator.kubernetesAPIGroups" . | fromYamlArray -}}
-{{- $found := false -}}
-{{- range .Capabilities.APIVersions -}}
-{{- $group := splitList "/" . | first -}}
-{{- if not (regexMatch "^v[0-9]+((alpha|beta)[0-9]+)?$" $group) -}}
-{{- if not (has $group $builtin) -}}
-{{- $found = true -}}
+{{- $shipped := include "costgraph-operator.kubernetesAPIGroups" . | fromYamlArray -}}
+{{- $custom := list -}}
+{{- range include "costgraph-operator.discoveredAPIGroups" . | fromYamlArray -}}
+{{- if not (has . $shipped) -}}
+{{- $custom = append $custom . -}}
 {{- end -}}
 {{- end -}}
-{{- end -}}
-{{- if not $found -}}
+{{- if not $custom -}}
 {{- fail "costgraph-operator: no custom resource API groups were discovered, so this chart was rendered without cluster access and would collect nothing beyond core Kubernetes. Render with `helm install`/`helm upgrade`, or pass --api-versions (Argo CD does this from v2.10; older versions do not). If this cluster genuinely has no CRDs, set rbac.requireClusterDiscovery=false." -}}
 {{- end -}}
 {{- end -}}
