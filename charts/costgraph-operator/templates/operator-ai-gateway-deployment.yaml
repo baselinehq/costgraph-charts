@@ -13,8 +13,15 @@ spec:
       {{- include "costgraph-operator.aiGatewayScraperSelectorLabels" . | nindent 6 }}
   template:
     metadata:
+      {{- with .Values.aiGatewayScraper.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       labels:
         {{- include "costgraph-operator.aiGatewayScraperLabels" . | nindent 8 }}
+        {{- with .Values.aiGatewayScraper.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -48,18 +55,28 @@ spec:
             - name: HTTP_TIMEOUT
               value: {{ .Values.aiGatewayScraper.config.httpTimeout | quote }}
             {{- /*
-            No SCRAPE_TARGETS here. Gateway targets are served by CostGraph from
-            the connections the customer created, fetched at start and refreshed
-            while the process runs, so connecting a gateway never edits Helm
-            values. See operator-prometheus-deployment.yaml for the statically
-            configured scraper.
+            An empty list, not an absent value: the scraper requires
+            SCRAPE_TARGETS to parse, and gateway targets are served by CostGraph
+            from the connections the customer created rather than set here, so
+            connecting a gateway never edits Helm values. See
+            operator-prometheus-deployment.yaml for the statically configured
+            scraper.
             */}}
+            - name: SCRAPE_TARGETS
+              value: "[]"
+            {{- with .Values.aiGatewayScraper.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- with .Values.aiGatewayScraper.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
       {{- with .Values.aiGatewayScraper.nodeSelector }}
       nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.aiGatewayScraper.affinity }}
+      affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.aiGatewayScraper.tolerations }}
