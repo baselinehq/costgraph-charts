@@ -168,6 +168,7 @@ aiGatewayScraper:
     remoteWriteURL: "https://tsdb.costgraph.ai"
     remoteWritePath: "/api/v1/write/short"
     httpTimeout: "30s"
+  securityContext: {}
   resources: {}
   nodeSelector: {}
   tolerations: []
