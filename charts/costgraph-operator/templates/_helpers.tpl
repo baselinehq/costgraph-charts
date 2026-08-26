@@ -144,6 +144,25 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/component: operator-prometheus
 {{- end }}
 
+{{- define "costgraph-operator.aiGatewayScraperName" -}}
+{{- printf "%s-ai-gateway" (include "costgraph-operator.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{- define "costgraph-operator.aiGatewayScraperLabels" -}}
+helm.sh/chart: {{ include "costgraph-operator.chart" . }}
+{{ include "costgraph-operator.aiGatewayScraperSelectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
+{{- define "costgraph-operator.aiGatewayScraperSelectorLabels" -}}
+app.kubernetes.io/name: {{ include "costgraph-operator.aiGatewayScraperName" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: operator-ai-gateway
+{{- end }}
+
 {{/*
 ------------------------------------------------------------------------------
 costgraph-operator-flowtrace helpers

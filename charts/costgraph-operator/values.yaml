@@ -147,6 +147,40 @@ cadvisor:
 
 
 # --------------------------------------------------------------------------
+# aiGatewayScraper
+#
+# A second instance of the operator scraper, dedicated to AI gateway metrics.
+# It exists as its own deployment for one reason: remoteWritePath is
+# per-deployment, and raw gateway series are high cardinality, so they belong in
+# the short-retention tier rather than the 90-day one. flowtrace does the same.
+#
+# It takes no scrapeTargets. Gateway targets are served by CostGraph from the
+# connections you create in Settings -> Integrations, fetched at start and
+# refreshed while it runs, so connecting a gateway never edits these values.
+# --------------------------------------------------------------------------
+aiGatewayScraper:
+  enabled: false
+  image:
+    repository: ghcr.io/baselinehq/costgraph-operator-prometheus
+    tag: "v0.4.0"
+    pullPolicy: IfNotPresent
+  config:
+    remoteWriteURL: "https://tsdb.costgraph.ai"
+    remoteWritePath: "/api/v1/write/short"
+    httpTimeout: "30s"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+  securityContext: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  podAnnotations: {}
+  podLabels: {}
+  env: []
+
+# --------------------------------------------------------------------------
 # dcgm-exporter (subchart from NVIDIA)
 # See: https://github.com/NVIDIA/dcgm-exporter/tree/main/deployment/chart
 # Enable this when GPU nodes are present in the cluster. The exporter runs
