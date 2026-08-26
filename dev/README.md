@@ -83,9 +83,10 @@ It needs a tenant API key from *this* deployment, with `operator:read` and
 below), write it to `dev/.operator-key` (gitignored), then:
 
 ```sh
-helm dependency build ../charts/costgraph-operator
-helm upgrade --install cg-operator ../charts/costgraph-operator -n costgraph \
-  -f operator-kind-values.yaml --set-string global.apiKey="$(cat .operator-key)"
+helm dependency build charts/costgraph-operator
+helm upgrade --install cg-operator charts/costgraph-operator -n costgraph \
+  -f dev/operator-kind-values.yaml \
+  --set-string global.apiKey="$(cat dev/.operator-key)"
 ```
 
 Confirm metrics arrive:

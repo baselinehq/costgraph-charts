@@ -1,15 +1,6 @@
 {{- if .Values.aggregator.enabled }}
 {{- $fullname := include "costgraph-selfhosted.fullname" . }}
 {{- $metricsStore := include "costgraph-selfhosted.metricsStoreURL" . }}
-{{/*
-The aggregator reads pre-aggregated costgraph:* series rather than raw samples,
-and vmalert is what produces them. Without it every aggregation cycle is
-skipped with "recording rules absent for every known cluster" and the dashboard
-stays empty however many metrics arrive.
-
-Two rule sets, two deployments: long-window rules feed the daily rollups, short
--window rules feed the recent views. They differ only in the rules they load.
-*/}}
 {{- range $set := list "long" "short" }}
 {{- $name := printf "%s-vmalert-%s" $fullname $set }}
 {{- $rules := ($.Files.Glob (printf "recording-rules/%s/*.yaml" $set)).AsConfig }}
@@ -23,11 +14,6 @@ metadata:
 data:
 {{ $rules | indent 2 }}
 ---
-{{/*
-Nothing scrapes vmalert - it pushes. The Service exists so /api/v1/rules can be
-reached when a rule is producing no samples, which is otherwise only visible by
-port-forwarding into the pod.
-*/}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -78,8 +64,6 @@ spec:
             - -datasource.url={{ $metricsStore }}
             - -remoteWrite.url={{ $metricsStore }}
             - -evaluationInterval={{ $.Values.vmalert.evaluationInterval }}
-            # Offsets the query time to absorb ingestion delay; chained rules
-            # read the output of earlier ones and would otherwise read nothing.
             - -rule.evalDelay={{ $.Values.vmalert.evalDelay }}
             - -remoteWrite.flushInterval={{ $.Values.vmalert.flushInterval }}
             - -external.label=job=aggregator

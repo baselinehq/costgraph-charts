@@ -1,9 +1,5 @@
 {{- if .Values.redis.bundled.enabled }}
 {{- $name := printf "%s-redis" (include "costgraph-selfhosted.fullname" .) }}
-{{/*
-Cache and short-lived locks only, so no persistence: a restart costs a few
-cache misses, not data.
-*/}}
 apiVersion: v1
 kind: Service
 metadata:

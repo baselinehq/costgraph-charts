@@ -84,8 +84,8 @@ kubectl create secret generic costgraph-control-plane \
 ```
 
 A chart cannot read a Secret to build the image pull secret from it, so an
-install using `controlPlane.existingSecret` creates that one too and names it
-in `imagePullSecrets`:
+install using `controlPlane.existingSecret` must create that one too and name
+it in `imagePullSecrets`, or the images cannot be pulled:
 
 ```sh
 kubectl create secret docker-registry costgraph-registry \
@@ -93,6 +93,11 @@ kubectl create secret docker-registry costgraph-registry \
   --docker-server=registry.costgraph.ai \
   --docker-username=x \
   --docker-password=bl_...
+```
+
+```yaml
+imagePullSecrets:
+  - name: costgraph-registry
 ```
 
 ### Node architecture

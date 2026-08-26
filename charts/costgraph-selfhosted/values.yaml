@@ -2,10 +2,7 @@ nameOverride: ""
 fullnameOverride: ""
 
 image:
-  registry: registry.costgraph.ai
   repository: registry.costgraph.ai/backend
-  # Versioned separately from the chart: images are published per commit, so
-  # there is nothing tagged with the chart's appVersion to fall back to.
   tag: sha-5d4cd8c
   pullPolicy: IfNotPresent
 
@@ -112,8 +109,7 @@ redis:
       limits:
         memory: 512Mi
 
-# Read and written by the aggregator, ingestion-api and vmalert. None of the
-# three start without it.
+# Where cluster metrics are stored. Required unless bundled below.
 metricsStore:
   url: ""                       # http://victoria-metrics:8428
   bundled:
@@ -161,7 +157,6 @@ dashboard:
   enabled: true
   image:
     repository: registry.costgraph.ai/costgraph-dashboard
-    # Versioned separately from the chart, as with the backend image above.
     tag: sha-fb6ac21
     pullPolicy: IfNotPresent
   replicaCount: 2
@@ -183,14 +178,11 @@ dashboard:
     limits:
       memory: 256Mi
 
-# Receives metrics from the CostGraph operator running in your clusters. Turn
-# it off only if you are not collecting cluster metrics at all.
+# Receives metrics from the CostGraph operator in your clusters. Leave on.
 ingestionApi:
   enabled: true
   image:
     repository: registry.costgraph.ai/ingestion-api
-    # Versioned separately from the chart, so this is pinned rather than
-    # following appVersion.
     tag: sha-7a15311
     pullPolicy: IfNotPresent
   replicaCount: 2
@@ -204,7 +196,6 @@ ingestionApi:
   writeTimeout: 10s
   tenantHeader: X-Scope-OrgID
 
-  # API keys are looked up per request, so results are cached briefly.
   authCache:
     size: 10000
     ttl: 5m
@@ -216,21 +207,17 @@ ingestionApi:
     limits:
       memory: 1Gi
 
-# Turns the raw samples into the per-workload costs the dashboard shows.
-# Without it, metrics arrive but cost breakdowns stay empty.
+# Computes the cost breakdowns the dashboard shows. Leave on.
 aggregator:
   enabled: true
   image:
     repository: registry.costgraph.ai/aggregator
-    # Versioned separately from the chart, so this is pinned rather than
-    # following appVersion.
     tag: sha-5bcb0b4
     pullPolicy: IfNotPresent
   service:
     port: 8192
   rulesEvalInterval: 1m
 
-  # Keep below the memory limit below, so Go reclaims before the pod is killed.
   goMemLimit: 1750MiB
 
   # Cost dimensions to compute. Turning one off drops it from the dashboard.
@@ -247,8 +234,7 @@ aggregator:
     limits:
       memory: 2Gi
 
-# Evaluates the recording rules the aggregator reads. Without it metrics arrive
-# but every aggregation cycle is skipped, so the dashboard has no cost to show.
+# Required by the aggregator. Leave on.
 vmalert:
   image:
     repository: victoriametrics/vmalert
@@ -256,12 +242,8 @@ vmalert:
     pullPolicy: IfNotPresent
   port: 8880
   evaluationInterval: 1m
-  # Offsets the query time to absorb ingestion delay.
   evalDelay: 30s
   flushInterval: 5s
-  # Matches what the same two rule sets are given in CostGraph's own
-  # deployment: the working set is one query result at a time, and the long
-  # rules query a month of series.
   resources:
     requests:
       cpu: 100m

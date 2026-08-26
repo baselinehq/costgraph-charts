@@ -38,7 +38,6 @@ data:
   PRICING_SYNC_INTERVAL: {{ .Values.capabilities.pricingSyncInterval | quote }}
   METERING_PUSH_INTERVAL: {{ .Values.capabilities.meteringPushInterval | quote }}
 
-  # The backend reads MIGRATE=1, not a boolean.
   MIGRATE: {{ if .Values.postgres.runMigrations }}"1"{{ else }}"0"{{ end }}
   {{- if not .Values.redis.existingSecret }}
   {{- with (include "costgraph-selfhosted.redisURL" .) }}
@@ -56,7 +55,4 @@ data:
 
   PORT: "8080"
   ENVIRONMENT: "production"
-  # The browser calls the API from the dashboard's origin. Defaults to
-  # appBaseURL, which is that origin; override when the dashboard is served
-  # from somewhere else, or to allow several.
   CORS_ALLOWED_ORIGINS: {{ .Values.corsAllowedOrigins | default .Values.appBaseURL | quote }}

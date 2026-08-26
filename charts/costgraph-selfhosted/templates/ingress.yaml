@@ -23,10 +23,6 @@ spec:
       http:
         paths:
           {{- if $.Values.dashboard.enabled }}
-          {{/*
-          The API is matched first: the dashboard's catch-all would otherwise
-          swallow /api and the browser would get index.html for every call.
-          */}}
           - path: /api
             pathType: Prefix
             backend:

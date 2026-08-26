@@ -48,8 +48,6 @@ spec:
                 secretKeyRef:
                   name: {{ include "costgraph-selfhosted.secretName" . }}
                   key: control-plane-api-key
-            # pricingapi accepts the same CostGraph API key, so the deployment
-            # key serves for both unless one is supplied explicitly.
             {{- if .Values.redis.existingSecret }}
             - name: REDIS_URL
               valueFrom:

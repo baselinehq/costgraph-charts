@@ -56,9 +56,6 @@ spec:
       imagePullSecrets:
         {{- . | nindent 8 }}
       {{- end }}
-      # No serviceAccountName: the chart's ServiceAccount is not created until
-      # the main release, and a pre-install hook referencing it cannot
-      # schedule. The check needs no API access.
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
