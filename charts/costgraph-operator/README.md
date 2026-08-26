@@ -1,6 +1,6 @@
 # costgraph-operator
 
-![Version: 0.3.0](https://img.shields.io/badge/Version-0.3.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.4.0](https://img.shields.io/badge/AppVersion-0.4.0-informational?style=flat-square)
+![Version: 0.4.0](https://img.shields.io/badge/Version-0.4.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.4.0](https://img.shields.io/badge/AppVersion-0.4.0-informational?style=flat-square)
 
 A Helm chart for the Costgraph operator
 
@@ -17,6 +17,7 @@ A Helm chart for the Costgraph operator
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| aiGatewayScraper | object | `{"affinity":{},"config":{"httpTimeout":"30s","remoteWritePath":"/api/v1/write/short","remoteWriteURL":"https://tsdb.costgraph.ai"},"enabled":false,"env":[],"image":{"pullPolicy":"IfNotPresent","repository":"ghcr.io/baselinehq/costgraph-operator-prometheus","tag":"v0.4.0"},"nodeSelector":{},"podAnnotations":{},"podLabels":{},"resources":{"requests":{"cpu":"100m","memory":"64Mi"}},"securityContext":{},"tolerations":[]}` | ------------------------------------------------------------------------ |
 | cadvisor | object | `{"enabled":true,"image":{"registry":"ghcr.io","repository":"baselinehq/cadvisor","tag":"0.56.3-baseline"},"resources":{"requests":{"cpu":"100m","memory":"100Mi"}},"tolerations":[{"operator":"Exists"}]}` | ------------------------------------------------------------------------ |
 | dcgm-exporter | object | `{"enabled":false,"nodeSelector":{"accelerator":"nvidia"},"podAnnotations":{},"podLabels":{},"resources":{"requests":{"cpu":"100m","memory":"100Mi"}},"serviceMonitor":{"enabled":false},"tolerations":[]}` | ------------------------------------------------------------------------ |
 | flowtrace | object | `{"affinity":{},"config":{"httpTimeout":"30s","includeHostFlows":false,"pushInterval":"4m","remoteWritePath":"/api/v1/write/short","remoteWriteURL":"https://tsdb.costgraph.ai"},"enabled":true,"env":[],"image":{"pullPolicy":"IfNotPresent","repository":"ghcr.io/baselinehq/costgraph-operator-prometheus","tag":"v0.4.0"},"maxUnavailable":1,"nodeSelector":{},"podAnnotations":{},"podLabels":{},"priorityClassName":"","resources":{"limits":{"memory":"256Mi"},"requests":{"cpu":"50m","memory":"64Mi"}},"tolerations":[{"operator":"Exists"}]}` | ------------------------------------------------------------------------ |
