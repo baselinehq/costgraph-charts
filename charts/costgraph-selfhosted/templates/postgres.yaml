@@ -1,0 +1,124 @@
+{{- if .Values.postgres.bundled.enabled }}
+{{- $name := include "costgraph-selfhosted.bundledPostgresName" . }}
+{{/*
+Evaluation database. Deliberately minimal: one replica, one PVC, no backups
+and no failover. Production installs should point postgres.url at a database
+they operate.
+*/}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "costgraph-selfhosted.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+spec:
+  clusterIP: None
+  ports:
+    - port: 5432
+      targetPort: postgres
+      name: postgres
+  selector:
+    {{- include "costgraph-selfhosted.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "costgraph-selfhosted.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+spec:
+  serviceName: {{ $name }}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "costgraph-selfhosted.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: postgres
+  template:
+    metadata:
+      labels:
+        {{- include "costgraph-selfhosted.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: postgres
+    spec:
+      securityContext:
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: {{ .Values.postgres.bundled.image }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.postgres.bundled.database | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgres.bundled.username | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $name }}
+                  key: postgres-password
+            # The image initialises into a subdirectory so the PVC's
+            # lost+found does not block initdb.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", {{ .Values.postgres.bundled.username | quote }}, "-d", {{ .Values.postgres.bundled.database | quote }}]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", {{ .Values.postgres.bundled.username | quote }}, "-d", {{ .Values.postgres.bundled.database | quote }}]
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.postgres.bundled.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- with .Values.postgres.bundled.storageClass }}
+        storageClassName: {{ . | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.postgres.bundled.storage }}
+---
+{{/*
+Holds the DSN as well as the password, so aggregator and ingestion-api - which
+read a DSN and have no separate password env - can reach the bundled database.
+
+The password is generated once here and read back on every later render:
+rotating it would lock the backend out of its own data directory, since
+Postgres only reads POSTGRES_PASSWORD at initdb. "password" is read as well as
+"postgres-password" because a Secret written by an earlier chart version
+carries only the former, and helm.sh/resource-policy keeps it across upgrades.
+
+The value is bound to $password rather than inlined per key - randAlphaNum runs
+again on each call, so two keys would carry two different passwords.
+*/}}
+{{- $existingPg := (lookup "v1" "Secret" .Release.Namespace $name).data | default dict }}
+{{- $priorPassword := index $existingPg "postgres-password" | default (index $existingPg "password") | default "" }}
+{{- $password := .Values.postgres.bundled.password | default (randAlphaNum 32) }}
+{{- if $priorPassword }}{{ $password = b64dec (toString $priorPassword) }}{{ end }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "costgraph-selfhosted.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep
+type: Opaque
+stringData:
+  postgres-password: {{ $password | quote }}
+  postgres-url: {{ printf "postgres://%s:%s@%s:5432/%s?sslmode=disable" .Values.postgres.bundled.username (urlquery $password) $name .Values.postgres.bundled.database | quote }}
+{{- end }}

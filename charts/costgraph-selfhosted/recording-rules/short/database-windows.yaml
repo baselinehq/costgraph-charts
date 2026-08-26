@@ -1,0 +1,57 @@
+groups:
+  - name: baseline_database_windows
+    interval: 30m
+    rules:
+      - record: costgraph:database_storage_used_bytes:mean24h
+        expr: avg_over_time(costgraph:database_storage_used_bytes:last[24h:5m])
+      - record: costgraph:database_storage_used_bytes:stddev24h
+        expr: stddev_over_time(costgraph:database_storage_used_bytes:last[24h:5m])
+      - record: costgraph:database_storage_used_bytes:min24h
+        expr: min_over_time(costgraph:database_storage_used_bytes:last[24h:5m])
+      - record: costgraph:database_storage_used_bytes:max24h
+        expr: max_over_time(costgraph:database_storage_used_bytes:last[24h:5m])
+      - record: costgraph:database_storage_used_bytes:p50_24h
+        expr: quantile_over_time(0.50, costgraph:database_storage_used_bytes:last[24h:5m])
+      - record: costgraph:database_storage_used_bytes:p90_24h
+        expr: quantile_over_time(0.90, costgraph:database_storage_used_bytes:last[24h:5m])
+      - record: costgraph:database_storage_used_bytes:p95_24h
+        expr: quantile_over_time(0.95, costgraph:database_storage_used_bytes:last[24h:5m])
+      - record: costgraph:database_storage_used_bytes:p99_24h
+        expr: quantile_over_time(0.99, costgraph:database_storage_used_bytes:last[24h:5m])
+
+      - record: costgraph:database_storage_used_bytes:mean7d
+        expr: avg_over_time(costgraph:database_storage_used_bytes:last[7d:5m])
+      - record: costgraph:database_storage_used_bytes:stddev7d
+        expr: stddev_over_time(costgraph:database_storage_used_bytes:last[7d:5m])
+      - record: costgraph:database_storage_used_bytes:min7d
+        expr: min_over_time(costgraph:database_storage_used_bytes:last[7d:5m])
+      - record: costgraph:database_storage_used_bytes:max7d
+        expr: max_over_time(costgraph:database_storage_used_bytes:last[7d:5m])
+      - record: costgraph:database_storage_used_bytes:p50_7d
+        expr: quantile_over_time(0.50, costgraph:database_storage_used_bytes:last[7d:5m])
+      - record: costgraph:database_storage_used_bytes:p90_7d
+        expr: quantile_over_time(0.90, costgraph:database_storage_used_bytes:last[7d:5m])
+      - record: costgraph:database_storage_used_bytes:p95_7d
+        expr: quantile_over_time(0.95, costgraph:database_storage_used_bytes:last[7d:5m])
+      - record: costgraph:database_storage_used_bytes:p99_7d
+        expr: quantile_over_time(0.99, costgraph:database_storage_used_bytes:last[7d:5m])
+
+      - record: costgraph:database_storage_used_bytes:mean30d
+        expr: avg_over_time(costgraph:database_storage_used_bytes:last[30d:30m])
+      - record: costgraph:database_storage_used_bytes:stddev30d
+        expr: stddev_over_time(costgraph:database_storage_used_bytes:last[30d:30m])
+      - record: costgraph:database_storage_used_bytes:min30d
+        expr: min_over_time(costgraph:database_storage_used_bytes:last[30d:30m])
+      - record: costgraph:database_storage_used_bytes:max30d
+        expr: max_over_time(costgraph:database_storage_used_bytes:last[30d:30m])
+      - record: costgraph:database_storage_used_bytes:p50_30d
+        expr: quantile_over_time(0.50, costgraph:database_storage_used_bytes:last[30d:30m])
+      - record: costgraph:database_storage_used_bytes:p90_30d
+        expr: quantile_over_time(0.90, costgraph:database_storage_used_bytes:last[30d:30m])
+      - record: costgraph:database_storage_used_bytes:p95_30d
+        expr: quantile_over_time(0.95, costgraph:database_storage_used_bytes:last[30d:30m])
+      - record: costgraph:database_storage_used_bytes:p99_30d
+        expr: quantile_over_time(0.99, costgraph:database_storage_used_bytes:last[30d:30m])
+
+      - record: costgraph:database_storage_used_bytes:growth_per_day
+        expr: deriv(costgraph:database_storage_used_bytes:last[30d:30m]) * 86400

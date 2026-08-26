@@ -1,0 +1,203 @@
+# prometheus/recording-rules/disk-iops.yaml
+# ----------------------------------------------------------
+# Baseline Aggregator — Disk IOPS Recording Rules
+#
+# Two groups:
+#   baseline_disk_iops_base    — 13 base rules across container IO,
+#                                PVC IO, container-PVC IO joins, and
+#                                PVC usage/limit gauges (5m cadence).
+#   baseline_disk_iops_windows — thin aggregates: full 7-stat × 24h
+#                                + :last; full 7-stat × 7d/30d
+#                                for PVC IO + usage (30m cadence).
+#
+# Trend-window rules omit the > 0 clamp so idle PVCs produce zero
+# samples — engine.pvcIdleTier needs to see the zero, not absent.
+# :last rules keep the clamp.
+# ----------------------------------------------------------
+
+groups:
+  - name: baseline_disk_iops_base
+    interval: 5m
+    eval_offset: 1m
+    rules:
+      - record: costgraph:container_disk_read_iops:rate5m
+        expr: |
+          rate(container_fs_reads_total{container!="", device!=""}[5m])
+
+      - record: costgraph:container_disk_write_iops:rate5m
+        expr: |
+          rate(container_fs_writes_total{container!="", device!=""}[5m])
+
+      - record: costgraph:container_disk_read_bytes_rate:rate5m
+        expr: |
+          rate(container_fs_reads_bytes_total{container!="", device!=""}[5m])
+
+      - record: costgraph:container_disk_write_bytes_rate:rate5m
+        expr: |
+          rate(container_fs_writes_bytes_total{container!="", device!=""}[5m])
+
+      - record: costgraph:pvc_disk_read_iops:rate5m
+        expr: |
+          sum by (volume_name, costgraph_cluster_id, costgraph_tenant_id) (
+            rate(container_fs_reads_total{
+              id="/", volume_name!="", volume_type="kubernetes.io~csi"
+            }[5m])
+          )
+
+      - record: costgraph:pvc_disk_write_iops:rate5m
+        expr: |
+          sum by (volume_name, costgraph_cluster_id, costgraph_tenant_id) (
+            rate(container_fs_writes_total{
+              id="/", volume_name!="", volume_type="kubernetes.io~csi"
+            }[5m])
+          )
+
+      - record: costgraph:pvc_disk_read_bytes_rate:rate5m
+        expr: |
+          sum by (volume_name, costgraph_cluster_id, costgraph_tenant_id) (
+            rate(container_fs_reads_bytes_total{
+              id="/", volume_name!="", volume_type="kubernetes.io~csi"
+            }[5m])
+          )
+
+      - record: costgraph:pvc_disk_write_bytes_rate:rate5m
+        expr: |
+          sum by (volume_name, costgraph_cluster_id, costgraph_tenant_id) (
+            rate(container_fs_writes_bytes_total{
+              id="/", volume_name!="", volume_type="kubernetes.io~csi"
+            }[5m])
+          )
+
+      - record: costgraph:pvc_disk_iops:rate5m
+        expr: |
+          costgraph:pvc_disk_read_iops:rate5m
+          + costgraph:pvc_disk_write_iops:rate5m
+
+      - record: costgraph:pvc_disk_throughput:rate5m
+        expr: |
+          costgraph:pvc_disk_read_bytes_rate:rate5m
+          + costgraph:pvc_disk_write_bytes_rate:rate5m
+
+      - record: costgraph:pvc_disk_usage_bytes:snapshot
+        expr: |
+          max by (volume_name, costgraph_cluster_id, costgraph_tenant_id) (
+            label_replace(
+              max by (namespace, persistentvolumeclaim, costgraph_cluster_id, costgraph_tenant_id) (
+                kubelet_volume_stats_used_bytes
+              )
+              * on (namespace, persistentvolumeclaim, costgraph_cluster_id, costgraph_tenant_id) group_left(volumename)
+              max by (namespace, persistentvolumeclaim, volumename, costgraph_cluster_id, costgraph_tenant_id) (
+                kube_persistentvolumeclaim_info{volumename!=""}
+              ),
+              "volume_name", "$1", "volumename", "(.+)"
+            )
+          )
+
+      # Provisioned PVC size: the KSM-requested storage (what the claim requests
+      # and is billed for), falling back to the kubelet filesystem capacity for
+      # PVCs without KSM coverage. Both are keyed by namespace +
+      # persistentvolumeclaim, so kube_persistentvolumeclaim_info bridges the
+      # claim to its bound PV name before relabeling to volume_name.
+      - record: costgraph:pvc_disk_limit_bytes:snapshot
+        expr: |
+          max by (volume_name, costgraph_cluster_id, costgraph_tenant_id) (
+            label_replace(
+              max by (namespace, persistentvolumeclaim, costgraph_cluster_id, costgraph_tenant_id) (
+                kube_persistentvolumeclaim_resource_requests_storage_bytes
+              )
+              * on (namespace, persistentvolumeclaim, costgraph_cluster_id, costgraph_tenant_id) group_left(volumename)
+              max by (namespace, persistentvolumeclaim, volumename, costgraph_cluster_id, costgraph_tenant_id) (
+                kube_persistentvolumeclaim_info{volumename!=""}
+              ),
+              "volume_name", "$1", "volumename", "(.+)"
+            )
+          )
+          or
+          max by (volume_name, costgraph_cluster_id, costgraph_tenant_id) (
+            label_replace(
+              max by (namespace, persistentvolumeclaim, costgraph_cluster_id, costgraph_tenant_id) (
+                kubelet_volume_stats_capacity_bytes
+              )
+              * on (namespace, persistentvolumeclaim, costgraph_cluster_id, costgraph_tenant_id) group_left(volumename)
+              max by (namespace, persistentvolumeclaim, volumename, costgraph_cluster_id, costgraph_tenant_id) (
+                kube_persistentvolumeclaim_info{volumename!=""}
+              ),
+              "volume_name", "$1", "volumename", "(.+)"
+            )
+          )
+
+      # PVC mount presence (KSM-derived)
+      # Emits 1 per PVC iff some pod's spec references the PVC. Absents when
+      # no pod mounts the PVC. Powers the orphan-detection windows below.
+      # The label_replace clause unifies KSM's `persistentvolumeclaim` label
+      # with the `volume_name` label used by every other PVC IO rule, so the
+      # collector can join on a single key.
+      - record: costgraph:pvc_mounted_by_pod
+        expr: |
+          max by (volume_name, namespace, costgraph_cluster_id, costgraph_tenant_id) (
+            label_replace(
+              kube_pod_spec_volumes_persistentvolumeclaims_info,
+              "volume_name", "$1", "persistentvolumeclaim", "(.*)"
+            )
+          )
+
+      - record: costgraph:container_pvc_disk_read_bytes_rate:rate5m
+        expr: |
+          sum without (operation) (
+            rate(container_blkio_device_usage_total{namespace!="", operation="Read"}[5m])
+            * on (container_label_io_kubernetes_pod_uid, costgraph_cluster_id, costgraph_tenant_id) group_left(volume_name, volume_type)
+            (label_replace(container_fs_limit_bytes{id="/",volume_name!="",volume_type="kubernetes.io~csi"}, "container_label_io_kubernetes_pod_uid", "$1", "host_mountpoint", ".*/pods/([^/]+)/volumes/.*") * 0 + 1)
+          )
+
+      - record: costgraph:container_pvc_disk_write_bytes_rate:rate5m
+        expr: |
+          sum without (operation) (
+            rate(container_blkio_device_usage_total{namespace!="", operation="Write"}[5m])
+            * on (container_label_io_kubernetes_pod_uid, costgraph_cluster_id, costgraph_tenant_id) group_left(volume_name, volume_type)
+            (label_replace(container_fs_limit_bytes{id="/",volume_name!="",volume_type="kubernetes.io~csi"}, "container_label_io_kubernetes_pod_uid", "$1", "host_mountpoint", ".*/pods/([^/]+)/volumes/.*") * 0 + 1)
+          )
+
+      # container_fs_{reads,writes}_total at id="/" carry volume_name but no
+      # container/pod identity, so the pod uid is recovered from host_mountpoint
+      # and joined to blkio (which carries pod/container) on pod uid. The value is
+      # per pod-volume, projected onto the pod's containers.
+      - record: costgraph:container_pvc_disk_read_iops:rate5m
+        expr: |
+          sum by (container, pod, namespace, volume_name, costgraph_cluster_id, costgraph_tenant_id) (
+            label_replace(
+              rate(container_fs_reads_total{id="/", volume_name!="", volume_type="kubernetes.io~csi"}[5m]),
+              "container_label_io_kubernetes_pod_uid", "$1", "host_mountpoint", ".*/pods/([^/]+)/volumes/.*"
+            )
+            * on (container_label_io_kubernetes_pod_uid, costgraph_cluster_id, costgraph_tenant_id) group_right(volume_name)
+            (
+              max by (container, pod, namespace, container_label_io_kubernetes_pod_uid, costgraph_cluster_id, costgraph_tenant_id) (
+                container_blkio_device_usage_total{namespace!=""}
+              ) * 0 + 1
+            )
+          )
+
+      - record: costgraph:container_pvc_disk_write_iops:rate5m
+        expr: |
+          sum by (container, pod, namespace, volume_name, costgraph_cluster_id, costgraph_tenant_id) (
+            label_replace(
+              rate(container_fs_writes_total{id="/", volume_name!="", volume_type="kubernetes.io~csi"}[5m]),
+              "container_label_io_kubernetes_pod_uid", "$1", "host_mountpoint", ".*/pods/([^/]+)/volumes/.*"
+            )
+            * on (container_label_io_kubernetes_pod_uid, costgraph_cluster_id, costgraph_tenant_id) group_right(volume_name)
+            (
+              max by (container, pod, namespace, container_label_io_kubernetes_pod_uid, costgraph_cluster_id, costgraph_tenant_id) (
+                container_blkio_device_usage_total{namespace!=""}
+              ) * 0 + 1
+            )
+          )
+
+      - record: costgraph:container_pvc_disk_iops:rate5m
+        expr: |
+          costgraph:container_pvc_disk_read_iops:rate5m
+          + costgraph:container_pvc_disk_write_iops:rate5m
+
+      - record: costgraph:container_pvc_disk_throughput:rate5m
+        expr: |
+          costgraph:container_pvc_disk_read_bytes_rate:rate5m
+          + costgraph:container_pvc_disk_write_bytes_rate:rate5m
+

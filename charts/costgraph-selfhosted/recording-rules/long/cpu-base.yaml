@@ -1,0 +1,30 @@
+# prometheus/recording-rules/cpu.yaml
+# ----------------------------------------------------------
+# Baseline Aggregator — CPU Recording Rules
+#
+# Two groups:
+#   baseline_cpu_base    — base rules per metric (5m cadence)
+#   baseline_cpu_windows — thin aggregates over base series (30m cadence)
+# ----------------------------------------------------------
+
+groups:
+  - name: baseline_cpu_base
+    interval: 5m
+    eval_offset: 1m
+    rules:
+      - record: costgraph:container_cpu_usage:rate5m
+        expr: |
+          sum by (namespace, pod, container, node, costgraph_cluster_id, costgraph_tenant_id) (
+            rate(container_cpu_usage_seconds_total{
+              container!="", container!="POD", image!=""
+            }[5m])
+          )
+
+      - record: costgraph:container_cpu_throttle_ratio:rate5m
+        expr: |
+          rate(container_cpu_cfs_throttled_periods_total{container!=""}[5m])
+          /
+          (
+            rate(container_cpu_cfs_periods_total{container!=""}[5m]) > 0
+          )
+

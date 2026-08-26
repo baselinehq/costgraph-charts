@@ -1,0 +1,48 @@
+# prometheus/recording-rules/gpu.yaml
+# ----------------------------------------------------------
+# Baseline Aggregator — GPU Recording Rules (NVIDIA DCGM Exporter)
+#
+# Two groups:
+#   baseline_gpu_base    — five :snapshot base rules over DCGM (5m cadence).
+#                          DCGM samples already carry pod/container/namespace
+#                          labels via the exporter's pod-association feature,
+#                          so no kube_pod_info join is required.
+#   baseline_gpu_windows — thin aggregates over the snapshots (30m cadence).
+#                          Per-metric shape preserves every name that existed
+#                          before the two-layer refactor:
+#                            container_gpu_util         — full 7-stat × 24h + :last
+#                                                         + full 7-stat × 7d/30d
+#                                                         + growth_per_day
+#                            container_gpu_memory_used  — full 7-stat × 24h + :last
+#                                                         (no trends)
+#                            container_gpu_memory_total — max24h only
+#                            container_gpu_fb_used      — full 7-stat × 7d/30d
+#                                                         + growth_per_day (no 24h)
+#                            container_gpu_power        — mean24h + max24h
+# ----------------------------------------------------------
+
+groups:
+  - name: baseline_gpu_base
+    interval: 5m
+    eval_offset: 1m
+    rules:
+      - record: costgraph:container_gpu_util:snapshot
+        expr: |
+          DCGM_FI_DEV_GPU_UTIL
+
+      - record: costgraph:container_gpu_memory_used:snapshot
+        expr: |
+          DCGM_FI_DEV_FB_USED
+
+      - record: costgraph:container_gpu_memory_total:snapshot
+        expr: |
+          DCGM_FI_DEV_FB_USED + DCGM_FI_DEV_FB_FREE
+
+      - record: costgraph:container_gpu_fb_used:snapshot
+        expr: |
+          DCGM_FI_DEV_FB_USED
+
+      - record: costgraph:container_gpu_power:snapshot
+        expr: |
+          DCGM_FI_DEV_POWER_USAGE
+

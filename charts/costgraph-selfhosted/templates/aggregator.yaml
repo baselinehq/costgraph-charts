@@ -1,0 +1,106 @@
+{{- if .Values.aggregator.enabled }}
+{{- $name := printf "%s-aggregator" (include "costgraph-selfhosted.fullname" .) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "costgraph-selfhosted.labels" . | nindent 4 }}
+    app.kubernetes.io/component: aggregator
+spec:
+  ports:
+    - port: {{ .Values.aggregator.service.port }}
+      targetPort: http
+      name: http
+  selector:
+    {{- include "costgraph-selfhosted.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: aggregator
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "costgraph-selfhosted.labels" . | nindent 4 }}
+    app.kubernetes.io/component: aggregator
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "costgraph-selfhosted.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: aggregator
+  template:
+    metadata:
+      labels:
+        {{- include "costgraph-selfhosted.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: aggregator
+      annotations:
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with include "costgraph-selfhosted.imagePullSecrets" . }}
+      imagePullSecrets:
+        {{- . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "costgraph-selfhosted.fullname" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: aggregator
+          image: "{{ .Values.aggregator.image.repository }}:{{ .Values.aggregator.image.tag | required "aggregator.image.tag is required" }}"
+          imagePullPolicy: {{ .Values.aggregator.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.aggregator.service.port }}
+          env:
+            - name: ENVIRONMENT
+              value: production
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "costgraph-selfhosted.postgresSecretName" . }}
+                  key: postgres-url
+            {{- if .Values.redis.existingSecret }}
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.redis.existingSecret }}
+                  key: redis-url
+            {{- else }}
+            - name: REDIS_URL
+              value: {{ include "costgraph-selfhosted.redisURL" . | quote }}
+            {{- end }}
+            - name: PROMETHEUS_URL
+              value: {{ include "costgraph-selfhosted.metricsStoreURL" . | quote }}
+            - name: REMOTE_WRITE_URL
+              value: {{ printf "%s/api/v1/write" (include "costgraph-selfhosted.metricsStoreURL" .) | quote }}
+            - name: REMOTE_WRITE_URL_SHORT
+              value: {{ printf "%s/api/v1/write" (include "costgraph-selfhosted.metricsStoreURL" .) | quote }}
+            - name: RULES_EVAL_INTERVAL
+              value: {{ .Values.aggregator.rulesEvalInterval | quote }}
+            {{- range $k, $v := .Values.aggregator.features }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+            - name: GOMEMLIMIT
+              value: {{ .Values.aggregator.goMemLimit | quote }}
+          resources:
+            {{- toYaml .Values.aggregator.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

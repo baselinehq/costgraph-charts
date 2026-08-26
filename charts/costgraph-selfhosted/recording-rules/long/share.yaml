@@ -1,0 +1,74 @@
+# prometheus/recording-rules/share.yaml
+# ----------------------------------------------------------
+# Baseline Aggregator — Cost-Share Recording Rules
+#
+# Per-container share of node allocatable, used for dynamic cost
+# attribution. Pricing is applied at query time by multiplying
+# share × node_cost_per_hour × step_hours.
+#
+# Group baseline_cost_share: 5m share rules for CPU + memory.
+# Group baseline_node_uptime: node presence indicator for partial-day
+#   correction (autoscale, spot eviction).
+# ----------------------------------------------------------
+
+groups:
+    - name: baseline_cost_share
+      interval: 5m
+      eval_offset: 2m
+      
+      rules:
+          
+          # Container share of node allocatable CPU (cores used / cores allocatable).
+          # Joins per-container CPU usage with node allocatable on (node, costgraph_cluster_id).
+          # group_left preserves left-side labels (namespace, pod, container, costgraph_tenant_id).
+          - record: costgraph:container_cpu_share:5m
+            expr: |
+                clamp_max(
+                  (
+                    sum by (namespace, pod, container, node, costgraph_cluster_id, costgraph_tenant_id) (
+                      rate(container_cpu_usage_seconds_total{
+                        container!="", container!="POD", image!=""
+                      }[5m])
+                    )
+                    / on(node, costgraph_cluster_id) group_left
+                    sum by (node, costgraph_cluster_id) (
+                      kube_node_status_allocatable{resource="cpu"}
+                    )
+                  ),
+                  1
+                ) > 0
+          
+          # Container share of node allocatable memory (bytes used / bytes allocatable).
+          - record: costgraph:container_memory_share:5m
+            expr: |
+                clamp_max(
+                  (
+                    sum by (namespace, pod, container, node, costgraph_cluster_id, costgraph_tenant_id) (
+                      container_memory_working_set_bytes{
+                        container!="", container!="POD", image!=""
+                      }
+                    )
+                    / on(node, costgraph_cluster_id) group_left
+                    sum by (node, costgraph_cluster_id) (
+                      kube_node_status_allocatable{resource="memory"}
+                    )
+                  ),
+                  1
+                ) > 0
+    
+    - name: baseline_node_uptime
+      interval: 5m
+      
+      rules:
+          
+          # Node presence indicator (1 when node is up, absent otherwise).
+          # Use sum_over_time(...[range:5m]) * (5/60) at query time to compute
+          # node uptime hours over a window for partial-day cost correction.
+          - record: costgraph:node_uptime:5m
+            expr: |
+                clamp_max(
+                  sum by (node, costgraph_cluster_id, costgraph_tenant_id) (
+                    kube_node_info
+                  ),
+                  1
+                )

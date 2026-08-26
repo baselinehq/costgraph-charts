@@ -1,0 +1,38 @@
+# prometheus/recording-rules/ephemeral-storage.yaml
+# ----------------------------------------------------------
+# Baseline Aggregator — Ephemeral Storage Recording Rules
+#
+# P99 and max over 24h of container_fs_usage_bytes filtered to real block
+# devices (device=~"/dev/.*") to exclude tmpfs and virtual mounts.
+# ----------------------------------------------------------
+
+groups:
+  - name: baseline_ephemeral_storage
+    interval: 5m
+    eval_offset: 1m
+
+    rules:
+
+      - record: costgraph:container_ephemeral_usage:p50_24h
+        expr: |
+          quantile_over_time(0.50,
+            container_fs_usage_bytes{
+              container!="", device=~"/dev/.*"
+            }[24h:]
+          ) > 0
+
+      - record: costgraph:container_ephemeral_usage:p99_24h
+        expr: |
+          quantile_over_time(0.99,
+            container_fs_usage_bytes{
+              container!="", device=~"/dev/.*"
+            }[24h:]
+          ) > 0
+
+      - record: costgraph:container_ephemeral_usage:max24h
+        expr: |
+          max_over_time(
+            container_fs_usage_bytes{
+              container!="", device=~"/dev/.*"
+            }[24h:]
+          ) > 0

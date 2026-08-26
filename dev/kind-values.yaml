@@ -1,0 +1,57 @@
+replicaCount: 1
+
+image:
+  tag: sha-5d4cd8c
+
+appBaseURL: http://costgraph.localtest.me:8088
+
+postgres:
+  bundled:
+    enabled: true
+    storage: 5Gi
+
+redis:
+  bundled:
+    enabled: true
+
+metricsStore:
+  bundled:
+    enabled: true
+    storage: 5Gi
+
+dashboard:
+  replicaCount: 1
+  image:
+    tag: sha-fb6ac21
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: costgraph.localtest.me
+      paths:
+        - path: /
+          pathType: Prefix
+
+# Built by dev/build-local-images.sh: the published aggregator and
+# ingestion-api images are linux/amd64 only.
+aggregator:
+  image:
+    repository: costgraph-local/aggregator
+    tag: dev
+    pullPolicy: Never
+
+ingestionApi:
+  replicaCount: 1
+  image:
+    repository: costgraph-local/ingestion-api
+    tag: dev
+    pullPolicy: Never
+
+# One node, so the production request would reserve a third of the cluster for
+# two pods that hold a query result set each.
+vmalert:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 192Mi

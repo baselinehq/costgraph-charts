@@ -2,3 +2,5 @@
 # Chart dependencies
 **/charts/*.tgz
 values-*.yaml
+dev/.key
+dev/.operator-key

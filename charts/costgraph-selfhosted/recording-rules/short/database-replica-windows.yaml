@@ -1,0 +1,54 @@
+groups:
+  - name: baseline_database_replica_windows
+    interval: 30m
+    rules:
+      - record: costgraph:database_replica_client_connections:mean24h
+        expr: avg_over_time(costgraph:database_replica_client_connections:last[24h:5m])
+      - record: costgraph:database_replica_client_connections:stddev24h
+        expr: stddev_over_time(costgraph:database_replica_client_connections:last[24h:5m])
+      - record: costgraph:database_replica_client_connections:min24h
+        expr: min_over_time(costgraph:database_replica_client_connections:last[24h:5m])
+      - record: costgraph:database_replica_client_connections:max24h
+        expr: max_over_time(costgraph:database_replica_client_connections:last[24h:5m])
+      - record: costgraph:database_replica_client_connections:p50_24h
+        expr: quantile_over_time(0.50, costgraph:database_replica_client_connections:last[24h:5m])
+      - record: costgraph:database_replica_client_connections:p90_24h
+        expr: quantile_over_time(0.90, costgraph:database_replica_client_connections:last[24h:5m])
+      - record: costgraph:database_replica_client_connections:p95_24h
+        expr: quantile_over_time(0.95, costgraph:database_replica_client_connections:last[24h:5m])
+      - record: costgraph:database_replica_client_connections:p99_24h
+        expr: quantile_over_time(0.99, costgraph:database_replica_client_connections:last[24h:5m])
+
+      - record: costgraph:database_replica_client_connections:mean7d
+        expr: avg_over_time(costgraph:database_replica_client_connections:last[7d:5m])
+      - record: costgraph:database_replica_client_connections:stddev7d
+        expr: stddev_over_time(costgraph:database_replica_client_connections:last[7d:5m])
+      - record: costgraph:database_replica_client_connections:min7d
+        expr: min_over_time(costgraph:database_replica_client_connections:last[7d:5m])
+      - record: costgraph:database_replica_client_connections:max7d
+        expr: max_over_time(costgraph:database_replica_client_connections:last[7d:5m])
+      - record: costgraph:database_replica_client_connections:p50_7d
+        expr: quantile_over_time(0.50, costgraph:database_replica_client_connections:last[7d:5m])
+      - record: costgraph:database_replica_client_connections:p90_7d
+        expr: quantile_over_time(0.90, costgraph:database_replica_client_connections:last[7d:5m])
+      - record: costgraph:database_replica_client_connections:p95_7d
+        expr: quantile_over_time(0.95, costgraph:database_replica_client_connections:last[7d:5m])
+      - record: costgraph:database_replica_client_connections:p99_7d
+        expr: quantile_over_time(0.99, costgraph:database_replica_client_connections:last[7d:5m])
+
+      - record: costgraph:database_replica_client_connections:mean30d
+        expr: avg_over_time(costgraph:database_replica_client_connections:last[30d:30m])
+      - record: costgraph:database_replica_client_connections:stddev30d
+        expr: stddev_over_time(costgraph:database_replica_client_connections:last[30d:30m])
+      - record: costgraph:database_replica_client_connections:min30d
+        expr: min_over_time(costgraph:database_replica_client_connections:last[30d:30m])
+      - record: costgraph:database_replica_client_connections:max30d
+        expr: max_over_time(costgraph:database_replica_client_connections:last[30d:30m])
+      - record: costgraph:database_replica_client_connections:p50_30d
+        expr: quantile_over_time(0.50, costgraph:database_replica_client_connections:last[30d:30m])
+      - record: costgraph:database_replica_client_connections:p90_30d
+        expr: quantile_over_time(0.90, costgraph:database_replica_client_connections:last[30d:30m])
+      - record: costgraph:database_replica_client_connections:p95_30d
+        expr: quantile_over_time(0.95, costgraph:database_replica_client_connections:last[30d:30m])
+      - record: costgraph:database_replica_client_connections:p99_30d
+        expr: quantile_over_time(0.99, costgraph:database_replica_client_connections:last[30d:30m])

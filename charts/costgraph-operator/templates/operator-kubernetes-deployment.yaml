@@ -54,6 +54,16 @@ spec:
                   key: {{ include "costgraph-operator.apiKeySecretKey" . }}
             - name: OPERATOR_VERSION
               value: {{ .Values.operatorKubernetes.image.tag | quote }}
+            {{/*
+            This component pushes the metrics it collects, and defaults to
+            CostGraph's hosted TSDB when unset. A self-hosted install must send
+            them to its own ingestion-api instead, or half the cluster's
+            metrics leave for an endpoint that rejects the deployment's key.
+            */}}
+            - name: REMOTE_WRITE_URL
+              value: {{ .Values.operatorKubernetes.config.remoteWriteURL | default .Values.operatorPrometheus.config.remoteWriteURL | quote }}
+            - name: REMOTE_WRITE_PATH
+              value: {{ .Values.operatorKubernetes.config.remoteWritePath | default .Values.operatorPrometheus.config.remoteWritePath | quote }}
             {{- with .Values.operatorKubernetes.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

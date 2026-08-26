@@ -1,0 +1,558 @@
+groups:
+  - name: baseline_disk_iops_windows
+    interval: 30m
+    rules:
+
+      # ── container_disk_read_iops — 24h stats + :last (no trends) ──────────────
+      - record: costgraph:container_disk_read_iops:mean24h
+        expr: avg_over_time(costgraph:container_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:container_disk_read_iops:stddev24h
+        expr: stddev_over_time(costgraph:container_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:container_disk_read_iops:min24h
+        expr: min_over_time(costgraph:container_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:container_disk_read_iops:max24h
+        expr: max_over_time(costgraph:container_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:container_disk_read_iops:p50_24h
+        expr: quantile_over_time(0.50, costgraph:container_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:container_disk_read_iops:p90_24h
+        expr: quantile_over_time(0.90, costgraph:container_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:container_disk_read_iops:p95_24h
+        expr: quantile_over_time(0.95, costgraph:container_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:container_disk_read_iops:p99_24h
+        expr: quantile_over_time(0.99, costgraph:container_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:container_disk_read_iops:last
+        expr: costgraph:container_disk_read_iops:rate5m > 0
+
+      # ── container_disk_write_iops — 24h stats + :last (no trends) ──────────────
+      - record: costgraph:container_disk_write_iops:mean24h
+        expr: avg_over_time(costgraph:container_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:container_disk_write_iops:stddev24h
+        expr: stddev_over_time(costgraph:container_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:container_disk_write_iops:min24h
+        expr: min_over_time(costgraph:container_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:container_disk_write_iops:max24h
+        expr: max_over_time(costgraph:container_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:container_disk_write_iops:p50_24h
+        expr: quantile_over_time(0.50, costgraph:container_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:container_disk_write_iops:p90_24h
+        expr: quantile_over_time(0.90, costgraph:container_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:container_disk_write_iops:p95_24h
+        expr: quantile_over_time(0.95, costgraph:container_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:container_disk_write_iops:p99_24h
+        expr: quantile_over_time(0.99, costgraph:container_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:container_disk_write_iops:last
+        expr: costgraph:container_disk_write_iops:rate5m > 0
+
+      # ── container_disk_read_bytes_rate — 24h stats + :last (no trends) ──────────────
+      - record: costgraph:container_disk_read_bytes_rate:mean24h
+        expr: avg_over_time(costgraph:container_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_disk_read_bytes_rate:stddev24h
+        expr: stddev_over_time(costgraph:container_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_disk_read_bytes_rate:min24h
+        expr: min_over_time(costgraph:container_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_disk_read_bytes_rate:max24h
+        expr: max_over_time(costgraph:container_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_disk_read_bytes_rate:p50_24h
+        expr: quantile_over_time(0.50, costgraph:container_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_disk_read_bytes_rate:p90_24h
+        expr: quantile_over_time(0.90, costgraph:container_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_disk_read_bytes_rate:p95_24h
+        expr: quantile_over_time(0.95, costgraph:container_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_disk_read_bytes_rate:p99_24h
+        expr: quantile_over_time(0.99, costgraph:container_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_disk_read_bytes_rate:last
+        expr: costgraph:container_disk_read_bytes_rate:rate5m > 0
+
+      # ── container_disk_write_bytes_rate — 24h stats + :last (no trends) ──────────────
+      - record: costgraph:container_disk_write_bytes_rate:mean24h
+        expr: avg_over_time(costgraph:container_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_disk_write_bytes_rate:stddev24h
+        expr: stddev_over_time(costgraph:container_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_disk_write_bytes_rate:min24h
+        expr: min_over_time(costgraph:container_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_disk_write_bytes_rate:max24h
+        expr: max_over_time(costgraph:container_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_disk_write_bytes_rate:p50_24h
+        expr: quantile_over_time(0.50, costgraph:container_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_disk_write_bytes_rate:p90_24h
+        expr: quantile_over_time(0.90, costgraph:container_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_disk_write_bytes_rate:p95_24h
+        expr: quantile_over_time(0.95, costgraph:container_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_disk_write_bytes_rate:p99_24h
+        expr: quantile_over_time(0.99, costgraph:container_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_disk_write_bytes_rate:last
+        expr: costgraph:container_disk_write_bytes_rate:rate5m > 0
+
+      # ── pvc_disk_read_iops — full 7-stat × 24h + :last + 7d/30d trends ──────
+      - record: costgraph:pvc_disk_read_iops:mean24h
+        expr: avg_over_time(costgraph:pvc_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_read_iops:stddev24h
+        expr: stddev_over_time(costgraph:pvc_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_read_iops:min24h
+        expr: min_over_time(costgraph:pvc_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_read_iops:max24h
+        expr: max_over_time(costgraph:pvc_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_read_iops:p50_24h
+        expr: quantile_over_time(0.50, costgraph:pvc_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_read_iops:p90_24h
+        expr: quantile_over_time(0.90, costgraph:pvc_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_read_iops:p95_24h
+        expr: quantile_over_time(0.95, costgraph:pvc_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_read_iops:p99_24h
+        expr: quantile_over_time(0.99, costgraph:pvc_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_read_iops:last
+        expr: costgraph:pvc_disk_read_iops:rate5m > 0
+      - record: costgraph:pvc_disk_read_iops:mean7d
+        expr: avg_over_time(costgraph:pvc_disk_read_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_read_iops:stddev7d
+        expr: stddev_over_time(costgraph:pvc_disk_read_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_read_iops:min7d
+        expr: min_over_time(costgraph:pvc_disk_read_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_read_iops:max7d
+        expr: max_over_time(costgraph:pvc_disk_read_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_read_iops:p50_7d
+        expr: quantile_over_time(0.50, costgraph:pvc_disk_read_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_read_iops:p90_7d
+        expr: quantile_over_time(0.90, costgraph:pvc_disk_read_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_read_iops:p95_7d
+        expr: quantile_over_time(0.95, costgraph:pvc_disk_read_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_read_iops:p99_7d
+        expr: quantile_over_time(0.99, costgraph:pvc_disk_read_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_read_iops:mean30d
+        expr: avg_over_time(costgraph:pvc_disk_read_iops:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_read_iops:stddev30d
+        expr: stddev_over_time(costgraph:pvc_disk_read_iops:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_read_iops:min30d
+        expr: min_over_time(costgraph:pvc_disk_read_iops:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_read_iops:max30d
+        expr: max_over_time(costgraph:pvc_disk_read_iops:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_read_iops:p50_30d
+        expr: quantile_over_time(0.50, costgraph:pvc_disk_read_iops:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_read_iops:p90_30d
+        expr: quantile_over_time(0.90, costgraph:pvc_disk_read_iops:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_read_iops:p95_30d
+        expr: quantile_over_time(0.95, costgraph:pvc_disk_read_iops:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_read_iops:p99_30d
+        expr: quantile_over_time(0.99, costgraph:pvc_disk_read_iops:rate5m[30d:30m])
+
+      # ── pvc_disk_write_iops — full 7-stat × 24h + :last + 7d/30d trends ─────
+      - record: costgraph:pvc_disk_write_iops:mean24h
+        expr: avg_over_time(costgraph:pvc_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_write_iops:stddev24h
+        expr: stddev_over_time(costgraph:pvc_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_write_iops:min24h
+        expr: min_over_time(costgraph:pvc_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_write_iops:max24h
+        expr: max_over_time(costgraph:pvc_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_write_iops:p50_24h
+        expr: quantile_over_time(0.50, costgraph:pvc_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_write_iops:p90_24h
+        expr: quantile_over_time(0.90, costgraph:pvc_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_write_iops:p95_24h
+        expr: quantile_over_time(0.95, costgraph:pvc_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_write_iops:p99_24h
+        expr: quantile_over_time(0.99, costgraph:pvc_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_write_iops:last
+        expr: costgraph:pvc_disk_write_iops:rate5m > 0
+      - record: costgraph:pvc_disk_write_iops:mean7d
+        expr: avg_over_time(costgraph:pvc_disk_write_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_write_iops:stddev7d
+        expr: stddev_over_time(costgraph:pvc_disk_write_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_write_iops:min7d
+        expr: min_over_time(costgraph:pvc_disk_write_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_write_iops:max7d
+        expr: max_over_time(costgraph:pvc_disk_write_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_write_iops:p50_7d
+        expr: quantile_over_time(0.50, costgraph:pvc_disk_write_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_write_iops:p90_7d
+        expr: quantile_over_time(0.90, costgraph:pvc_disk_write_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_write_iops:p95_7d
+        expr: quantile_over_time(0.95, costgraph:pvc_disk_write_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_write_iops:p99_7d
+        expr: quantile_over_time(0.99, costgraph:pvc_disk_write_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_write_iops:mean30d
+        expr: avg_over_time(costgraph:pvc_disk_write_iops:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_write_iops:stddev30d
+        expr: stddev_over_time(costgraph:pvc_disk_write_iops:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_write_iops:min30d
+        expr: min_over_time(costgraph:pvc_disk_write_iops:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_write_iops:max30d
+        expr: max_over_time(costgraph:pvc_disk_write_iops:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_write_iops:p50_30d
+        expr: quantile_over_time(0.50, costgraph:pvc_disk_write_iops:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_write_iops:p90_30d
+        expr: quantile_over_time(0.90, costgraph:pvc_disk_write_iops:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_write_iops:p95_30d
+        expr: quantile_over_time(0.95, costgraph:pvc_disk_write_iops:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_write_iops:p99_30d
+        expr: quantile_over_time(0.99, costgraph:pvc_disk_write_iops:rate5m[30d:30m])
+
+      # ── pvc_disk_read_bytes_rate — full 7-stat × 24h + :last + 7d/30d trends ──
+      - record: costgraph:pvc_disk_read_bytes_rate:mean24h
+        expr: avg_over_time(costgraph:pvc_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_read_bytes_rate:stddev24h
+        expr: stddev_over_time(costgraph:pvc_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_read_bytes_rate:min24h
+        expr: min_over_time(costgraph:pvc_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_read_bytes_rate:max24h
+        expr: max_over_time(costgraph:pvc_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_read_bytes_rate:p50_24h
+        expr: quantile_over_time(0.50, costgraph:pvc_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_read_bytes_rate:p90_24h
+        expr: quantile_over_time(0.90, costgraph:pvc_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_read_bytes_rate:p95_24h
+        expr: quantile_over_time(0.95, costgraph:pvc_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_read_bytes_rate:p99_24h
+        expr: quantile_over_time(0.99, costgraph:pvc_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_read_bytes_rate:last
+        expr: costgraph:pvc_disk_read_bytes_rate:rate5m > 0
+      - record: costgraph:pvc_disk_read_bytes_rate:mean7d
+        expr: avg_over_time(costgraph:pvc_disk_read_bytes_rate:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_read_bytes_rate:stddev7d
+        expr: stddev_over_time(costgraph:pvc_disk_read_bytes_rate:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_read_bytes_rate:min7d
+        expr: min_over_time(costgraph:pvc_disk_read_bytes_rate:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_read_bytes_rate:max7d
+        expr: max_over_time(costgraph:pvc_disk_read_bytes_rate:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_read_bytes_rate:p50_7d
+        expr: quantile_over_time(0.50, costgraph:pvc_disk_read_bytes_rate:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_read_bytes_rate:p90_7d
+        expr: quantile_over_time(0.90, costgraph:pvc_disk_read_bytes_rate:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_read_bytes_rate:p95_7d
+        expr: quantile_over_time(0.95, costgraph:pvc_disk_read_bytes_rate:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_read_bytes_rate:p99_7d
+        expr: quantile_over_time(0.99, costgraph:pvc_disk_read_bytes_rate:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_read_bytes_rate:mean30d
+        expr: avg_over_time(costgraph:pvc_disk_read_bytes_rate:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_read_bytes_rate:stddev30d
+        expr: stddev_over_time(costgraph:pvc_disk_read_bytes_rate:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_read_bytes_rate:min30d
+        expr: min_over_time(costgraph:pvc_disk_read_bytes_rate:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_read_bytes_rate:max30d
+        expr: max_over_time(costgraph:pvc_disk_read_bytes_rate:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_read_bytes_rate:p50_30d
+        expr: quantile_over_time(0.50, costgraph:pvc_disk_read_bytes_rate:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_read_bytes_rate:p90_30d
+        expr: quantile_over_time(0.90, costgraph:pvc_disk_read_bytes_rate:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_read_bytes_rate:p95_30d
+        expr: quantile_over_time(0.95, costgraph:pvc_disk_read_bytes_rate:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_read_bytes_rate:p99_30d
+        expr: quantile_over_time(0.99, costgraph:pvc_disk_read_bytes_rate:rate5m[30d:30m])
+
+      # ── pvc_disk_write_bytes_rate — full 7-stat × 24h + :last + 7d/30d trends ──
+      - record: costgraph:pvc_disk_write_bytes_rate:mean24h
+        expr: avg_over_time(costgraph:pvc_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_write_bytes_rate:stddev24h
+        expr: stddev_over_time(costgraph:pvc_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_write_bytes_rate:min24h
+        expr: min_over_time(costgraph:pvc_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_write_bytes_rate:max24h
+        expr: max_over_time(costgraph:pvc_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_write_bytes_rate:p50_24h
+        expr: quantile_over_time(0.50, costgraph:pvc_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_write_bytes_rate:p90_24h
+        expr: quantile_over_time(0.90, costgraph:pvc_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_write_bytes_rate:p95_24h
+        expr: quantile_over_time(0.95, costgraph:pvc_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_write_bytes_rate:p99_24h
+        expr: quantile_over_time(0.99, costgraph:pvc_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_write_bytes_rate:last
+        expr: costgraph:pvc_disk_write_bytes_rate:rate5m > 0
+      - record: costgraph:pvc_disk_write_bytes_rate:mean7d
+        expr: avg_over_time(costgraph:pvc_disk_write_bytes_rate:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_write_bytes_rate:stddev7d
+        expr: stddev_over_time(costgraph:pvc_disk_write_bytes_rate:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_write_bytes_rate:min7d
+        expr: min_over_time(costgraph:pvc_disk_write_bytes_rate:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_write_bytes_rate:max7d
+        expr: max_over_time(costgraph:pvc_disk_write_bytes_rate:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_write_bytes_rate:p50_7d
+        expr: quantile_over_time(0.50, costgraph:pvc_disk_write_bytes_rate:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_write_bytes_rate:p90_7d
+        expr: quantile_over_time(0.90, costgraph:pvc_disk_write_bytes_rate:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_write_bytes_rate:p95_7d
+        expr: quantile_over_time(0.95, costgraph:pvc_disk_write_bytes_rate:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_write_bytes_rate:p99_7d
+        expr: quantile_over_time(0.99, costgraph:pvc_disk_write_bytes_rate:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_write_bytes_rate:mean30d
+        expr: avg_over_time(costgraph:pvc_disk_write_bytes_rate:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_write_bytes_rate:stddev30d
+        expr: stddev_over_time(costgraph:pvc_disk_write_bytes_rate:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_write_bytes_rate:min30d
+        expr: min_over_time(costgraph:pvc_disk_write_bytes_rate:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_write_bytes_rate:max30d
+        expr: max_over_time(costgraph:pvc_disk_write_bytes_rate:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_write_bytes_rate:p50_30d
+        expr: quantile_over_time(0.50, costgraph:pvc_disk_write_bytes_rate:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_write_bytes_rate:p90_30d
+        expr: quantile_over_time(0.90, costgraph:pvc_disk_write_bytes_rate:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_write_bytes_rate:p95_30d
+        expr: quantile_over_time(0.95, costgraph:pvc_disk_write_bytes_rate:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_write_bytes_rate:p99_30d
+        expr: quantile_over_time(0.99, costgraph:pvc_disk_write_bytes_rate:rate5m[30d:30m])
+
+      # ── pvc_disk_usage_bytes — full 7-stat × 24h + :last + 7d/30d trends ────
+      - record: costgraph:pvc_disk_usage_bytes:mean24h
+        expr: avg_over_time(costgraph:pvc_disk_usage_bytes:snapshot[24h:5m])
+      - record: costgraph:pvc_disk_usage_bytes:stddev24h
+        expr: stddev_over_time(costgraph:pvc_disk_usage_bytes:snapshot[24h:5m])
+      - record: costgraph:pvc_disk_usage_bytes:min24h
+        expr: min_over_time(costgraph:pvc_disk_usage_bytes:snapshot[24h:5m])
+      - record: costgraph:pvc_disk_usage_bytes:max24h
+        expr: max_over_time(costgraph:pvc_disk_usage_bytes:snapshot[24h:5m])
+      - record: costgraph:pvc_disk_usage_bytes:p50_24h
+        expr: quantile_over_time(0.50, costgraph:pvc_disk_usage_bytes:snapshot[24h:5m])
+      - record: costgraph:pvc_disk_usage_bytes:p90_24h
+        expr: quantile_over_time(0.90, costgraph:pvc_disk_usage_bytes:snapshot[24h:5m])
+      - record: costgraph:pvc_disk_usage_bytes:p95_24h
+        expr: quantile_over_time(0.95, costgraph:pvc_disk_usage_bytes:snapshot[24h:5m])
+      - record: costgraph:pvc_disk_usage_bytes:p99_24h
+        expr: quantile_over_time(0.99, costgraph:pvc_disk_usage_bytes:snapshot[24h:5m])
+      - record: costgraph:pvc_disk_usage_bytes:last
+        expr: costgraph:pvc_disk_usage_bytes:snapshot > 0
+      - record: costgraph:pvc_disk_usage_bytes:mean7d
+        expr: avg_over_time(costgraph:pvc_disk_usage_bytes:snapshot[7d:5m])
+      - record: costgraph:pvc_disk_usage_bytes:stddev7d
+        expr: stddev_over_time(costgraph:pvc_disk_usage_bytes:snapshot[7d:5m])
+      - record: costgraph:pvc_disk_usage_bytes:min7d
+        expr: min_over_time(costgraph:pvc_disk_usage_bytes:snapshot[7d:5m])
+      - record: costgraph:pvc_disk_usage_bytes:max7d
+        expr: max_over_time(costgraph:pvc_disk_usage_bytes:snapshot[7d:5m])
+      - record: costgraph:pvc_disk_usage_bytes:p50_7d
+        expr: quantile_over_time(0.50, costgraph:pvc_disk_usage_bytes:snapshot[7d:5m])
+      - record: costgraph:pvc_disk_usage_bytes:p90_7d
+        expr: quantile_over_time(0.90, costgraph:pvc_disk_usage_bytes:snapshot[7d:5m])
+      - record: costgraph:pvc_disk_usage_bytes:p95_7d
+        expr: quantile_over_time(0.95, costgraph:pvc_disk_usage_bytes:snapshot[7d:5m])
+      - record: costgraph:pvc_disk_usage_bytes:p99_7d
+        expr: quantile_over_time(0.99, costgraph:pvc_disk_usage_bytes:snapshot[7d:5m])
+      - record: costgraph:pvc_disk_usage_bytes:mean30d
+        expr: avg_over_time(costgraph:pvc_disk_usage_bytes:snapshot[30d:30m])
+      - record: costgraph:pvc_disk_usage_bytes:stddev30d
+        expr: stddev_over_time(costgraph:pvc_disk_usage_bytes:snapshot[30d:30m])
+      - record: costgraph:pvc_disk_usage_bytes:min30d
+        expr: min_over_time(costgraph:pvc_disk_usage_bytes:snapshot[30d:30m])
+      - record: costgraph:pvc_disk_usage_bytes:max30d
+        expr: max_over_time(costgraph:pvc_disk_usage_bytes:snapshot[30d:30m])
+      - record: costgraph:pvc_disk_usage_bytes:p50_30d
+        expr: quantile_over_time(0.50, costgraph:pvc_disk_usage_bytes:snapshot[30d:30m])
+      - record: costgraph:pvc_disk_usage_bytes:p90_30d
+        expr: quantile_over_time(0.90, costgraph:pvc_disk_usage_bytes:snapshot[30d:30m])
+      - record: costgraph:pvc_disk_usage_bytes:p95_30d
+        expr: quantile_over_time(0.95, costgraph:pvc_disk_usage_bytes:snapshot[30d:30m])
+      - record: costgraph:pvc_disk_usage_bytes:p99_30d
+        expr: quantile_over_time(0.99, costgraph:pvc_disk_usage_bytes:snapshot[30d:30m])
+      # Capacity growth slope (bytes/day) via linear regression over 30d. Drives
+      # days_until_full and UPSIZE_PVC_STORAGE. Mirrors container_memory_usage:growth_per_day.
+      - record: costgraph:pvc_disk_usage_bytes:growth_per_day
+        expr: deriv(costgraph:pvc_disk_usage_bytes:snapshot[30d:30m]) * 86400
+
+      # ── pvc_disk_iops (sum-then-percentile total) — 24h stats + :last ──
+      - record: costgraph:pvc_disk_iops:mean24h
+        expr: avg_over_time(costgraph:pvc_disk_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_iops:stddev24h
+        expr: stddev_over_time(costgraph:pvc_disk_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_iops:min24h
+        expr: min_over_time(costgraph:pvc_disk_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_iops:max24h
+        expr: max_over_time(costgraph:pvc_disk_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_iops:p50_24h
+        expr: quantile_over_time(0.50, costgraph:pvc_disk_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_iops:p90_24h
+        expr: quantile_over_time(0.90, costgraph:pvc_disk_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_iops:p95_24h
+        expr: quantile_over_time(0.95, costgraph:pvc_disk_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_iops:p99_24h
+        expr: quantile_over_time(0.99, costgraph:pvc_disk_iops:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_iops:last
+        expr: costgraph:pvc_disk_iops:rate5m > 0
+      # ── pvc_disk_iops trend windows (7d/30d) for stats_7d/30d ──
+      - record: costgraph:pvc_disk_iops:mean7d
+        expr: avg_over_time(costgraph:pvc_disk_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_iops:stddev7d
+        expr: stddev_over_time(costgraph:pvc_disk_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_iops:min7d
+        expr: min_over_time(costgraph:pvc_disk_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_iops:max7d
+        expr: max_over_time(costgraph:pvc_disk_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_iops:p50_7d
+        expr: quantile_over_time(0.50, costgraph:pvc_disk_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_iops:p90_7d
+        expr: quantile_over_time(0.90, costgraph:pvc_disk_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_iops:p95_7d
+        expr: quantile_over_time(0.95, costgraph:pvc_disk_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_iops:p99_7d
+        expr: quantile_over_time(0.99, costgraph:pvc_disk_iops:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_iops:mean30d
+        expr: avg_over_time(costgraph:pvc_disk_iops:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_iops:stddev30d
+        expr: stddev_over_time(costgraph:pvc_disk_iops:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_iops:min30d
+        expr: min_over_time(costgraph:pvc_disk_iops:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_iops:max30d
+        expr: max_over_time(costgraph:pvc_disk_iops:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_iops:p50_30d
+        expr: quantile_over_time(0.50, costgraph:pvc_disk_iops:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_iops:p90_30d
+        expr: quantile_over_time(0.90, costgraph:pvc_disk_iops:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_iops:p95_30d
+        expr: quantile_over_time(0.95, costgraph:pvc_disk_iops:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_iops:p99_30d
+        expr: quantile_over_time(0.99, costgraph:pvc_disk_iops:rate5m[30d:30m])
+
+      # ── pvc_disk_throughput (sum-then-percentile total) — 24h stats + :last ──
+      - record: costgraph:pvc_disk_throughput:mean24h
+        expr: avg_over_time(costgraph:pvc_disk_throughput:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_throughput:stddev24h
+        expr: stddev_over_time(costgraph:pvc_disk_throughput:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_throughput:min24h
+        expr: min_over_time(costgraph:pvc_disk_throughput:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_throughput:max24h
+        expr: max_over_time(costgraph:pvc_disk_throughput:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_throughput:p50_24h
+        expr: quantile_over_time(0.50, costgraph:pvc_disk_throughput:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_throughput:p90_24h
+        expr: quantile_over_time(0.90, costgraph:pvc_disk_throughput:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_throughput:p95_24h
+        expr: quantile_over_time(0.95, costgraph:pvc_disk_throughput:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_throughput:p99_24h
+        expr: quantile_over_time(0.99, costgraph:pvc_disk_throughput:rate5m[24h:5m])
+      - record: costgraph:pvc_disk_throughput:last
+        expr: costgraph:pvc_disk_throughput:rate5m > 0
+      # ── pvc_disk_throughput trend windows (7d/30d) for stats_7d/30d ──
+      - record: costgraph:pvc_disk_throughput:mean7d
+        expr: avg_over_time(costgraph:pvc_disk_throughput:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_throughput:stddev7d
+        expr: stddev_over_time(costgraph:pvc_disk_throughput:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_throughput:min7d
+        expr: min_over_time(costgraph:pvc_disk_throughput:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_throughput:max7d
+        expr: max_over_time(costgraph:pvc_disk_throughput:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_throughput:p50_7d
+        expr: quantile_over_time(0.50, costgraph:pvc_disk_throughput:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_throughput:p90_7d
+        expr: quantile_over_time(0.90, costgraph:pvc_disk_throughput:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_throughput:p95_7d
+        expr: quantile_over_time(0.95, costgraph:pvc_disk_throughput:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_throughput:p99_7d
+        expr: quantile_over_time(0.99, costgraph:pvc_disk_throughput:rate5m[7d:5m])
+      - record: costgraph:pvc_disk_throughput:mean30d
+        expr: avg_over_time(costgraph:pvc_disk_throughput:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_throughput:stddev30d
+        expr: stddev_over_time(costgraph:pvc_disk_throughput:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_throughput:min30d
+        expr: min_over_time(costgraph:pvc_disk_throughput:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_throughput:max30d
+        expr: max_over_time(costgraph:pvc_disk_throughput:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_throughput:p50_30d
+        expr: quantile_over_time(0.50, costgraph:pvc_disk_throughput:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_throughput:p90_30d
+        expr: quantile_over_time(0.90, costgraph:pvc_disk_throughput:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_throughput:p95_30d
+        expr: quantile_over_time(0.95, costgraph:pvc_disk_throughput:rate5m[30d:30m])
+      - record: costgraph:pvc_disk_throughput:p99_30d
+        expr: quantile_over_time(0.99, costgraph:pvc_disk_throughput:rate5m[30d:30m])
+
+      # ── pvc_disk_limit_bytes — :last only ──────────────────────────
+      - record: costgraph:pvc_disk_limit_bytes:last
+        expr: costgraph:pvc_disk_limit_bytes:snapshot > 0
+
+      # PVC unmounted duration (orphan detection)
+      # Seconds since the PVC was last referenced by any pod's spec. Trick:
+      # multiply by 0, add time() — the recorded value is the unix timestamp
+      # of the sample when the PVC was mounted. last_over_time picks the most
+      # recent sample where the series was alive within the 30d window;
+      # subtracting from now() gives seconds since last mount. The rule
+      # absents when the PVC was never mounted in the 30d window — engine's
+      # DQ pipeline reports MISSING_METRICS in that case.
+      # Detection cap: this rule cannot observe PVCs unmounted longer than
+      # 30 days (the subquery range). For PVCs in that band the rule
+      # absents and engine's DQ pipeline surfaces MISSING_METRICS — operators
+      # should already have reclaimed the storage before that window.
+      - record: costgraph:pvc_unmounted_seconds
+        expr: |
+          time() - last_over_time(
+            (costgraph:pvc_mounted_by_pod * 0 + time())[30d:30m]
+          )
+
+      # ── container_pvc_disk_read_bytes_rate — 24h stats + :last (no trends) ──
+      - record: costgraph:container_pvc_disk_read_bytes_rate:mean24h
+        expr: avg_over_time(costgraph:container_pvc_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_read_bytes_rate:stddev24h
+        expr: stddev_over_time(costgraph:container_pvc_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_read_bytes_rate:min24h
+        expr: min_over_time(costgraph:container_pvc_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_read_bytes_rate:max24h
+        expr: max_over_time(costgraph:container_pvc_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_read_bytes_rate:p50_24h
+        expr: quantile_over_time(0.50, costgraph:container_pvc_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_read_bytes_rate:p90_24h
+        expr: quantile_over_time(0.90, costgraph:container_pvc_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_read_bytes_rate:p95_24h
+        expr: quantile_over_time(0.95, costgraph:container_pvc_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_read_bytes_rate:p99_24h
+        expr: quantile_over_time(0.99, costgraph:container_pvc_disk_read_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_read_bytes_rate:last
+        expr: costgraph:container_pvc_disk_read_bytes_rate:rate5m > 0
+
+      # ── container_pvc_disk_write_bytes_rate — 24h stats + :last (no trends) ──
+      - record: costgraph:container_pvc_disk_write_bytes_rate:mean24h
+        expr: avg_over_time(costgraph:container_pvc_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_write_bytes_rate:stddev24h
+        expr: stddev_over_time(costgraph:container_pvc_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_write_bytes_rate:min24h
+        expr: min_over_time(costgraph:container_pvc_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_write_bytes_rate:max24h
+        expr: max_over_time(costgraph:container_pvc_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_write_bytes_rate:p50_24h
+        expr: quantile_over_time(0.50, costgraph:container_pvc_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_write_bytes_rate:p90_24h
+        expr: quantile_over_time(0.90, costgraph:container_pvc_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_write_bytes_rate:p95_24h
+        expr: quantile_over_time(0.95, costgraph:container_pvc_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_write_bytes_rate:p99_24h
+        expr: quantile_over_time(0.99, costgraph:container_pvc_disk_write_bytes_rate:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_write_bytes_rate:last
+        expr: costgraph:container_pvc_disk_write_bytes_rate:rate5m > 0
+
+      # ── container_pvc_disk_read_iops — 24h stats + :last (no trends) ──
+      - record: costgraph:container_pvc_disk_read_iops:mean24h
+        expr: avg_over_time(costgraph:container_pvc_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_read_iops:stddev24h
+        expr: stddev_over_time(costgraph:container_pvc_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_read_iops:min24h
+        expr: min_over_time(costgraph:container_pvc_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_read_iops:max24h
+        expr: max_over_time(costgraph:container_pvc_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_read_iops:p50_24h
+        expr: quantile_over_time(0.50, costgraph:container_pvc_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_read_iops:p90_24h
+        expr: quantile_over_time(0.90, costgraph:container_pvc_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_read_iops:p95_24h
+        expr: quantile_over_time(0.95, costgraph:container_pvc_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_read_iops:p99_24h
+        expr: quantile_over_time(0.99, costgraph:container_pvc_disk_read_iops:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_read_iops:last
+        expr: costgraph:container_pvc_disk_read_iops:rate5m > 0
+
+      # ── container_pvc_disk_write_iops — 24h stats + :last (no trends) ──
+      - record: costgraph:container_pvc_disk_write_iops:mean24h
+        expr: avg_over_time(costgraph:container_pvc_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_write_iops:stddev24h
+        expr: stddev_over_time(costgraph:container_pvc_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_write_iops:min24h
+        expr: min_over_time(costgraph:container_pvc_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_write_iops:max24h
+        expr: max_over_time(costgraph:container_pvc_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_write_iops:p50_24h
+        expr: quantile_over_time(0.50, costgraph:container_pvc_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_write_iops:p90_24h
+        expr: quantile_over_time(0.90, costgraph:container_pvc_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_write_iops:p95_24h
+        expr: quantile_over_time(0.95, costgraph:container_pvc_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_write_iops:p99_24h
+        expr: quantile_over_time(0.99, costgraph:container_pvc_disk_write_iops:rate5m[24h:5m])
+      - record: costgraph:container_pvc_disk_write_iops:last
+        expr: costgraph:container_pvc_disk_write_iops:rate5m > 0
+
+      # ── container_pvc_disk_read_iops — 24h stats + :last (no trends) ──

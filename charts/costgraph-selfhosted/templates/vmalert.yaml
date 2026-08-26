@@ -1,0 +1,126 @@
+{{- if .Values.aggregator.enabled }}
+{{- $fullname := include "costgraph-selfhosted.fullname" . }}
+{{- $metricsStore := include "costgraph-selfhosted.metricsStoreURL" . }}
+{{/*
+The aggregator reads pre-aggregated costgraph:* series rather than raw samples,
+and vmalert is what produces them. Without it every aggregation cycle is
+skipped with "recording rules absent for every known cluster" and the dashboard
+stays empty however many metrics arrive.
+
+Two rule sets, two deployments: long-window rules feed the daily rollups, short
+-window rules feed the recent views. They differ only in the rules they load.
+*/}}
+{{- range $set := list "long" "short" }}
+{{- $name := printf "%s-vmalert-%s" $fullname $set }}
+{{- $rules := ($.Files.Glob (printf "recording-rules/%s/*.yaml" $set)).AsConfig }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "costgraph-selfhosted.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: vmalert-{{ $set }}
+data:
+{{ $rules | indent 2 }}
+---
+{{/*
+Nothing scrapes vmalert - it pushes. The Service exists so /api/v1/rules can be
+reached when a rule is producing no samples, which is otherwise only visible by
+port-forwarding into the pod.
+*/}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "costgraph-selfhosted.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: vmalert-{{ $set }}
+spec:
+  selector:
+    {{- include "costgraph-selfhosted.selectorLabels" $ | nindent 4 }}
+    app.kubernetes.io/component: vmalert-{{ $set }}
+  ports:
+    - name: http
+      port: {{ $.Values.vmalert.port }}
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "costgraph-selfhosted.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: vmalert-{{ $set }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "costgraph-selfhosted.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: vmalert-{{ $set }}
+  template:
+    metadata:
+      annotations:
+        checksum/rules: {{ $rules | sha256sum }}
+      labels:
+        {{- include "costgraph-selfhosted.selectorLabels" $ | nindent 8 }}
+        app.kubernetes.io/component: vmalert-{{ $set }}
+    spec:
+      securityContext:
+        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: vmalert
+          image: "{{ $.Values.vmalert.image.repository }}:{{ $.Values.vmalert.image.tag }}"
+          imagePullPolicy: {{ $.Values.vmalert.image.pullPolicy }}
+          securityContext:
+            {{- toYaml $.Values.securityContext | nindent 12 }}
+          args:
+            - -rule=/etc/vmalert/rules/*.yaml
+            - -datasource.url={{ $metricsStore }}
+            - -remoteWrite.url={{ $metricsStore }}
+            - -evaluationInterval={{ $.Values.vmalert.evaluationInterval }}
+            # Offsets the query time to absorb ingestion delay; chained rules
+            # read the output of earlier ones and would otherwise read nothing.
+            - -rule.evalDelay={{ $.Values.vmalert.evalDelay }}
+            - -remoteWrite.flushInterval={{ $.Values.vmalert.flushInterval }}
+            - -external.label=job=aggregator
+            - -httpListenAddr=:{{ $.Values.vmalert.port }}
+          ports:
+            - name: http
+              containerPort: {{ $.Values.vmalert.port }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            {{- toYaml $.Values.vmalert.resources | nindent 12 }}
+          volumeMounts:
+            - name: rules
+              mountPath: /etc/vmalert/rules
+              readOnly: true
+      volumes:
+        - name: rules
+          configMap:
+            name: {{ $name }}
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+{{- end }}
+{{- end }}

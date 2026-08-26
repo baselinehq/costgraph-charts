@@ -1,0 +1,32 @@
+global:
+  clusterName: kind-eval
+  namespace: costgraph
+  backendURL: http://costgraph-costgraph-selfhosted:8080
+
+operatorKubernetes:
+  image:
+    repository: costgraph-local/operator-kubernetes
+    tag: dev
+    pullPolicy: Never
+
+operatorPrometheus:
+  image:
+    repository: costgraph-local/operator-prometheus
+    tag: dev
+    pullPolicy: Never
+  config:
+    remoteWriteURL: http://costgraph-costgraph-selfhosted-ingestion-api:8080
+  # The cadvisor DaemonSet never answers /metrics inside Docker Desktop's VM
+  # (no /etc/machine-id, housekeeping slower than the scrape timeout), so take
+  # the same container_* families from the kubelet's built-in cAdvisor.
+  scrapeTargets:
+    cadvisor:
+      enabled: false
+    kubelet-cadvisor:
+      enabled: true
+      kind: node
+      path: /metrics/cadvisor
+      nodeMetrics: true
+
+cadvisor:
+  enabled: false

@@ -1,0 +1,154 @@
+groups:
+  - name: baseline_cpu_windows
+    interval: 30m
+    rules:
+      # ── container_cpu_usage — 24h stats ────────────────────────────────────
+      - record: costgraph:container_cpu_usage:mean24h
+        expr: avg_over_time(costgraph:container_cpu_usage:rate5m[24h:5m])
+      - record: costgraph:container_cpu_usage:stddev24h
+        expr: stddev_over_time(costgraph:container_cpu_usage:rate5m[24h:5m])
+      - record: costgraph:container_cpu_usage:min24h
+        expr: min_over_time(costgraph:container_cpu_usage:rate5m[24h:5m])
+      - record: costgraph:container_cpu_usage:max24h
+        expr: max_over_time(costgraph:container_cpu_usage:rate5m[24h:5m])
+      - record: costgraph:container_cpu_usage:p50_24h
+        expr: quantile_over_time(0.50, costgraph:container_cpu_usage:rate5m[24h:5m])
+      - record: costgraph:container_cpu_usage:p90_24h
+        expr: quantile_over_time(0.90, costgraph:container_cpu_usage:rate5m[24h:5m])
+      - record: costgraph:container_cpu_usage:p95_24h
+        expr: quantile_over_time(0.95, costgraph:container_cpu_usage:rate5m[24h:5m])
+      - record: costgraph:container_cpu_usage:p99_24h
+        expr: quantile_over_time(0.99, costgraph:container_cpu_usage:rate5m[24h:5m])
+      - record: costgraph:container_cpu_usage:last
+        expr: costgraph:container_cpu_usage:rate5m > 0
+
+      # ── container_cpu_usage — 7d / 30d trends ──────────────────────────────
+      - record: costgraph:container_cpu_usage:mean7d
+        expr: avg_over_time(costgraph:container_cpu_usage:rate5m[7d:5m])
+      - record: costgraph:container_cpu_usage:stddev7d
+        expr: stddev_over_time(costgraph:container_cpu_usage:rate5m[7d:5m])
+      - record: costgraph:container_cpu_usage:min7d
+        expr: min_over_time(costgraph:container_cpu_usage:rate5m[7d:5m])
+      - record: costgraph:container_cpu_usage:max7d
+        expr: max_over_time(costgraph:container_cpu_usage:rate5m[7d:5m])
+      - record: costgraph:container_cpu_usage:p50_7d
+        expr: quantile_over_time(0.50, costgraph:container_cpu_usage:rate5m[7d:5m])
+      - record: costgraph:container_cpu_usage:p90_7d
+        expr: quantile_over_time(0.90, costgraph:container_cpu_usage:rate5m[7d:5m])
+      - record: costgraph:container_cpu_usage:p95_7d
+        expr: quantile_over_time(0.95, costgraph:container_cpu_usage:rate5m[7d:5m])
+      - record: costgraph:container_cpu_usage:p99_7d
+        expr: quantile_over_time(0.99, costgraph:container_cpu_usage:rate5m[7d:5m])
+      - record: costgraph:container_cpu_usage:mean30d
+        expr: avg_over_time(costgraph:container_cpu_usage:rate5m[30d:30m])
+      - record: costgraph:container_cpu_usage:stddev30d
+        expr: stddev_over_time(costgraph:container_cpu_usage:rate5m[30d:30m])
+      - record: costgraph:container_cpu_usage:min30d
+        expr: min_over_time(costgraph:container_cpu_usage:rate5m[30d:30m])
+      - record: costgraph:container_cpu_usage:max30d
+        expr: max_over_time(costgraph:container_cpu_usage:rate5m[30d:30m])
+      - record: costgraph:container_cpu_usage:p50_30d
+        expr: quantile_over_time(0.50, costgraph:container_cpu_usage:rate5m[30d:30m])
+      - record: costgraph:container_cpu_usage:p90_30d
+        expr: quantile_over_time(0.90, costgraph:container_cpu_usage:rate5m[30d:30m])
+      - record: costgraph:container_cpu_usage:p95_30d
+        expr: quantile_over_time(0.95, costgraph:container_cpu_usage:rate5m[30d:30m])
+      - record: costgraph:container_cpu_usage:p99_30d
+        expr: quantile_over_time(0.99, costgraph:container_cpu_usage:rate5m[30d:30m])
+      - record: costgraph:container_cpu_usage:growth_per_day
+        expr: deriv(costgraph:container_cpu_usage:rate5m[30d:30m]) * 86400
+
+      # ── container_cpu_throttle_ratio — mean24h only ────────────────────────
+      - record: costgraph:container_cpu_throttle_ratio:mean24h
+        expr: avg_over_time(costgraph:container_cpu_throttle_ratio:rate5m[24h:5m])
+
+      # ── workload_cpu_usage — pooled per-pod trends ─────────────────────────
+      # Feeds k8s_workload_reports.stats_7d_id / stats_30d_id.
+      #
+      # Pool every replica's per-pod samples into one histogram (histogram_over_time
+      # per pod, then sum the vmrange buckets across pods) and read pooled
+      # mean/stddev/quantiles from it; max/min/last/growth compose from the
+      # per-pod container windows. This is the per-pod distribution of the
+      # workload, NOT the summed total - so recommended_request stays per-pod and
+      # the generated total_recommended_request (= request x replica_count) is not
+      # multiplied by the replica count a second time.
+      - record: costgraph:workload_cpu_usage:hist7d
+        expr: |
+          sum by (namespace, workload_name, workload_kind, container, costgraph_cluster_id, costgraph_tenant_id, vmrange) (
+            histogram_over_time(costgraph:container_cpu_usage:rate5m[7d:5m])
+            * on (namespace, pod, costgraph_cluster_id, costgraph_tenant_id) group_left(workload_name, workload_kind)
+            costgraph:pod_workload:info
+          )
+      - record: costgraph:workload_cpu_usage:mean7d
+        expr: histogram_avg(costgraph:workload_cpu_usage:hist7d)
+      - record: costgraph:workload_cpu_usage:stddev7d
+        expr: histogram_stddev(costgraph:workload_cpu_usage:hist7d)
+      - record: costgraph:workload_cpu_usage:p50_7d
+        expr: histogram_quantile(0.50, costgraph:workload_cpu_usage:hist7d)
+      - record: costgraph:workload_cpu_usage:p90_7d
+        expr: histogram_quantile(0.90, costgraph:workload_cpu_usage:hist7d)
+      - record: costgraph:workload_cpu_usage:p95_7d
+        expr: histogram_quantile(0.95, costgraph:workload_cpu_usage:hist7d)
+      - record: costgraph:workload_cpu_usage:p99_7d
+        expr: histogram_quantile(0.99, costgraph:workload_cpu_usage:hist7d)
+      - record: costgraph:workload_cpu_usage:max7d
+        expr: |
+          max by (namespace, workload_name, workload_kind, container, costgraph_cluster_id, costgraph_tenant_id) (
+            costgraph:container_cpu_usage:max7d
+            * on (namespace, pod, costgraph_cluster_id, costgraph_tenant_id) group_left(workload_name, workload_kind)
+            costgraph:pod_workload:info
+          )
+      - record: costgraph:workload_cpu_usage:min7d
+        expr: |
+          min by (namespace, workload_name, workload_kind, container, costgraph_cluster_id, costgraph_tenant_id) (
+            costgraph:container_cpu_usage:min7d
+            * on (namespace, pod, costgraph_cluster_id, costgraph_tenant_id) group_left(workload_name, workload_kind)
+            costgraph:pod_workload:info
+          )
+      - record: costgraph:workload_cpu_usage:hist30d
+        expr: |
+          sum by (namespace, workload_name, workload_kind, container, costgraph_cluster_id, costgraph_tenant_id, vmrange) (
+            histogram_over_time(costgraph:container_cpu_usage:rate5m[30d:30m])
+            * on (namespace, pod, costgraph_cluster_id, costgraph_tenant_id) group_left(workload_name, workload_kind)
+            costgraph:pod_workload:info
+          )
+      - record: costgraph:workload_cpu_usage:mean30d
+        expr: histogram_avg(costgraph:workload_cpu_usage:hist30d)
+      - record: costgraph:workload_cpu_usage:stddev30d
+        expr: histogram_stddev(costgraph:workload_cpu_usage:hist30d)
+      - record: costgraph:workload_cpu_usage:p50_30d
+        expr: histogram_quantile(0.50, costgraph:workload_cpu_usage:hist30d)
+      - record: costgraph:workload_cpu_usage:p90_30d
+        expr: histogram_quantile(0.90, costgraph:workload_cpu_usage:hist30d)
+      - record: costgraph:workload_cpu_usage:p95_30d
+        expr: histogram_quantile(0.95, costgraph:workload_cpu_usage:hist30d)
+      - record: costgraph:workload_cpu_usage:p99_30d
+        expr: histogram_quantile(0.99, costgraph:workload_cpu_usage:hist30d)
+      - record: costgraph:workload_cpu_usage:max30d
+        expr: |
+          max by (namespace, workload_name, workload_kind, container, costgraph_cluster_id, costgraph_tenant_id) (
+            costgraph:container_cpu_usage:max30d
+            * on (namespace, pod, costgraph_cluster_id, costgraph_tenant_id) group_left(workload_name, workload_kind)
+            costgraph:pod_workload:info
+          )
+      - record: costgraph:workload_cpu_usage:min30d
+        expr: |
+          min by (namespace, workload_name, workload_kind, container, costgraph_cluster_id, costgraph_tenant_id) (
+            costgraph:container_cpu_usage:min30d
+            * on (namespace, pod, costgraph_cluster_id, costgraph_tenant_id) group_left(workload_name, workload_kind)
+            costgraph:pod_workload:info
+          )
+      - record: costgraph:workload_cpu_usage:last
+        expr: |
+          max by (namespace, workload_name, workload_kind, container, costgraph_cluster_id, costgraph_tenant_id) (
+            costgraph:container_cpu_usage:last
+            * on (namespace, pod, costgraph_cluster_id, costgraph_tenant_id) group_left(workload_name, workload_kind)
+            costgraph:pod_workload:info
+          )
+      - record: costgraph:workload_cpu_usage:growth_per_day
+        expr: |
+          max by (namespace, workload_name, workload_kind, container, costgraph_cluster_id, costgraph_tenant_id) (
+            costgraph:container_cpu_usage:growth_per_day
+            * on (namespace, pod, costgraph_cluster_id, costgraph_tenant_id) group_left(workload_name, workload_kind)
+            costgraph:pod_workload:info
+          )

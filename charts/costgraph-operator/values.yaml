@@ -211,6 +211,11 @@ operatorKubernetes:
   replicas: 1
   config:
     operatorVersion: "1.0.0"
+    # Where this component pushes the metrics it collects. Defaults to the
+    # operatorPrometheus values below, which is what every install wants -
+    # both components report to the same endpoint.
+    remoteWriteURL: ""
+    remoteWritePath: ""
   resources:
     requests:
       cpu: 10m

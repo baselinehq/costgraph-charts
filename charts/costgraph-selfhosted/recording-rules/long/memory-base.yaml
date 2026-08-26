@@ -1,0 +1,20 @@
+# prometheus/recording-rules/memory.yaml
+# ----------------------------------------------------------
+# Baseline Aggregator — Memory Recording Rules
+#
+# Two groups:
+#   baseline_memory_base    — one base rule per metric (5m cadence)
+#   baseline_memory_windows — thin aggregates over the base series (30m cadence)
+# ----------------------------------------------------------
+
+groups:
+  - name: baseline_memory_base
+    interval: 5m
+    eval_offset: 1m
+    rules:
+      - record: costgraph:container_memory_usage:snapshot
+        expr: |
+          container_memory_working_set_bytes{
+            container!="", container!="POD", image!=""
+          }
+

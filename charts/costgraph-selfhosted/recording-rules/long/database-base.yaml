@@ -1,0 +1,16 @@
+groups:
+  - name: baseline_database_base
+    interval: 5m
+    eval_offset: 1m
+    rules:
+      - record: costgraph:database_storage_provisioned_bytes:last
+        expr: |
+          sum by (costgraph_tenant_id, costgraph_database_id) (
+            costgraph:database_node_storage_provisioned_bytes:last
+          )
+
+      - record: costgraph:database_storage_used_bytes:last
+        expr: |
+          sum by (costgraph_tenant_id, costgraph_database_id) (
+            costgraph:database_node_storage_used_bytes:last
+          )

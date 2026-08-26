@@ -1,0 +1,31 @@
+CostGraph is installing in {{ .Release.Namespace }}.
+
+The deployment registers itself with {{ .Values.controlPlane.url }} on first
+start, fetches its signed config document and licence, then begins replicating
+the pricing catalog. Watch it happen:
+
+  kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }} -f
+
+Check health at any time (reads the database, makes no outbound call):
+
+  kubectl exec -n {{ .Release.Namespace }} deploy/{{ include "costgraph-selfhosted.fullname" . }} -- selfhost-doctor -offline
+
+If CostGraph support asks for a bundle — version, schema state, health and
+redacted config, no secrets and no cost data:
+
+  kubectl exec -n {{ .Release.Namespace }} deploy/{{ include "costgraph-selfhosted.fullname" . }} -- selfhost-doctor -bundle -offline
+
+{{ if .Values.ingress.enabled -}}
+Users reach the dashboard at:
+
+  {{ .Values.appBaseURL }}
+{{- else }}
+No ingress is enabled. Expose the service yourself, or port-forward to try it:
+
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "costgraph-selfhosted.fullname" . }} 8080:{{ .Values.service.port }}
+{{- end }}
+
+{{ if eq .Values.capabilities.pricingSource "replicate" -}}
+The first pricing sync runs a minute after startup and can take a few minutes.
+Until it finishes, resources resolve to base pricing.
+{{- end }}

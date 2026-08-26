@@ -1,0 +1,59 @@
+# prometheus/recording-rules/workload.yaml
+# ----------------------------------------------------------
+# Baseline Aggregator — workload identity mapping
+#
+# costgraph:pod_workload:info maps each Pod to its top-level workload
+# (workload name + workload_type). Joined into resource-specific
+# workload-pooled rules (workload_cpu_usage:rate5m,
+# workload_memory_usage:snapshot, etc.) so percentile/mean/stddev
+# aggregates collapse same-workload replicas into one series.
+#
+# Lives in its own file because both cpu.yaml and memory.yaml — and any
+# future workload-grouped resource — depend on it. Single shared
+# definition avoids drift if the resolution logic changes.
+# ----------------------------------------------------------
+
+groups:
+  - name: baseline_pod_workload
+    interval: 5m
+    rules:
+      # Branch 1 — Pods owned by a ReplicaSet: join through
+      # kube_replicaset_owner to recover the ReplicaSet's parent
+      # (Deployment, Argo Rollout, or any future controller that owns
+      # ReplicaSets). Parent name → workload_name, parent kind → workload_kind.
+      # Branch 2 — Pods owned directly by something else (StatefulSet,
+      # DaemonSet, Job, CronJob's spawned Job, custom CRD-owned Pods):
+      # owner_name IS workload_name, owner_kind IS workload_kind.
+      # Pods with no owner (naked Pods) are intentionally dropped.
+      # apiVersion intentionally omitted — kube_pod_owner /
+      # kube_replicaset_owner don't expose it. In practice same-kind+name
+      # collisions across api_versions don't occur in modern clusters.
+      - record: costgraph:pod_workload:info
+        expr: |
+          max by (namespace, workload_name, workload_kind, pod, costgraph_cluster_id, costgraph_tenant_id) (
+            label_replace(
+              label_replace(
+                kube_pod_owner{owner_kind="ReplicaSet"}
+                  * on (namespace, owner_name, costgraph_cluster_id, costgraph_tenant_id) group_left(rs_owner_kind, rs_owner_name)
+                  label_replace(
+                    label_replace(
+                      kube_replicaset_owner,
+                      "rs_owner_kind", "$1", "owner_kind", "(.+)"
+                    ),
+                    "rs_owner_name", "$1", "owner_name", "(.+)"
+                  ),
+                "workload_name", "$1", "rs_owner_name", "(.+)"
+              ),
+              "workload_kind", "$1", "rs_owner_kind", "(.+)"
+            )
+          )
+          or
+          max by (namespace, workload_name, workload_kind, pod, costgraph_cluster_id, costgraph_tenant_id) (
+            label_replace(
+              label_replace(
+                kube_pod_owner{owner_kind!="ReplicaSet"},
+                "workload_name", "$1", "owner_name", "(.+)"
+              ),
+              "workload_kind", "$1", "owner_kind", "(.+)"
+            )
+          )

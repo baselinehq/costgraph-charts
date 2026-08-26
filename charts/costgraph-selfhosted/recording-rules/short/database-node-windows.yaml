@@ -1,0 +1,273 @@
+groups:
+  - name: baseline_database_node_windows
+    interval: 30m
+    rules:
+      - record: costgraph:database_node_storage_used_bytes:mean24h
+        expr: avg_over_time(costgraph:database_node_storage_used_bytes:last[24h:5m])
+      - record: costgraph:database_node_storage_used_bytes:stddev24h
+        expr: stddev_over_time(costgraph:database_node_storage_used_bytes:last[24h:5m])
+      - record: costgraph:database_node_storage_used_bytes:min24h
+        expr: min_over_time(costgraph:database_node_storage_used_bytes:last[24h:5m])
+      - record: costgraph:database_node_storage_used_bytes:max24h
+        expr: max_over_time(costgraph:database_node_storage_used_bytes:last[24h:5m])
+      - record: costgraph:database_node_storage_used_bytes:p50_24h
+        expr: quantile_over_time(0.50, costgraph:database_node_storage_used_bytes:last[24h:5m])
+      - record: costgraph:database_node_storage_used_bytes:p90_24h
+        expr: quantile_over_time(0.90, costgraph:database_node_storage_used_bytes:last[24h:5m])
+      - record: costgraph:database_node_storage_used_bytes:p95_24h
+        expr: quantile_over_time(0.95, costgraph:database_node_storage_used_bytes:last[24h:5m])
+      - record: costgraph:database_node_storage_used_bytes:p99_24h
+        expr: quantile_over_time(0.99, costgraph:database_node_storage_used_bytes:last[24h:5m])
+
+      - record: costgraph:database_node_storage_used_bytes:mean7d
+        expr: avg_over_time(costgraph:database_node_storage_used_bytes:last[7d:5m])
+      - record: costgraph:database_node_storage_used_bytes:stddev7d
+        expr: stddev_over_time(costgraph:database_node_storage_used_bytes:last[7d:5m])
+      - record: costgraph:database_node_storage_used_bytes:min7d
+        expr: min_over_time(costgraph:database_node_storage_used_bytes:last[7d:5m])
+      - record: costgraph:database_node_storage_used_bytes:max7d
+        expr: max_over_time(costgraph:database_node_storage_used_bytes:last[7d:5m])
+      - record: costgraph:database_node_storage_used_bytes:p50_7d
+        expr: quantile_over_time(0.50, costgraph:database_node_storage_used_bytes:last[7d:5m])
+      - record: costgraph:database_node_storage_used_bytes:p90_7d
+        expr: quantile_over_time(0.90, costgraph:database_node_storage_used_bytes:last[7d:5m])
+      - record: costgraph:database_node_storage_used_bytes:p95_7d
+        expr: quantile_over_time(0.95, costgraph:database_node_storage_used_bytes:last[7d:5m])
+      - record: costgraph:database_node_storage_used_bytes:p99_7d
+        expr: quantile_over_time(0.99, costgraph:database_node_storage_used_bytes:last[7d:5m])
+
+      - record: costgraph:database_node_storage_used_bytes:mean30d
+        expr: avg_over_time(costgraph:database_node_storage_used_bytes:last[30d:30m])
+      - record: costgraph:database_node_storage_used_bytes:stddev30d
+        expr: stddev_over_time(costgraph:database_node_storage_used_bytes:last[30d:30m])
+      - record: costgraph:database_node_storage_used_bytes:min30d
+        expr: min_over_time(costgraph:database_node_storage_used_bytes:last[30d:30m])
+      - record: costgraph:database_node_storage_used_bytes:max30d
+        expr: max_over_time(costgraph:database_node_storage_used_bytes:last[30d:30m])
+      - record: costgraph:database_node_storage_used_bytes:p50_30d
+        expr: quantile_over_time(0.50, costgraph:database_node_storage_used_bytes:last[30d:30m])
+      - record: costgraph:database_node_storage_used_bytes:p90_30d
+        expr: quantile_over_time(0.90, costgraph:database_node_storage_used_bytes:last[30d:30m])
+      - record: costgraph:database_node_storage_used_bytes:p95_30d
+        expr: quantile_over_time(0.95, costgraph:database_node_storage_used_bytes:last[30d:30m])
+      - record: costgraph:database_node_storage_used_bytes:p99_30d
+        expr: quantile_over_time(0.99, costgraph:database_node_storage_used_bytes:last[30d:30m])
+
+      - record: costgraph:database_node_storage_used_bytes:growth_per_day
+        expr: deriv(costgraph:database_node_storage_used_bytes:last[30d:30m]) * 86400
+
+      - record: costgraph:database_node_cpu_util:mean24h
+        expr: avg_over_time(costgraph:database_node_cpu_util:last[24h:5m])
+      - record: costgraph:database_node_cpu_util:stddev24h
+        expr: stddev_over_time(costgraph:database_node_cpu_util:last[24h:5m])
+      - record: costgraph:database_node_cpu_util:min24h
+        expr: min_over_time(costgraph:database_node_cpu_util:last[24h:5m])
+      - record: costgraph:database_node_cpu_util:max24h
+        expr: max_over_time(costgraph:database_node_cpu_util:last[24h:5m])
+      - record: costgraph:database_node_cpu_util:p50_24h
+        expr: quantile_over_time(0.50, costgraph:database_node_cpu_util:last[24h:5m])
+      - record: costgraph:database_node_cpu_util:p90_24h
+        expr: quantile_over_time(0.90, costgraph:database_node_cpu_util:last[24h:5m])
+      - record: costgraph:database_node_cpu_util:p95_24h
+        expr: quantile_over_time(0.95, costgraph:database_node_cpu_util:last[24h:5m])
+      - record: costgraph:database_node_cpu_util:p99_24h
+        expr: quantile_over_time(0.99, costgraph:database_node_cpu_util:last[24h:5m])
+
+      - record: costgraph:database_node_cpu_util:mean7d
+        expr: avg_over_time(costgraph:database_node_cpu_util:last[7d:5m])
+      - record: costgraph:database_node_cpu_util:stddev7d
+        expr: stddev_over_time(costgraph:database_node_cpu_util:last[7d:5m])
+      - record: costgraph:database_node_cpu_util:min7d
+        expr: min_over_time(costgraph:database_node_cpu_util:last[7d:5m])
+      - record: costgraph:database_node_cpu_util:max7d
+        expr: max_over_time(costgraph:database_node_cpu_util:last[7d:5m])
+      - record: costgraph:database_node_cpu_util:p50_7d
+        expr: quantile_over_time(0.50, costgraph:database_node_cpu_util:last[7d:5m])
+      - record: costgraph:database_node_cpu_util:p90_7d
+        expr: quantile_over_time(0.90, costgraph:database_node_cpu_util:last[7d:5m])
+      - record: costgraph:database_node_cpu_util:p95_7d
+        expr: quantile_over_time(0.95, costgraph:database_node_cpu_util:last[7d:5m])
+      - record: costgraph:database_node_cpu_util:p99_7d
+        expr: quantile_over_time(0.99, costgraph:database_node_cpu_util:last[7d:5m])
+
+      - record: costgraph:database_node_cpu_util:mean30d
+        expr: avg_over_time(costgraph:database_node_cpu_util:last[30d:30m])
+      - record: costgraph:database_node_cpu_util:stddev30d
+        expr: stddev_over_time(costgraph:database_node_cpu_util:last[30d:30m])
+      - record: costgraph:database_node_cpu_util:min30d
+        expr: min_over_time(costgraph:database_node_cpu_util:last[30d:30m])
+      - record: costgraph:database_node_cpu_util:max30d
+        expr: max_over_time(costgraph:database_node_cpu_util:last[30d:30m])
+      - record: costgraph:database_node_cpu_util:p50_30d
+        expr: quantile_over_time(0.50, costgraph:database_node_cpu_util:last[30d:30m])
+      - record: costgraph:database_node_cpu_util:p90_30d
+        expr: quantile_over_time(0.90, costgraph:database_node_cpu_util:last[30d:30m])
+      - record: costgraph:database_node_cpu_util:p95_30d
+        expr: quantile_over_time(0.95, costgraph:database_node_cpu_util:last[30d:30m])
+      - record: costgraph:database_node_cpu_util:p99_30d
+        expr: quantile_over_time(0.99, costgraph:database_node_cpu_util:last[30d:30m])
+
+      - record: costgraph:database_node_cpu_util:growth_per_day
+        expr: deriv(costgraph:database_node_cpu_util:last[30d:30m]) * 86400
+
+      - record: costgraph:database_node_mem_util:mean24h
+        expr: avg_over_time(costgraph:database_node_mem_util:last[24h:5m])
+      - record: costgraph:database_node_mem_util:stddev24h
+        expr: stddev_over_time(costgraph:database_node_mem_util:last[24h:5m])
+      - record: costgraph:database_node_mem_util:min24h
+        expr: min_over_time(costgraph:database_node_mem_util:last[24h:5m])
+      - record: costgraph:database_node_mem_util:max24h
+        expr: max_over_time(costgraph:database_node_mem_util:last[24h:5m])
+      - record: costgraph:database_node_mem_util:p50_24h
+        expr: quantile_over_time(0.50, costgraph:database_node_mem_util:last[24h:5m])
+      - record: costgraph:database_node_mem_util:p90_24h
+        expr: quantile_over_time(0.90, costgraph:database_node_mem_util:last[24h:5m])
+      - record: costgraph:database_node_mem_util:p95_24h
+        expr: quantile_over_time(0.95, costgraph:database_node_mem_util:last[24h:5m])
+      - record: costgraph:database_node_mem_util:p99_24h
+        expr: quantile_over_time(0.99, costgraph:database_node_mem_util:last[24h:5m])
+
+      - record: costgraph:database_node_mem_util:mean7d
+        expr: avg_over_time(costgraph:database_node_mem_util:last[7d:5m])
+      - record: costgraph:database_node_mem_util:stddev7d
+        expr: stddev_over_time(costgraph:database_node_mem_util:last[7d:5m])
+      - record: costgraph:database_node_mem_util:min7d
+        expr: min_over_time(costgraph:database_node_mem_util:last[7d:5m])
+      - record: costgraph:database_node_mem_util:max7d
+        expr: max_over_time(costgraph:database_node_mem_util:last[7d:5m])
+      - record: costgraph:database_node_mem_util:p50_7d
+        expr: quantile_over_time(0.50, costgraph:database_node_mem_util:last[7d:5m])
+      - record: costgraph:database_node_mem_util:p90_7d
+        expr: quantile_over_time(0.90, costgraph:database_node_mem_util:last[7d:5m])
+      - record: costgraph:database_node_mem_util:p95_7d
+        expr: quantile_over_time(0.95, costgraph:database_node_mem_util:last[7d:5m])
+      - record: costgraph:database_node_mem_util:p99_7d
+        expr: quantile_over_time(0.99, costgraph:database_node_mem_util:last[7d:5m])
+
+      - record: costgraph:database_node_mem_util:mean30d
+        expr: avg_over_time(costgraph:database_node_mem_util:last[30d:30m])
+      - record: costgraph:database_node_mem_util:stddev30d
+        expr: stddev_over_time(costgraph:database_node_mem_util:last[30d:30m])
+      - record: costgraph:database_node_mem_util:min30d
+        expr: min_over_time(costgraph:database_node_mem_util:last[30d:30m])
+      - record: costgraph:database_node_mem_util:max30d
+        expr: max_over_time(costgraph:database_node_mem_util:last[30d:30m])
+      - record: costgraph:database_node_mem_util:p50_30d
+        expr: quantile_over_time(0.50, costgraph:database_node_mem_util:last[30d:30m])
+      - record: costgraph:database_node_mem_util:p90_30d
+        expr: quantile_over_time(0.90, costgraph:database_node_mem_util:last[30d:30m])
+      - record: costgraph:database_node_mem_util:p95_30d
+        expr: quantile_over_time(0.95, costgraph:database_node_mem_util:last[30d:30m])
+      - record: costgraph:database_node_mem_util:p99_30d
+        expr: quantile_over_time(0.99, costgraph:database_node_mem_util:last[30d:30m])
+
+      - record: costgraph:database_node_mem_util:growth_per_day
+        expr: deriv(costgraph:database_node_mem_util:last[30d:30m]) * 86400
+
+      - record: costgraph:database_node_iops:mean24h
+        expr: avg_over_time(costgraph:database_node_iops:rate5m[24h:5m])
+      - record: costgraph:database_node_iops:stddev24h
+        expr: stddev_over_time(costgraph:database_node_iops:rate5m[24h:5m])
+      - record: costgraph:database_node_iops:min24h
+        expr: min_over_time(costgraph:database_node_iops:rate5m[24h:5m])
+      - record: costgraph:database_node_iops:max24h
+        expr: max_over_time(costgraph:database_node_iops:rate5m[24h:5m])
+      - record: costgraph:database_node_iops:p50_24h
+        expr: quantile_over_time(0.50, costgraph:database_node_iops:rate5m[24h:5m])
+      - record: costgraph:database_node_iops:p90_24h
+        expr: quantile_over_time(0.90, costgraph:database_node_iops:rate5m[24h:5m])
+      - record: costgraph:database_node_iops:p95_24h
+        expr: quantile_over_time(0.95, costgraph:database_node_iops:rate5m[24h:5m])
+      - record: costgraph:database_node_iops:p99_24h
+        expr: quantile_over_time(0.99, costgraph:database_node_iops:rate5m[24h:5m])
+
+      - record: costgraph:database_node_iops:mean7d
+        expr: avg_over_time(costgraph:database_node_iops:rate5m[7d:5m])
+      - record: costgraph:database_node_iops:stddev7d
+        expr: stddev_over_time(costgraph:database_node_iops:rate5m[7d:5m])
+      - record: costgraph:database_node_iops:min7d
+        expr: min_over_time(costgraph:database_node_iops:rate5m[7d:5m])
+      - record: costgraph:database_node_iops:max7d
+        expr: max_over_time(costgraph:database_node_iops:rate5m[7d:5m])
+      - record: costgraph:database_node_iops:p50_7d
+        expr: quantile_over_time(0.50, costgraph:database_node_iops:rate5m[7d:5m])
+      - record: costgraph:database_node_iops:p90_7d
+        expr: quantile_over_time(0.90, costgraph:database_node_iops:rate5m[7d:5m])
+      - record: costgraph:database_node_iops:p95_7d
+        expr: quantile_over_time(0.95, costgraph:database_node_iops:rate5m[7d:5m])
+      - record: costgraph:database_node_iops:p99_7d
+        expr: quantile_over_time(0.99, costgraph:database_node_iops:rate5m[7d:5m])
+
+      - record: costgraph:database_node_iops:mean30d
+        expr: avg_over_time(costgraph:database_node_iops:rate5m[30d:30m])
+      - record: costgraph:database_node_iops:stddev30d
+        expr: stddev_over_time(costgraph:database_node_iops:rate5m[30d:30m])
+      - record: costgraph:database_node_iops:min30d
+        expr: min_over_time(costgraph:database_node_iops:rate5m[30d:30m])
+      - record: costgraph:database_node_iops:max30d
+        expr: max_over_time(costgraph:database_node_iops:rate5m[30d:30m])
+      - record: costgraph:database_node_iops:p50_30d
+        expr: quantile_over_time(0.50, costgraph:database_node_iops:rate5m[30d:30m])
+      - record: costgraph:database_node_iops:p90_30d
+        expr: quantile_over_time(0.90, costgraph:database_node_iops:rate5m[30d:30m])
+      - record: costgraph:database_node_iops:p95_30d
+        expr: quantile_over_time(0.95, costgraph:database_node_iops:rate5m[30d:30m])
+      - record: costgraph:database_node_iops:p99_30d
+        expr: quantile_over_time(0.99, costgraph:database_node_iops:rate5m[30d:30m])
+
+      - record: costgraph:database_node_iops:growth_per_day
+        expr: deriv(costgraph:database_node_iops:rate5m[30d:30m]) * 86400
+
+      - record: costgraph:database_node_connections_used:mean24h
+        expr: avg_over_time(costgraph:database_node_connections_used:last[24h:5m])
+      - record: costgraph:database_node_connections_used:stddev24h
+        expr: stddev_over_time(costgraph:database_node_connections_used:last[24h:5m])
+      - record: costgraph:database_node_connections_used:min24h
+        expr: min_over_time(costgraph:database_node_connections_used:last[24h:5m])
+      - record: costgraph:database_node_connections_used:max24h
+        expr: max_over_time(costgraph:database_node_connections_used:last[24h:5m])
+      - record: costgraph:database_node_connections_used:p50_24h
+        expr: quantile_over_time(0.50, costgraph:database_node_connections_used:last[24h:5m])
+      - record: costgraph:database_node_connections_used:p90_24h
+        expr: quantile_over_time(0.90, costgraph:database_node_connections_used:last[24h:5m])
+      - record: costgraph:database_node_connections_used:p95_24h
+        expr: quantile_over_time(0.95, costgraph:database_node_connections_used:last[24h:5m])
+      - record: costgraph:database_node_connections_used:p99_24h
+        expr: quantile_over_time(0.99, costgraph:database_node_connections_used:last[24h:5m])
+
+      - record: costgraph:database_node_connections_used:mean7d
+        expr: avg_over_time(costgraph:database_node_connections_used:last[7d:5m])
+      - record: costgraph:database_node_connections_used:stddev7d
+        expr: stddev_over_time(costgraph:database_node_connections_used:last[7d:5m])
+      - record: costgraph:database_node_connections_used:min7d
+        expr: min_over_time(costgraph:database_node_connections_used:last[7d:5m])
+      - record: costgraph:database_node_connections_used:max7d
+        expr: max_over_time(costgraph:database_node_connections_used:last[7d:5m])
+      - record: costgraph:database_node_connections_used:p50_7d
+        expr: quantile_over_time(0.50, costgraph:database_node_connections_used:last[7d:5m])
+      - record: costgraph:database_node_connections_used:p90_7d
+        expr: quantile_over_time(0.90, costgraph:database_node_connections_used:last[7d:5m])
+      - record: costgraph:database_node_connections_used:p95_7d
+        expr: quantile_over_time(0.95, costgraph:database_node_connections_used:last[7d:5m])
+      - record: costgraph:database_node_connections_used:p99_7d
+        expr: quantile_over_time(0.99, costgraph:database_node_connections_used:last[7d:5m])
+
+      - record: costgraph:database_node_connections_used:mean30d
+        expr: avg_over_time(costgraph:database_node_connections_used:last[30d:30m])
+      - record: costgraph:database_node_connections_used:stddev30d
+        expr: stddev_over_time(costgraph:database_node_connections_used:last[30d:30m])
+      - record: costgraph:database_node_connections_used:min30d
+        expr: min_over_time(costgraph:database_node_connections_used:last[30d:30m])
+      - record: costgraph:database_node_connections_used:max30d
+        expr: max_over_time(costgraph:database_node_connections_used:last[30d:30m])
+      - record: costgraph:database_node_connections_used:p50_30d
+        expr: quantile_over_time(0.50, costgraph:database_node_connections_used:last[30d:30m])
+      - record: costgraph:database_node_connections_used:p90_30d
+        expr: quantile_over_time(0.90, costgraph:database_node_connections_used:last[30d:30m])
+      - record: costgraph:database_node_connections_used:p95_30d
+        expr: quantile_over_time(0.95, costgraph:database_node_connections_used:last[30d:30m])
+      - record: costgraph:database_node_connections_used:p99_30d
+        expr: quantile_over_time(0.99, costgraph:database_node_connections_used:last[30d:30m])
+
+      - record: costgraph:database_node_connections_used:growth_per_day
+        expr: deriv(costgraph:database_node_connections_used:last[30d:30m]) * 86400

@@ -1,0 +1,68 @@
+groups:
+  - name: baseline_database_node_base
+    interval: 5m
+    eval_offset: 1m
+    rules:
+      - record: costgraph:database_node_storage_provisioned_bytes:last
+        expr: |
+          max by (costgraph_tenant_id, costgraph_database_id, costgraph_node_id, planetscale_role) (
+            planetscale_volume_capacity_bytes
+          )
+
+      - record: costgraph:database_node_storage_used_bytes:last
+        expr: |
+          max by (costgraph_tenant_id, costgraph_database_id, costgraph_node_id, planetscale_role) (
+            planetscale_volume_capacity_bytes
+          )
+          -
+          max by (costgraph_tenant_id, costgraph_database_id, costgraph_node_id, planetscale_role) (
+            planetscale_volume_available_bytes
+          )
+
+      - record: costgraph:database_node_cpu_util:last
+        expr: |
+          max by (costgraph_tenant_id, costgraph_database_id, costgraph_node_id, planetscale_role) (
+            planetscale_pods_cpu_util_percentages
+          )
+
+      - record: costgraph:database_node_mem_util:last
+        expr: |
+          max by (costgraph_tenant_id, costgraph_database_id, costgraph_node_id, planetscale_role) (
+            planetscale_pods_mem_util_percentages
+          )
+
+      - record: costgraph:database_node_iops:rate5m
+        expr: |
+          sum by (costgraph_tenant_id, costgraph_database_id, costgraph_node_id, planetscale_role) (
+            rate(planetscale_pods_iops_total[5m])
+          )
+
+      - record: costgraph:database_node_connections_provisioned:last
+        expr: |
+          max by (costgraph_tenant_id, costgraph_database_id, costgraph_node_id, planetscale_role) (
+            planetscale_postgres_settings_max_connections
+          )
+
+      - record: costgraph:database_node_connections_used:last
+        expr: |
+          sum by (costgraph_tenant_id, costgraph_database_id, costgraph_node_id, planetscale_role) (
+            planetscale_postgres_connection_state
+          )
+
+      - record: costgraph:database_node_client_connections:last
+        expr: |
+          max by (costgraph_tenant_id, costgraph_database_id, costgraph_node_id, planetscale_role) (
+            planetscale_pgbouncer_current_client_connections
+          )
+
+      - record: costgraph:database_node_client_connection_capacity:last
+        expr: |
+          max by (costgraph_tenant_id, costgraph_database_id, costgraph_node_id, planetscale_role) (
+            planetscale_pgbouncer_settings_max_client_conn
+          )
+
+      - record: costgraph:database_node_replica_lag_seconds:last
+        expr: |
+          max by (costgraph_tenant_id, costgraph_database_id, costgraph_node_id, planetscale_role) (
+            planetscale_postgres_replica_lag_seconds
+          )

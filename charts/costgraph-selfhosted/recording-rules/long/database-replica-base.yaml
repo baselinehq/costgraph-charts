@@ -1,0 +1,28 @@
+groups:
+  - name: baseline_database_replica_base
+    interval: 5m
+    eval_offset: 1m
+    rules:
+      - record: costgraph:database_replica_count:last
+        expr: |
+          count by (costgraph_tenant_id, costgraph_database_id) (
+            costgraph:database_node_client_connection_capacity:last{planetscale_role="replica"}
+          )
+
+      - record: costgraph:database_replica_client_connections:last
+        expr: |
+          sum by (costgraph_tenant_id, costgraph_database_id) (
+            costgraph:database_node_client_connections:last{planetscale_role="replica"}
+          )
+
+      - record: costgraph:database_replica_connection_capacity:last
+        expr: |
+          sum by (costgraph_tenant_id, costgraph_database_id) (
+            costgraph:database_node_client_connection_capacity:last{planetscale_role="replica"}
+          )
+
+      - record: costgraph:database_replica_lag_seconds:max
+        expr: |
+          max by (costgraph_tenant_id, costgraph_database_id) (
+            costgraph:database_node_replica_lag_seconds:last{planetscale_role="replica"}
+          )

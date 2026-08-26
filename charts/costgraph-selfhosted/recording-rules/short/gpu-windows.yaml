@@ -1,0 +1,124 @@
+groups:
+  - name: baseline_gpu_windows
+    interval: 30m
+    rules:
+
+      # ── container_gpu_util — full 7-stat × 24h + :last + 7d/30d trends ──────
+      - record: costgraph:container_gpu_util:mean24h
+        expr: avg_over_time(costgraph:container_gpu_util:snapshot[24h:5m])
+      - record: costgraph:container_gpu_util:stddev24h
+        expr: stddev_over_time(costgraph:container_gpu_util:snapshot[24h:5m])
+      - record: costgraph:container_gpu_util:min24h
+        expr: min_over_time(costgraph:container_gpu_util:snapshot[24h:5m])
+      - record: costgraph:container_gpu_util:max24h
+        expr: max_over_time(costgraph:container_gpu_util:snapshot[24h:5m])
+      - record: costgraph:container_gpu_util:p50_24h
+        expr: quantile_over_time(0.50, costgraph:container_gpu_util:snapshot[24h:5m])
+      - record: costgraph:container_gpu_util:p90_24h
+        expr: quantile_over_time(0.90, costgraph:container_gpu_util:snapshot[24h:5m])
+      - record: costgraph:container_gpu_util:p95_24h
+        expr: quantile_over_time(0.95, costgraph:container_gpu_util:snapshot[24h:5m])
+      - record: costgraph:container_gpu_util:p99_24h
+        expr: quantile_over_time(0.99, costgraph:container_gpu_util:snapshot[24h:5m])
+      - record: costgraph:container_gpu_util:last
+        expr: costgraph:container_gpu_util:snapshot > 0
+      - record: costgraph:container_gpu_util:mean7d
+        expr: avg_over_time(costgraph:container_gpu_util:snapshot[7d:5m])
+      - record: costgraph:container_gpu_util:stddev7d
+        expr: stddev_over_time(costgraph:container_gpu_util:snapshot[7d:5m])
+      - record: costgraph:container_gpu_util:min7d
+        expr: min_over_time(costgraph:container_gpu_util:snapshot[7d:5m])
+      - record: costgraph:container_gpu_util:max7d
+        expr: max_over_time(costgraph:container_gpu_util:snapshot[7d:5m])
+      - record: costgraph:container_gpu_util:p50_7d
+        expr: quantile_over_time(0.50, costgraph:container_gpu_util:snapshot[7d:5m])
+      - record: costgraph:container_gpu_util:p90_7d
+        expr: quantile_over_time(0.90, costgraph:container_gpu_util:snapshot[7d:5m])
+      - record: costgraph:container_gpu_util:p95_7d
+        expr: quantile_over_time(0.95, costgraph:container_gpu_util:snapshot[7d:5m])
+      - record: costgraph:container_gpu_util:p99_7d
+        expr: quantile_over_time(0.99, costgraph:container_gpu_util:snapshot[7d:5m])
+      - record: costgraph:container_gpu_util:mean30d
+        expr: avg_over_time(costgraph:container_gpu_util:snapshot[30d:30m])
+      - record: costgraph:container_gpu_util:stddev30d
+        expr: stddev_over_time(costgraph:container_gpu_util:snapshot[30d:30m])
+      - record: costgraph:container_gpu_util:min30d
+        expr: min_over_time(costgraph:container_gpu_util:snapshot[30d:30m])
+      - record: costgraph:container_gpu_util:max30d
+        expr: max_over_time(costgraph:container_gpu_util:snapshot[30d:30m])
+      - record: costgraph:container_gpu_util:p50_30d
+        expr: quantile_over_time(0.50, costgraph:container_gpu_util:snapshot[30d:30m])
+      - record: costgraph:container_gpu_util:p90_30d
+        expr: quantile_over_time(0.90, costgraph:container_gpu_util:snapshot[30d:30m])
+      - record: costgraph:container_gpu_util:p95_30d
+        expr: quantile_over_time(0.95, costgraph:container_gpu_util:snapshot[30d:30m])
+      - record: costgraph:container_gpu_util:p99_30d
+        expr: quantile_over_time(0.99, costgraph:container_gpu_util:snapshot[30d:30m])
+      - record: costgraph:container_gpu_util:growth_per_day
+        expr: deriv(costgraph:container_gpu_util:snapshot[30d:30m]) * 86400
+
+      # ── container_gpu_memory_used — full 7-stat × 24h + :last (no trends) ──
+      - record: costgraph:container_gpu_memory_used:mean24h
+        expr: avg_over_time(costgraph:container_gpu_memory_used:snapshot[24h:5m])
+      - record: costgraph:container_gpu_memory_used:stddev24h
+        expr: stddev_over_time(costgraph:container_gpu_memory_used:snapshot[24h:5m])
+      - record: costgraph:container_gpu_memory_used:min24h
+        expr: min_over_time(costgraph:container_gpu_memory_used:snapshot[24h:5m])
+      - record: costgraph:container_gpu_memory_used:max24h
+        expr: max_over_time(costgraph:container_gpu_memory_used:snapshot[24h:5m])
+      - record: costgraph:container_gpu_memory_used:p50_24h
+        expr: quantile_over_time(0.50, costgraph:container_gpu_memory_used:snapshot[24h:5m])
+      - record: costgraph:container_gpu_memory_used:p90_24h
+        expr: quantile_over_time(0.90, costgraph:container_gpu_memory_used:snapshot[24h:5m])
+      - record: costgraph:container_gpu_memory_used:p95_24h
+        expr: quantile_over_time(0.95, costgraph:container_gpu_memory_used:snapshot[24h:5m])
+      - record: costgraph:container_gpu_memory_used:p99_24h
+        expr: quantile_over_time(0.99, costgraph:container_gpu_memory_used:snapshot[24h:5m])
+      - record: costgraph:container_gpu_memory_used:last
+        expr: costgraph:container_gpu_memory_used:snapshot > 0
+
+      # ── container_gpu_memory_total — max24h only ──────────────────────────
+      - record: costgraph:container_gpu_memory_total:max24h
+        expr: max_over_time(costgraph:container_gpu_memory_total:snapshot[24h:5m])
+
+      # ── container_gpu_fb_used — 7d/30d trends + growth (no 24h) ───────────
+      - record: costgraph:container_gpu_fb_used:mean7d
+        expr: avg_over_time(costgraph:container_gpu_fb_used:snapshot[7d:5m])
+      - record: costgraph:container_gpu_fb_used:stddev7d
+        expr: stddev_over_time(costgraph:container_gpu_fb_used:snapshot[7d:5m])
+      - record: costgraph:container_gpu_fb_used:min7d
+        expr: min_over_time(costgraph:container_gpu_fb_used:snapshot[7d:5m])
+      - record: costgraph:container_gpu_fb_used:max7d
+        expr: max_over_time(costgraph:container_gpu_fb_used:snapshot[7d:5m])
+      - record: costgraph:container_gpu_fb_used:p50_7d
+        expr: quantile_over_time(0.50, costgraph:container_gpu_fb_used:snapshot[7d:5m])
+      - record: costgraph:container_gpu_fb_used:p90_7d
+        expr: quantile_over_time(0.90, costgraph:container_gpu_fb_used:snapshot[7d:5m])
+      - record: costgraph:container_gpu_fb_used:p95_7d
+        expr: quantile_over_time(0.95, costgraph:container_gpu_fb_used:snapshot[7d:5m])
+      - record: costgraph:container_gpu_fb_used:p99_7d
+        expr: quantile_over_time(0.99, costgraph:container_gpu_fb_used:snapshot[7d:5m])
+      - record: costgraph:container_gpu_fb_used:mean30d
+        expr: avg_over_time(costgraph:container_gpu_fb_used:snapshot[30d:30m])
+      - record: costgraph:container_gpu_fb_used:stddev30d
+        expr: stddev_over_time(costgraph:container_gpu_fb_used:snapshot[30d:30m])
+      - record: costgraph:container_gpu_fb_used:min30d
+        expr: min_over_time(costgraph:container_gpu_fb_used:snapshot[30d:30m])
+      - record: costgraph:container_gpu_fb_used:max30d
+        expr: max_over_time(costgraph:container_gpu_fb_used:snapshot[30d:30m])
+      - record: costgraph:container_gpu_fb_used:p50_30d
+        expr: quantile_over_time(0.50, costgraph:container_gpu_fb_used:snapshot[30d:30m])
+      - record: costgraph:container_gpu_fb_used:p90_30d
+        expr: quantile_over_time(0.90, costgraph:container_gpu_fb_used:snapshot[30d:30m])
+      - record: costgraph:container_gpu_fb_used:p95_30d
+        expr: quantile_over_time(0.95, costgraph:container_gpu_fb_used:snapshot[30d:30m])
+      - record: costgraph:container_gpu_fb_used:p99_30d
+        expr: quantile_over_time(0.99, costgraph:container_gpu_fb_used:snapshot[30d:30m])
+      - record: costgraph:container_gpu_fb_used:growth_per_day
+        expr: deriv(costgraph:container_gpu_fb_used:snapshot[30d:30m]) * 86400
+
+      # ── container_gpu_power — mean24h + max24h only ────────────────────────
+      - record: costgraph:container_gpu_power:mean24h
+        expr: avg_over_time(costgraph:container_gpu_power:snapshot[24h:5m])
+      - record: costgraph:container_gpu_power:max24h
+        expr: max_over_time(costgraph:container_gpu_power:snapshot[24h:5m])
