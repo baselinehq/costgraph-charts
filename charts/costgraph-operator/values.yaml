@@ -298,6 +298,38 @@ operatorPrometheus:
   #   metricNamePrefixes (optional) — list of name prefixes; only families
   #                              matching one are kept. Empty keeps all. Used to
   #                              drop go_*/process_* noise from kubelet /metrics.
+  #   metricBindings (optional) - rewrite a source metric family onto the
+  #                              CostGraph contract. Each entry takes `from`
+  #                              (the exposed family name), `labelMap` (source
+  #                              label to costgraph_* label) and `setLabels`
+  #                              (constants to stamp). Without a binding an AI
+  #                              gateway's native metrics reach the backend
+  #                              unrecognised and are dropped.
+  #   staticLabels (optional) - list of {name, value} stamped on every sample
+  #                              from this target, e.g. costgraph_gateway.
+  #   annotationLabels (optional) - when true, costgraph.ai/* pod annotations
+  #                              become costgraph_sub_account and
+  #                              costgraph_dim_* labels for attribution.
+  #
+  # CostGraph serves those three itself for a connected AI gateway, so set them
+  # here only for a target it does not know about - a self-hosted install, or a
+  # gateway kind not yet in the registry:
+  #
+  #   my-gateway:
+  #     namespace: inference
+  #     labelSelector: app.kubernetes.io/name=my-gateway
+  #     port: 9090
+  #     metricNamePrefixes: ["gen_ai_"]
+  #     annotationLabels: true
+  #     staticLabels:
+  #       - {name: costgraph_gateway, value: my-gateway}
+  #     metricBindings:
+  #       - from: gen_ai_client_token_usage
+  #         labelMap:
+  #           gen_ai_response_model: costgraph_model
+  #           gen_ai_token_type: costgraph_usage_kind
+  #         setLabels:
+  #           costgraph_unit: tokens
   #
   # Pod targets (kind: pod) additionally require:
   #   namespace     (required) — pod namespace
