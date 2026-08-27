@@ -29,11 +29,11 @@ spec:
   ttlSecondsAfterFinished: {{ . }}
   {{- end }}
   template:
+    {{- with .podLabels }}
     metadata:
-      {{- with .podLabels }}
       labels:
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+    {{- end }}
     spec:
       restartPolicy: {{ .restartPolicy | default "Never" }}
       {{- with .imagePullSecrets }}
