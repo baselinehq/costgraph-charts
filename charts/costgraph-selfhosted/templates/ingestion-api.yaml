@@ -1,0 +1,105 @@
+{{- if .Values.ingestionApi.enabled }}
+{{- $name := printf "%s-ingestion-api" (include "costgraph-selfhosted.fullname" .) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "costgraph-selfhosted.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ingestion-api
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: 8080
+      targetPort: http
+      name: http
+  selector:
+    {{- include "costgraph-selfhosted.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: ingestion-api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "costgraph-selfhosted.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ingestion-api
+spec:
+  replicas: {{ .Values.ingestionApi.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "costgraph-selfhosted.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: ingestion-api
+  template:
+    metadata:
+      labels:
+        {{- include "costgraph-selfhosted.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: ingestion-api
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with include "costgraph-selfhosted.imagePullSecrets" . }}
+      imagePullSecrets:
+        {{- . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "costgraph-selfhosted.fullname" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: ingestion-api
+          image: {{ include "costgraph-selfhosted.imageRef" (dict "repository" .Values.ingestionApi.image.repository "tag" (required "ingestionApi.image.tag is required" .Values.ingestionApi.image.tag)) | quote }}
+          imagePullPolicy: {{ .Values.ingestionApi.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: LOG_LEVEL
+              value: {{ .Values.ingestionApi.logLevel | quote }}
+            - name: AUTH_DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "costgraph-selfhosted.postgresSecretName" . }}
+                  key: postgres-url
+            - name: API_KEY_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "costgraph-selfhosted.fullname" . }}-generated
+                  key: api-key-secret
+            - name: VM_WRITE_URL
+              value: {{ printf "%s/api/v1/write" (include "costgraph-selfhosted.metricsStoreURL" .) | quote }}
+            - name: VM_SHORT_WRITE_URL
+              value: {{ printf "%s/api/v1/write" (include "costgraph-selfhosted.metricsStoreURL" .) | quote }}
+            - name: VM_TENANT_HEADER
+              value: "X-Scope-OrgID"
+            - name: VM_WRITE_TIMEOUT
+              value: "10s"
+            - name: MAX_BODY_BYTES
+              value: {{ .Values.ingestionApi.maxBodyBytes | quote }}
+            - name: AUTH_CACHE_SIZE
+              value: "10000"
+            - name: AUTH_CACHE_TTL
+              value: "5m"
+            - name: AUTH_CACHE_NEGATIVE_TTL
+              value: "5s"
+          resources:
+            {{- toYaml .Values.ingestionApi.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

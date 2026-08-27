@@ -77,7 +77,7 @@ spec:
                   name: {{ include "costgraph-operator.apiKeySecretName" . }}
                   key: {{ include "costgraph-operator.apiKeySecretKey" . }}
             - name: REMOTE_WRITE_URL
-              value: {{ .Values.flowtrace.config.remoteWriteURL | quote }}
+              value: {{ include "costgraph-operator.remoteWriteURL" (dict "component" .Values.flowtrace.config.remoteWriteURL "root" $) | quote }}
             - name: REMOTE_WRITE_PATH
               value: {{ .Values.flowtrace.config.remoteWritePath | quote }}
             - name: FLOWTRACE_PUSH_INTERVAL

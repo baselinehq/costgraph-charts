@@ -47,6 +47,10 @@ spec:
             - name: BACKEND_URL
               value: {{ . | quote }}
             {{- end }}
+            {{- with .Values.global.remoteWriteURL }}
+            - name: REMOTE_WRITE_URL
+              value: {{ . | quote }}
+            {{- end }}
             - name: API_KEY
               valueFrom:
                 secretKeyRef:

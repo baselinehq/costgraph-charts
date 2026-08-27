@@ -15,6 +15,9 @@ global:
   # backendURL is the base URL of the Costgraph API. Leave empty to omit the
   # BACKEND_URL env var and rely on the service's built-in default.
   backendURL: "https://api.costgraph.ai"
+  # Where cluster metrics are sent. A self-hosted install points this at its
+  # own ingestion endpoint; left unset, metrics go to hosted CostGraph.
+  remoteWriteURL: ""
   namespace: "costgraph"
   # Flag to enable use of our custom image in the cadvisor chart
   security:
@@ -165,7 +168,7 @@ aiGatewayScraper:
     tag: "v0.4.0"
     pullPolicy: IfNotPresent
   config:
-    remoteWriteURL: "https://tsdb.costgraph.ai"
+    remoteWriteURL: ""
     remoteWritePath: "/api/v1/write/short"
     httpTimeout: "30s"
   resources:
@@ -269,7 +272,7 @@ operatorPrometheus:
   # This should always be 1
   replicas: 1
   config:
-    remoteWriteURL: "https://tsdb.costgraph.ai"
+    remoteWriteURL: ""
     remoteWritePath: "/api/v1/write"
     prometheusAPIProvider: "prometheus"
     prometheusAPIVersion: "kube-state-metrics"
@@ -372,7 +375,7 @@ flowtrace:
     tag: "v0.4.0"
     pullPolicy: IfNotPresent
   config:
-    remoteWriteURL: "https://tsdb.costgraph.ai"
+    remoteWriteURL: ""
     # Short-retention tier: flow series are high cardinality and are not
     # intended to live as long as the operator's scraped metrics.
     remoteWritePath: "/api/v1/write/short"
