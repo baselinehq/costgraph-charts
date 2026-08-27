@@ -798,4 +798,15 @@ entries:
     urls:
     - costgraph-selfhosted-0.1.0.tgz
     version: 0.1.0
-generated: "2026-08-27T08:38:25.744740233Z"
+  costgraph-vmalert:
+  - apiVersion: v2
+    created: "2026-08-27T16:52:35.612865188Z"
+    description: Shared vmalert workload for the CostGraph aggregator's recording
+      rules
+    digest: b3d8eaa5e2c700ad1239643729f965f08c3a0fd14084d9247d39b18da728d598
+    name: costgraph-vmalert
+    type: library
+    urls:
+    - costgraph-vmalert-0.1.0.tgz
+    version: 0.1.0
+generated: "2026-08-27T16:52:35.612974674Z"
