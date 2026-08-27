@@ -13,11 +13,13 @@ datasourceURL, remoteWriteURL.
 */}}
 {{- define "costgraph.vmalert" -}}
 {{- $name := required "vmalert: name is required" .name -}}
+{{- $ctx := required "vmalert: ctx is required" .ctx -}}
 {{- $port := .port | default 8880 -}}
 apiVersion: v1
 kind: Service
 metadata:
   name: {{ $name }}
+  namespace: {{ $ctx.Release.Namespace }}
   labels:
     {{- toYaml .labels | nindent 4 }}
 spec:
@@ -32,6 +34,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ $name }}
+  namespace: {{ $ctx.Release.Namespace }}
   labels:
     {{- toYaml .labels | nindent 4 }}
 spec:
