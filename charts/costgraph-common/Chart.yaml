@@ -2,4 +2,4 @@ apiVersion: v2
 name: costgraph-common
 description: The objects stakater's application chart does not render, shared across the CostGraph charts
 type: library
-version: 0.1.0
+version: 0.1.1
