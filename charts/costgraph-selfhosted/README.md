@@ -17,7 +17,7 @@ the URL your users will reach the dashboard on. To evaluate without setting
 those up, the chart can run all three for you — see "Install" below.
 
 Sign-in needs no configuration. Your users sign in with their CostGraph
-accounts; their cost data stays in your network.
+accounts.
 
 ## Install
 
@@ -117,19 +117,20 @@ Nothing needs to reach the deployment from outside your network.
 | backend | the API and cost engine |
 | dashboard | the web UI (`dashboard.enabled`, on by default) |
 | ingestion-api | receives metrics from your clusters (`ingestionApi.enabled`, on by default) |
-| aggregator | turns those metrics into aggregations (`aggregator.enabled`, on by default) |
+| aggregator | turns those metrics into per-workload costs (`aggregator.enabled`, on by default) |
+| vmalert | evaluates the recording rules the cost maths reads, alongside the aggregator |
 | Postgres, Redis, VictoriaMetrics | only when `*.bundled.enabled` is set |
 
 The operator in each of your clusters sends metrics to ingestion-api, and the
-aggregator turns them into the data you see on the dashboard shows. Turning either off
-leaves the dashboard without data.
+aggregator turns them into the costs the dashboard shows. Turning either off
+leaves the dashboard without cost data.
 
 One ingress host serves both, so there is nothing to configure. Set
 `dashboard.apiBaseURL` only if you put the API on a different host.
 
-## Measuring your clusters
+## Kubernetes Operator
 
-The CostGraph operator installs separately in each cluster you want costgraph features for, including the one running this chart.
+The CostGraph operator installs separately in each cluster you want costgraph features for.
 
 Its defaults point at hosted CostGraph, so a self-hosted install has to redirect
 both endpoints at itself:
@@ -219,50 +220,6 @@ helm upgrade costgraph costgraph/costgraph-selfhosted \
 
 Back the database up first. Migrations are not reversible, so rolling the
 release back does not roll the schema back.
-
-
-### If an upgrade fails
-
-Migrations run before the new version rolls out, so a failed upgrade leaves a
-database that has already moved forward. **Do not `helm rollback`.** The old
-version does not understand the new schema, and rolling back is how a failed
-upgrade becomes an outage.
-
-Find out what stopped:
-
-```sh
-helm status costgraph -n costgraph
-kubectl get pods -n costgraph
-```
-
-Then, in order:
-
-1. **A pod will not start** — read `kubectl describe pod` for the failing
-   pod. A missing image or an exhausted quota fixes itself once the cause is
-   addressed; the rollout continues on its own.
-2. **The upgrade timed out but the release is healthy** — the 15 minute limit
-   was reached while pods were still coming up. Check `kubectl get pods`, and
-   if everything is running, nothing is wrong.
-3. **Helm reports another operation in progress** — a previous upgrade was
-   interrupted, usually because its node went away, and the release is stuck
-   in `pending-upgrade`. `helm history costgraph` shows that revision. Helm
-   clears the state by rolling back, which for a revision that never applied
-   anything moves the schema nowhere:
-
-   ```sh
-   helm rollback costgraph <last-deployed-revision> -n costgraph
-   ```
-
-   Use the last revision marked `deployed`, and only when the interrupted
-   upgrade never got as far as starting pods — `kubectl get pods` still shows
-   the old version. If the new version did start, treat it as case 4: the
-   migrations have run and rolling back would put the old binary on the new
-   schema.
-4. **Nothing else works** — restore the database from the backup taken before
-   the upgrade, then reinstall at the version you restored.
-
-Support can tell you what a specific release changed, so send the output of
-`helm history costgraph -n costgraph` when you ask.
 
 ### One thing you must not delete
 
