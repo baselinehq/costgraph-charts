@@ -64,6 +64,13 @@ spec:
             */}}
             - name: SCRAPE_TARGETS
               value: "[]"
+            {{- /*
+            Both deployments run the same binary, so without this the statically
+            configured scraper would fetch the same served targets and scrape
+            every gateway twice, into both retention tiers.
+            */}}
+            - name: MANAGED_SCRAPE_TARGETS
+              value: "true"
             {{- with .Values.aiGatewayScraper.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
