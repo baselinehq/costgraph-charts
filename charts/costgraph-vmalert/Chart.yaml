@@ -1,5 +1,0 @@
-apiVersion: v2
-name: costgraph-vmalert
-description: Shared vmalert workload for the CostGraph aggregator's recording rules
-type: library
-version: 0.2.0
