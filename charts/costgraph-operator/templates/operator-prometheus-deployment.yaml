@@ -95,6 +95,9 @@ spec:
                     {{- if $tgt.path }}{{- $_ := set $t "path" (tpl ($tgt.path | toString) $) }}{{- end }}
                     {{- if $tgt.nodeMetrics }}{{- $_ := set $t "node_metrics" true }}{{- end }}
                     {{- if $tgt.metricNamePrefixes }}{{- $_ := set $t "metric_name_prefixes" $tgt.metricNamePrefixes }}{{- end }}
+                    {{- if $tgt.metricBindings }}{{- $_ := set $t "metric_bindings" $tgt.metricBindings }}{{- end }}
+                    {{- if $tgt.staticLabels }}{{- $_ := set $t "static_labels" $tgt.staticLabels }}{{- end }}
+                    {{- if $tgt.annotationLabels }}{{- $_ := set $t "annotation_labels" true }}{{- end }}
                     {{- $targets = append $targets $t }}
                   {{- else if eq $kind "pod" }}
                     {{- $namespace := required (printf "operatorPrometheus.scrapeTargets.%s: namespace is required" $name) $tgt.namespace }}
@@ -112,6 +115,9 @@ spec:
                     {{- if $tgt.path }}{{- $_ := set $t "path" (tpl ($tgt.path | toString) $) }}{{- end }}
                     {{- if $tgt.nodeMetrics }}{{- $_ := set $t "node_metrics" true }}{{- end }}
                     {{- if $tgt.metricNamePrefixes }}{{- $_ := set $t "metric_name_prefixes" $tgt.metricNamePrefixes }}{{- end }}
+                    {{- if $tgt.metricBindings }}{{- $_ := set $t "metric_bindings" $tgt.metricBindings }}{{- end }}
+                    {{- if $tgt.staticLabels }}{{- $_ := set $t "static_labels" $tgt.staticLabels }}{{- end }}
+                    {{- if $tgt.annotationLabels }}{{- $_ := set $t "annotation_labels" true }}{{- end }}
                     {{- $targets = append $targets $t }}
                   {{- else }}
                     {{- fail (printf "operatorPrometheus.scrapeTargets.%s: kind must be \"pod\" or \"node\", got %v" $name $kind) }}
