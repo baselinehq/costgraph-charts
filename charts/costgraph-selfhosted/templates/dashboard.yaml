@@ -1,0 +1,122 @@
+{{- if .Values.dashboard.enabled }}
+{{- $fullname := include "costgraph-selfhosted.fullname" . }}
+{{- $name := printf "%s-dashboard" $fullname }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "costgraph-selfhosted.labels" . | nindent 4 }}
+    app.kubernetes.io/component: dashboard
+data:
+  config.json: |
+    {{- include "costgraph-selfhosted.dashboardConfig" . | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "costgraph-selfhosted.labels" . | nindent 4 }}
+    app.kubernetes.io/component: dashboard
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "costgraph-selfhosted.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: dashboard
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "costgraph-selfhosted.labels" . | nindent 4 }}
+    app.kubernetes.io/component: dashboard
+spec:
+  replicas: {{ .Values.dashboard.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "costgraph-selfhosted.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: dashboard
+  template:
+    metadata:
+      annotations:
+        # The browser reads config.json at boot, so a changed API address or
+        # client id must roll the pods.
+        checksum/config: {{ include "costgraph-selfhosted.dashboardConfig" . | sha256sum }}
+      labels:
+        {{- include "costgraph-selfhosted.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: dashboard
+    spec:
+      {{- with include "costgraph-selfhosted.imagePullSecrets" . }}
+      imagePullSecrets:
+        {{- . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        fsGroup: 101
+      containers:
+        - name: dashboard
+          image: {{ include "costgraph-selfhosted.imageRef" (dict "repository" .Values.dashboard.image.repository "tag" (required "dashboard.image.tag is required: the chart version is not an image tag" .Values.dashboard.image.tag)) | quote }}
+          imagePullPolicy: {{ .Values.dashboard.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /config.json
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /index.html
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.dashboard.resources | nindent 12 }}
+          volumeMounts:
+            - name: runtime-config
+              mountPath: /usr/share/nginx/html/config.json
+              subPath: config.json
+              readOnly: true
+            # nginx writes its pid and caches; the root filesystem is
+            # read-only, so these need to be real volumes.
+            - name: cache
+              mountPath: /var/cache/nginx
+            - name: run
+              mountPath: /var/run
+            # nginx creates proxy_temp/client_temp under /tmp at startup.
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: runtime-config
+          configMap:
+            name: {{ $name }}
+        - name: cache
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

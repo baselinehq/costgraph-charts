@@ -1,0 +1,46 @@
+{{- if and .Values.postgres.runMigrations (not .Values.postgres.bundled.enabled) }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "costgraph-selfhosted.fullname" . }}-migrate
+  labels:
+    {{- include "costgraph-selfhosted.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migrate
+  annotations:
+    helm.sh/hook: pre-upgrade
+    helm.sh/hook-weight: "-4"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        {{- include "costgraph-selfhosted.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: migrate
+    spec:
+      restartPolicy: Never
+      {{- with include "costgraph-selfhosted.imagePullSecrets" . }}
+      imagePullSecrets:
+        {{- . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: migrate
+          image: {{ include "costgraph-selfhosted.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            - name: MIGRATE
+              value: "1"
+            - name: MIGRATE_ONLY
+              value: "1"
+          envFrom:
+            - configMapRef:
+                name: {{ include "costgraph-selfhosted.fullname" . }}
+            - secretRef:
+                name: {{ include "costgraph-selfhosted.secretName" . }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+{{- end }}

@@ -318,3 +318,7 @@ is whether a group appeared that Kubernetes itself does not ship.
 {{- end -}}
 {{- end -}}
 {{- end }}
+
+{{- define "costgraph-operator.remoteWriteURL" -}}
+{{- coalesce .component .root.Values.global.remoteWriteURL "https://tsdb.costgraph.ai" -}}
+{{- end -}}

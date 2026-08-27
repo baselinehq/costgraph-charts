@@ -1,0 +1,248 @@
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  repository: registry.costgraph.ai/backend
+  tag: sha-13ae198
+  pullPolicy: IfNotPresent
+
+# Leave empty and the chart creates the pull secret from controlPlane.apiKey,
+# since the registry authenticates with that same key. Set it to a secret you
+# created yourself if you use controlPlane.existingSecret - a chart cannot read
+# a Secret to build one
+#
+#   kubectl create secret docker-registry costgraph-registry \
+#     --namespace costgraph \
+#     --docker-server=registry.costgraph.ai \
+#     --docker-username=x \
+#     --docker-password=<your deployment API key>
+imagePullSecrets: []
+
+replicaCount: 2
+
+controlPlane:
+  url: https://api.costgraph.ai
+
+  # Issued during onboarding. Create it in the CostGraph dashboard under
+  # Settings > API Keys. For production use existingSecret instead, so the key
+  # is not stored in values or in Helm release history.
+  apiKey: ""
+
+  # Name of a Secret you manage, holding the key under `control-plane-api-key`
+  # (and `pricing-api-key` if you use a separate pricing key). Takes precedence
+  # over apiKey, so nothing sensitive is stored in values or Helm history.
+  existingSecret: ""
+
+  # CostGraph's published public key, already filled in. It is not a secret,
+  # so keep it here rather than moving it into a Secret. Do not remove it;
+  # replace it only if CostGraph tells you it has rotated.
+  configPublicKey: |
+    -----BEGIN PUBLIC KEY-----
+    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2Q3ybjZNauw2OH0cthLK
+    53yTGgosHHE3lnvAkyd7+xn5EVEwvE1g3fkGQOF0j3aXo4yxPj6ez3kIaNLu4bn1
+    JE7M4XV20PhUhjhQ54wDjgqthJYkbctJCtVvg2VT98OCp4tl9ScyZhk5voCYtm7d
+    HvZsMczkQUFSaEk/pdWVSrb6G8HZjBptZRhZxfkodSRqLU1rN8KfjpNXP+o+N2Os
+    1j54yXjUfH1cKe7nbJDGVpZjnjbOBj/4VY0o9XlJvClAv0FSVxUNH8mZ+wvDR002
+    8sszjtvShB2bPTOdHr6cEfRNHcZsrewAt16Jzl3Dsbg4DNv5hQSgpQtJ8wpjs53/
+    RQIDAQAB
+    -----END PUBLIC KEY-----
+
+# Label for this deployment in the CostGraph dashboard, so you can tell
+# several of them apart. Defaults to the Helm release name.
+deploymentName: ""
+
+# The URL your users open CostGraph on. Must be the address people actually
+# reach in a browser, not an internal Service DNS name. Also the default
+# allowed browser origin.
+appBaseURL: ""
+
+# Browser origins allowed to call the API. Defaults to appBaseURL. Set it when
+# the dashboard is served from a different origin, or to allow more than one
+# (comma-separated).
+corsAllowedOrigins: ""
+
+# Key used to download the pricing catalog. Leave empty to reuse
+# controlPlane.apiKey, which is what most installs do. Set it only if
+# CostGraph issued you a separate key for pricing.
+pricingApiKey: ""
+
+
+postgres:
+  url: ""
+  password: ""
+
+  # Name of a Secret you manage holding keys `postgres-url` and
+  # `postgres-password`. Takes precedence over url/password above.
+  existingSecret: ""
+
+  # Apply pending database migrations on start. Leave on unless you apply
+  # them yourself as a separate step.
+  runMigrations: true
+  bundled:
+    enabled: false
+    image: timescale/timescaledb:2.17.2-pg17
+    database: costgraph
+    username: costgraph
+    password: ""            # generated per-install when empty
+    storage: 20Gi
+    storageClass: ""
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+
+redis:
+  url: ""                       # redis://host:6379
+  # Name of a Secret you manage holding the connection URL under `redis-url`.
+  # Use this rather than redis.url when the URL contains a password, so it is
+  # not stored in a ConfigMap in plain text.
+  existingSecret: ""
+  bundled:
+    enabled: false
+    image: redis:7-alpine
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+metricsStore:
+  url: ""                       # http://victoria-metrics:8428
+  bundled:
+    enabled: false
+    image: victoriametrics/victoria-metrics:v1.106.1
+    retentionPeriod: "12"       # months
+    storage: 20Gi
+    storageClass: ""
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+
+# Sends CostGraph anonymous product analytics: which features are used, and
+# where people get stuck. No personal data is sent to us. It is how we know
+# what to improve for the people running CostGraph themselves.
+#
+# Set enabled: false to send nothing.
+analytics:
+  enabled: true
+
+dashboard:
+  enabled: true
+  image:
+    repository: registry.costgraph.ai/costgraph-dashboard
+    tag: sha-2060465
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  # Where the browser reaches this deployment's API. Defaults to appBaseURL
+  # + /api/v1, which is right when one ingress fronts both; set it when the
+  # API is on a different host.
+  apiBaseURL: ""
+  # Domain for SSO sign-in. Leave empty unless CostGraph has set up SSO for
+  # your deployment; setting it otherwise shows a sign-in button that cannot
+  # complete a login.
+  cognitoOAuthDomain: ""
+  # Base URL of the CostGraph AI assistant, if you run one. Empty hides the
+  # assistant from the dashboard.
+  graphAiBaseURL: ""
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 256Mi
+
+# Receives metrics from the CostGraph operator running in your clusters. Turn
+# it off only if you are not collecting cluster metrics at all.
+ingestionApi:
+  enabled: true
+  image:
+    repository: registry.costgraph.ai/ingestion-api
+    # Versioned separately from the chart, so this is pinned rather than
+    # following appVersion.
+    tag: sha-5dc610b
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  logLevel: info
+
+  # Largest remote_write batch to accept, in bytes. Raise it if clusters with
+  # many nodes report bodies rejected as too large.
+  maxBodyBytes: 52428800
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+
+# Turns the raw samples into the per-workload costs the dashboard shows.
+# Without it, metrics arrive but cost breakdowns stay empty.
+aggregator:
+  enabled: true
+  image:
+    repository: registry.costgraph.ai/aggregator
+    # Versioned separately from the chart, so this is pinned rather than
+    # following appVersion.
+    tag: sha-79f4b08
+    pullPolicy: IfNotPresent
+  vmalert:
+    image:
+      repository: victoriametrics/vmalert
+      tag: v1.130.0
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 1Gi
+
+  # Cost dimensions to compute. Turning one off drops it from the dashboard.
+  features:
+    ENABLE_GPU: "true"
+    ENABLE_HPA: "true"
+    ENABLE_NETWORK_POLICY: "true"
+    ENABLE_EPHEMERAL_STORAGE: "true"
+    ENABLE_DISK_IOPS: "true"
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 2Gi
+
+service:
+  type: ClusterIP
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts: []
+  tls: []
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    memory: 2Gi
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  fsGroup: 10001
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+podAnnotations: {}
+
+# A preflight job that runs before install and upgrade and fails the release
+# with the real reason if the database cannot support the schema. Turn it off
+# if the database is provisioned after the release.
+doctor:
+  enabled: true

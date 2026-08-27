@@ -1,0 +1,83 @@
+{{- if .Values.aggregator.enabled }}
+{{- $name := printf "%s-vmalert" (include "costgraph-selfhosted.fullname" .) }}
+{{- $store := include "costgraph-selfhosted.metricsStoreURL" . }}
+{{- range $set := list "long" "short" }}
+{{- $suffix := ternary "" "-short" (eq $set "long") }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}{{ $suffix }}
+  labels:
+    {{- include "costgraph-selfhosted.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: vmalert{{ $suffix }}
+spec:
+  {{/* Intentioanlly one replica: every replica would evaluate the same rules and write the
+  same series, so a second is duplicated work.*/}}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "costgraph-selfhosted.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: vmalert{{ $suffix }}
+  template:
+    metadata:
+      labels:
+        {{- include "costgraph-selfhosted.selectorLabels" $ | nindent 8 }}
+        app.kubernetes.io/component: vmalert{{ $suffix }}
+      annotations:
+        checksum/rules: {{ $.Values.aggregator.image.tag | sha256sum }}
+    spec:
+      {{- with include "costgraph-selfhosted.imagePullSecrets" $ }}
+      imagePullSecrets:
+        {{- . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: rules
+          image: {{ include "costgraph-selfhosted.imageRef" (dict "repository" $.Values.aggregator.image.repository "tag" (required "aggregator.image.tag is required" $.Values.aggregator.image.tag)) | quote }}
+          imagePullPolicy: {{ $.Values.aggregator.image.pullPolicy }}
+          securityContext:
+            {{- toYaml $.Values.securityContext | nindent 12 }}
+          command: ["/bin/busybox", "cp", "-r", "/recording-rules/{{ $set }}/.", "/rules"]
+          volumeMounts:
+            - name: rules
+              mountPath: /rules
+      containers:
+        - name: vmalert
+          image: "{{ $.Values.aggregator.vmalert.image.repository }}:{{ $.Values.aggregator.vmalert.image.tag }}"
+          imagePullPolicy: {{ $.Values.aggregator.image.pullPolicy }}
+          securityContext:
+            {{- toYaml $.Values.securityContext | nindent 12 }}
+          args:
+            - -rule=/etc/vmalert/rules/*.yaml
+            - -datasource.url={{ $store }}
+            - -remoteWrite.url={{ $store }}
+            - -evaluationInterval=1m
+            {{/* Offsets the query time to absorb ingestion delay; chained
+            rules read what earlier rules just wrote. */}}
+            - -rule.evalDelay=30s
+            - -remoteWrite.flushInterval=5s
+            - -external.label=job=aggregator
+            - -httpListenAddr=:8880
+          ports:
+            - name: http
+              containerPort: 8880
+          resources:
+            {{- toYaml $.Values.aggregator.vmalert.resources | nindent 12 }}
+          volumeMounts:
+            - name: rules
+              mountPath: /etc/vmalert/rules
+      volumes:
+        - name: rules
+          emptyDir: {}
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+{{- end }}
