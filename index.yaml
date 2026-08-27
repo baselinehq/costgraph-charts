@@ -261,6 +261,17 @@ entries:
     urls:
     - costgraph-0.1.2.tgz
     version: 0.1.2
+  costgraph-common:
+  - apiVersion: v2
+    created: "2026-08-27T20:48:58.844102754Z"
+    description: The objects stakater's application chart does not render, shared
+      across the CostGraph charts
+    digest: df429c498e190d471df0701712b535c20e7928ff5b8ec20ce2b8cc51b07d9ed6
+    name: costgraph-common
+    type: library
+    urls:
+    - costgraph-common-0.1.0.tgz
+    version: 0.1.0
   costgraph-operator:
   - apiVersion: v2
     appVersion: 0.4.0
@@ -829,4 +840,4 @@ entries:
     urls:
     - costgraph-vmalert-0.1.0.tgz
     version: 0.1.0
-generated: "2026-08-27T17:21:16.076875211Z"
+generated: "2026-08-27T20:48:58.844206708Z"
