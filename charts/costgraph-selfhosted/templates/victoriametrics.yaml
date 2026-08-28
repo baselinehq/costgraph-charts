@@ -1,4 +1,4 @@
-{{- if .Values.metricsStore.bundled.enabled }}
+{{- if .Values.global.metricsStore.bundled.enabled }}
 {{- $name := printf "%s-victoria-metrics" (include "costgraph-selfhosted.fullname" .) }}
 apiVersion: v1
 kind: Service
@@ -42,11 +42,11 @@ spec:
         fsGroup: 1000
       containers:
         - name: victoria-metrics
-          image: {{ .Values.metricsStore.bundled.image }}
+          image: {{ .Values.global.metricsStore.bundled.image }}
           imagePullPolicy: IfNotPresent
           args:
             - --storageDataPath=/storage
-            - --retentionPeriod={{ .Values.metricsStore.bundled.retentionPeriod }}
+            - --retentionPeriod={{ .Values.global.metricsStore.bundled.retentionPeriod }}
           ports:
             - name: http
               containerPort: 8428
@@ -57,7 +57,7 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 10
           resources:
-            {{- toYaml .Values.metricsStore.bundled.resources | nindent 12 }}
+            {{- toYaml .Values.global.metricsStore.bundled.resources | nindent 12 }}
           volumeMounts:
             - name: storage
               mountPath: /storage
@@ -66,10 +66,10 @@ spec:
         name: storage
       spec:
         accessModes: ["ReadWriteOnce"]
-        {{- with .Values.metricsStore.bundled.storageClass }}
+        {{- with .Values.global.metricsStore.bundled.storageClass }}
         storageClassName: {{ . | quote }}
         {{- end }}
         resources:
           requests:
-            storage: {{ .Values.metricsStore.bundled.storage }}
+            storage: {{ .Values.global.metricsStore.bundled.storage }}
 {{- end }}

@@ -16,7 +16,7 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
-        {{- with .Values.podAnnotations }}
+        {{- with .Values.global.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
@@ -29,13 +29,13 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "costgraph-selfhosted.fullname" . }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.global.podSecurityContext | nindent 8 }}
       containers:
         - name: backend
           image: {{ include "costgraph-selfhosted.image" . }}
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.global.securityContext | nindent 12 }}
           ports:
             - name: http
               containerPort: 8080
@@ -51,18 +51,18 @@ spec:
                   key: control-plane-api-key
             # pricingapi accepts the same CostGraph API key, so the deployment
             # key serves for both unless one is supplied explicitly.
-            {{- if .Values.redis.existingSecret }}
+            {{- if .Values.global.redis.existingSecret }}
             - name: REDIS_URL
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.redis.existingSecret }}
+                  name: {{ .Values.global.redis.existingSecret }}
                   key: redis-url
             {{- end }}
             - name: PRICING_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ include "costgraph-selfhosted.secretName" . }}
-                  key: {{ if .Values.pricingApiKey }}pricing-api-key{{ else }}control-plane-api-key{{ end }}
+                  key: {{ if .Values.global.pricingApiKey }}pricing-api-key{{ else }}control-plane-api-key{{ end }}
             - name: DB_URL
               valueFrom:
                 secretKeyRef:
@@ -71,7 +71,7 @@ spec:
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  {{- if .Values.postgres.bundled.enabled }}
+                  {{- if .Values.global.postgres.bundled.enabled }}
                   name: {{ include "costgraph-selfhosted.fullname" . }}-postgres
                   key: password
                   {{- else }}
@@ -109,15 +109,15 @@ spec:
       volumes:
         - name: tmp
           emptyDir: {}
-      {{- with .Values.nodeSelector }}
+      {{- with .Values.global.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with .Values.global.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
+      {{- with .Values.global.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}

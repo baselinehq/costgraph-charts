@@ -2,17 +2,14 @@
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{/*
+Fixed rather than release-derived. Components rendered by stakater's chart name
+themselves from a plain value and cannot resolve this helper, so every object in
+the chart uses a name they can also reference. One release per namespace, which
+is how this chart is deployed, so the release prefix bought nothing.
+*/}}
 {{- define "costgraph-selfhosted.fullname" -}}
-{{- if .Values.fullnameOverride -}}
-{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- if contains $name .Release.Name -}}
-{{- .Release.Name | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-{{- end -}}
+{{- default "costgraph-selfhosted" .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{- define "costgraph-selfhosted.labels" -}}
@@ -29,7 +26,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
 {{- define "costgraph-selfhosted.image" -}}
-{{- include "costgraph-selfhosted.imageRef" (dict "repository" .Values.image.repository "tag" (required "image.tag is required: the chart version is not an image tag" .Values.image.tag)) -}}
+{{- include "costgraph-selfhosted.imageRef" (dict "repository" .Values.global.image.repository "tag" (required "image.tag is required: the chart version is not an image tag" .Values.global.image.tag)) -}}
 {{- end -}}
 
 {{/*
@@ -48,16 +45,16 @@ joins with @ rather than :.
 The secret holding credentials. An existingSecret you supply always wins.
 */}}
 {{- define "costgraph-selfhosted.secretName" -}}
-{{- if .Values.controlPlane.existingSecret -}}
-{{- .Values.controlPlane.existingSecret -}}
+{{- if .Values.global.controlPlane.existingSecret -}}
+{{- .Values.global.controlPlane.existingSecret -}}
 {{- else -}}
 {{- include "costgraph-selfhosted.fullname" . -}}
 {{- end -}}
 {{- end -}}
 
 {{- define "costgraph-selfhosted.postgresSecretName" -}}
-{{- if .Values.postgres.existingSecret -}}
-{{- .Values.postgres.existingSecret -}}
+{{- if .Values.global.postgres.existingSecret -}}
+{{- .Values.global.postgres.existingSecret -}}
 {{- else -}}
 {{- include "costgraph-selfhosted.fullname" . -}}
 {{- end -}}
@@ -68,17 +65,17 @@ An explicit url always wins; a bundled dependency supplies one when none is
 set, so an evaluation install needs no addresses.
 */}}
 {{- define "costgraph-selfhosted.redisURL" -}}
-{{- if .Values.redis.url -}}
-{{- .Values.redis.url -}}
-{{- else if .Values.redis.bundled.enabled -}}
+{{- if .Values.global.redis.url -}}
+{{- .Values.global.redis.url -}}
+{{- else if .Values.global.redis.bundled.enabled -}}
 {{- printf "redis://%s-redis:6379" (include "costgraph-selfhosted.fullname" .) -}}
 {{- end -}}
 {{- end -}}
 
 {{- define "costgraph-selfhosted.metricsStoreURL" -}}
-{{- if .Values.metricsStore.url -}}
-{{- .Values.metricsStore.url -}}
-{{- else if .Values.metricsStore.bundled.enabled -}}
+{{- if .Values.global.metricsStore.url -}}
+{{- .Values.global.metricsStore.url -}}
+{{- else if .Values.global.metricsStore.bundled.enabled -}}
 {{- printf "http://%s-victoria-metrics:8428" (include "costgraph-selfhosted.fullname" .) -}}
 {{- end -}}
 {{- end -}}
@@ -93,8 +90,8 @@ in use rather than a new one on every render.
 {{- $password := "" -}}
 {{- if $existing -}}
 {{- $password = index $existing.data "password" | b64dec -}}
-{{- else if .Values.postgres.bundled.password -}}
-{{- $password = .Values.postgres.bundled.password -}}
+{{- else if .Values.global.postgres.bundled.password -}}
+{{- $password = .Values.global.postgres.bundled.password -}}
 {{- else -}}
 {{- $password = randAlphaNum 32 -}}
 {{- end -}}
@@ -104,7 +101,7 @@ in use rather than a new one on every render.
 {{- end -}}
 
 {{- define "costgraph-selfhosted.bundledPostgresURL" -}}
-{{- $pg := .Values.postgres.bundled -}}
+{{- $pg := .Values.global.postgres.bundled -}}
 {{- printf "postgres://%s:%s@%s-postgres:5432/%s?sslmode=disable" $pg.username (include "costgraph-selfhosted.bundledPostgresPassword" . | urlquery) (include "costgraph-selfhosted.fullname" .) $pg.database -}}
 {{- end -}}
 
@@ -115,7 +112,7 @@ ignored.
 {{- define "costgraph-selfhosted.dashboardConfig" -}}
 {{- $api := .Values.dashboard.apiBaseURL -}}
 {{- if not $api -}}
-{{- $api = printf "%s/api/v1" (trimSuffix "/" .Values.appBaseURL) -}}
+{{- $api = printf "%s/api/v1" (trimSuffix "/" .Values.global.appBaseURL) -}}
 {{- end -}}
 {{/* Omitted rather than left empty when unset, which is the normal case. */}}
 {{- $cognito := dict -}}
@@ -126,7 +123,7 @@ ignored.
 {{- if and .Values.dashboard.cognitoOAuthDomain $cognito -}}
 {{- $_ := set $cognito "oauthDomain" .Values.dashboard.cognitoOAuthDomain -}}
 {{- end -}}
-{{- $cfg := dict "apiBaseUrl" $api "posthog" (dict "enabled" .Values.analytics.enabled) -}}
+{{- $cfg := dict "apiBaseUrl" $api "posthog" (dict "enabled" .Values.global.analytics.enabled) -}}
 {{- if $cognito -}}
 {{- $_ := set $cfg "cognito" $cognito -}}
 {{- end -}}
@@ -142,9 +139,9 @@ chart's own generated secret is used, and nothing is attached when the key is
 not in values.
 */}}
 {{- define "costgraph-selfhosted.imagePullSecrets" -}}
-{{- if .Values.imagePullSecrets -}}
-{{- toYaml .Values.imagePullSecrets -}}
-{{- else if .Values.controlPlane.apiKey -}}
+{{- if .Values.global.imagePullSecrets -}}
+{{- toYaml .Values.global.imagePullSecrets -}}
+{{- else if .Values.global.controlPlane.apiKey -}}
 - name: {{ include "costgraph-selfhosted.fullname" . }}-registry
 {{- end -}}
 {{- end -}}

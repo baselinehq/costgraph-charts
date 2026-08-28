@@ -1,4 +1,4 @@
-{{- if and .Values.postgres.runMigrations (not .Values.postgres.bundled.enabled) }}
+{{- if and .Values.global.postgres.runMigrations (not .Values.global.postgres.bundled.enabled) }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -24,13 +24,13 @@ spec:
         {{- . | nindent 8 }}
       {{- end }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.global.podSecurityContext | nindent 8 }}
       containers:
         - name: migrate
           image: {{ include "costgraph-selfhosted.image" . }}
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.global.securityContext | nindent 12 }}
           env:
             - name: MIGRATE
               value: "1"

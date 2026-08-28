@@ -8,8 +8,8 @@ data:
   DEPLOYMENT_MODE: "on_prem"
   DEPLOYMENT_NAME: {{ .Values.deploymentName | default .Release.Name | quote }}
 
-  CONTROL_PLANE_URL: {{ .Values.controlPlane.url | quote }}
-  DEPLOYMENT_CONFIG_PUBLIC_KEY: {{ .Values.controlPlane.configPublicKey | quote }}
+  CONTROL_PLANE_URL: {{ .Values.global.controlPlane.url | quote }}
+  DEPLOYMENT_CONFIG_PUBLIC_KEY: {{ .Values.global.controlPlane.configPublicKey | quote }}
 
   {{- with (.Values.cognito).region }}
   COGNITO_REGION: {{ . | quote }}
@@ -24,13 +24,13 @@ data:
   COGNITO_JWKS_URL: {{ . | quote }}
   {{- end }}
 
-  APP_BASE_URL: {{ .Values.appBaseURL | quote }}
+  APP_BASE_URL: {{ .Values.global.appBaseURL | quote }}
   AUTH_PROVIDER_NAME: "cognito"
 
   PRICING_SYNC_INTERVAL: "24h"
   METERING_PUSH_INTERVAL: "24h"
-  MIGRATE: {{ if and .Values.postgres.runMigrations .Values.postgres.bundled.enabled }}"1"{{ else }}"0"{{ end }}
-  {{- if not .Values.redis.existingSecret }}
+  MIGRATE: {{ if and .Values.global.postgres.runMigrations .Values.global.postgres.bundled.enabled }}"1"{{ else }}"0"{{ end }}
+  {{- if not .Values.global.redis.existingSecret }}
   {{- with (include "costgraph-selfhosted.redisURL" .) }}
   REDIS_URL: {{ . | quote }}
   {{- end }}
@@ -45,4 +45,4 @@ data:
   # The browser calls the API from the dashboard's origin. Defaults to
   # appBaseURL, which is that origin; override when the dashboard is served
   # from somewhere else, or to allow several.
-  CORS_ALLOWED_ORIGINS: {{ .Values.corsAllowedOrigins | default .Values.appBaseURL | quote }}
+  CORS_ALLOWED_ORIGINS: {{ .Values.global.corsAllowedOrigins | default .Values.global.appBaseURL | quote }}

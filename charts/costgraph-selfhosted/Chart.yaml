@@ -2,7 +2,7 @@ apiVersion: v2
 name: costgraph-selfhosted
 description: CostGraph running in your own infrastructure
 type: application
-version: 0.2.0
+version: 0.3.0
 appVersion: "0.1.0"
 home: https://costgraph.ai
 sources:
@@ -11,6 +11,23 @@ maintainers:
   - name: Baseline
     url: https://baselinehq.cloud
 dependencies:
+  - name: application
+    version: 9.3.1
+    repository: https://stakater.github.io/stakater-charts
+    alias: redis
+    # The bundled Redis is opt-in; without this the alias renders regardless,
+    # where the template it replaced was guarded.
+    condition: global.redis.bundled.enabled
+  - name: application
+    version: 9.3.1
+    repository: https://stakater.github.io/stakater-charts
+    alias: aggregator
+    condition: aggregator.enabled
+  - name: application
+    version: 9.3.1
+    repository: https://stakater.github.io/stakater-charts
+    alias: ingestionApi
+    condition: ingestionApi.enabled
   - name: costgraph-common
     version: 0.1.1
     repository: https://charts.costgraph.ai
