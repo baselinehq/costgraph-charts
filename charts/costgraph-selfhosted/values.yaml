@@ -105,6 +105,51 @@ redis:
         cpu: 100m
         memory: 128Mi
 
+  # Rendered by stakater's application chart. Its names come from
+  # applicationName, a plain value, so the bundled Redis no longer carries the
+  # release name; costgraph-selfhosted.redisURL points at this name.
+  applicationName: costgraph-selfhosted-redis
+  rbac:
+    enabled: false
+  deployment:
+    enabled: true
+    replicas: 1
+    strategy:
+      type: Recreate
+    image:
+      repository: redis
+      tag: "7-alpine"
+      pullPolicy: IfNotPresent
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 999
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    automountServiceAccountToken: true
+    ports:
+      - name: redis
+        containerPort: 6379
+    readinessProbe:
+      enabled: true
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      exec:
+        command: ["redis-cli", "ping"]
+    volumeMounts:
+      data:
+        mountPath: /data
+    volumes:
+      data:
+        emptyDir: {}
+  service:
+    ports:
+      - name: redis
+        port: 6379
+        targetPort: redis
+
 metricsStore:
   url: ""                       # http://victoria-metrics:8428
   bundled:
