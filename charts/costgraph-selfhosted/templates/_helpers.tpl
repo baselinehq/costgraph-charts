@@ -71,7 +71,7 @@ set, so an evaluation install needs no addresses.
 {{- if .Values.redis.url -}}
 {{- .Values.redis.url -}}
 {{- else if .Values.redis.bundled.enabled -}}
-{{- printf "redis://%s:6379" .Values.redis.applicationName -}}
+{{- printf "redis://%s:6379" (default .Release.Name .Values.redis.applicationName | trunc 63 | trimSuffix "-") -}}
 {{- end -}}
 {{- end -}}
 

@@ -16,10 +16,6 @@ redis:
   bundled:
     enabled: false
     image: redis:7-alpine
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
 
   # Rendered by stakater's application chart. Its names come from
   # applicationName, a plain value, so the bundled Redis no longer carries the
@@ -33,9 +29,16 @@ redis:
     strategy:
       type: Recreate
     image:
-      repository: redis
-      tag: "7-alpine"
+      # Follows redis.bundled.image, which is a full reference, so no tag is
+      # appended. stakater templates the repository, which is what makes this
+      # possible; it does not template resources, so those live here now.
+      repository: '{{ .Values.bundled.image }}'
+      tag: ""
       pullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
     securityContext:
       runAsNonRoot: true
       runAsUser: 999
@@ -44,7 +47,7 @@ redis:
       readOnlyRootFilesystem: true
       capabilities:
         drop: ["ALL"]
-    automountServiceAccountToken: true
+    automountServiceAccountToken: false
     ports:
       - name: redis
         containerPort: 6379
