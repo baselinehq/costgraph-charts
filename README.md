@@ -4,6 +4,7 @@ Helm chart definitions to deploy costgraph to the clusters.
 | Chart | Status | Deploys |
 |-------|--------|---------|
 | [`costgraph-operator`](./charts/costgraph-operator) | Active | `costgraph-operator-kubernetes`, `costgraph-operator-prometheus` and their exporters |
+| [`costgraph-selfhosted`](./charts/costgraph-selfhosted) | Active | CostGraph itself, in a customer's own infrastructure |
 | [`costgraph`](./charts/costgraph) | **Deprecated** | Single-binary `costgraph-operator`, no longer supported |
 
 The single-binary operator has been broken out into domain-specific operators,

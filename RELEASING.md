@@ -14,6 +14,23 @@ binaries and the Helm chart that ships them.
 The two binaries version independently. The chart is the customer-facing
 release unit: a customer upgrades a chart version, not an image tag.
 
+## costgraph-selfhosted
+
+Released by the same chart-releaser workflow, on a version bump in
+`charts/costgraph-selfhosted/Chart.yaml`. Two things about it differ from the
+operator chart:
+
+- Its `appVersion` is not an image tag. The backend and dashboard images are
+  published per commit as `sha-<short>`, so `image.tag` and
+  `dashboard.image.tag` are pinned in `values.yaml` and must be bumped when
+  those images are rebuilt. An empty tag fails the render rather than
+  resolving to something that does not exist.
+- `recording-rules/` is a copy of `deploy/recording-rules` in
+  `baselinehq/aggregator`. Do not edit it here: a change to the rules there
+  opens a pull request against this repository with the copy refreshed and the
+  chart's patch version bumped. `dev/sync-recording-rules.sh -check` fails on
+  drift if you want to check locally.
+
 ## Versioning
 
 Both binaries follow Semantic Versioning and are released from

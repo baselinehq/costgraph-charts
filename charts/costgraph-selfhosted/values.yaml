@@ -2,6 +2,9 @@ nameOverride: ""
 fullnameOverride: ""
 
 image:
+  # The host the pull secret authenticates against, and the host in
+  # repository below.
+  registry: registry.costgraph.ai
   repository: registry.costgraph.ai/backend
   tag: sha-5d4cd8c
   pullPolicy: IfNotPresent

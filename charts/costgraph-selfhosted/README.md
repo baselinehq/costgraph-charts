@@ -3,7 +3,7 @@
 ![Version: 0.2.0](https://img.shields.io/badge/Version-0.2.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
 
 CostGraph running in your own infrastructure. Your cost data, cloud
-credentials and telemetry stay in your network — see "Network access it
+credentials and telemetry stay in your network - see "Network access it
 needs" below for the traffic that does leave it.
 
 ## What you need first
@@ -14,10 +14,14 @@ registry authenticates with the same key, and the chart wires that up for you.
 
 From your side: a Postgres 14+, a Redis, and a VictoriaMetrics you run, plus
 the URL your users will reach the dashboard on. To evaluate without setting
-those up, the chart can run all three for you — see "Install" below.
+those up, the chart can run all three for you - see "Install" below.
 
-Sign-in needs no configuration. Your users sign in with their CostGraph
-accounts; their cost data stays in your network.
+Sign-in needs no configuration, but a new deployment starts with no
+organisation and no users. The first person to use it opens the dashboard and
+chooses "Create an account", which creates the organisation and makes them its
+owner; everyone else is invited from Settings. An email that already has a
+CostGraph account elsewhere is fine - the account here is local to this
+deployment. Their cost data stays in your network.
 
 ## Install
 
@@ -61,7 +65,7 @@ ingress:
 
 To try it out without standing up Postgres, Redis and VictoriaMetrics first,
 replace those three blocks with `bundled.enabled: true` on each and the chart
-runs them in-cluster. That is for evaluation only — single replica, no backups,
+runs them in-cluster. That is for evaluation only - single replica, no backups,
 and the bundled Postgres image does not carry `pg_partman` or `pg_cron`, so
 partition maintenance never runs. See "Database" below.
 
@@ -76,7 +80,7 @@ must use these key names:
 |---|---|
 | `controlPlane.existingSecret` | `control-plane-api-key`, plus `pricing-api-key` if you were issued a separate pricing key |
 | `postgres.existingSecret` | `postgres-url`, `postgres-password` |
-| `redis.existingSecret` | `redis-url` — use this if your Redis URL contains a password |
+| `redis.existingSecret` | `redis-url` - use this if your Redis URL contains a password |
 
 ```sh
 kubectl create secret generic costgraph-control-plane \
@@ -121,8 +125,9 @@ Outbound HTTPS (443) to these hosts:
 |---|---|
 | `api.costgraph.ai` | licensing, the pricing catalog, billing quantities, outbound account email |
 | `cognito-idp.us-east-2.amazonaws.com` | verifying sign-in tokens |
-| `registry.costgraph.ai` | pulling the images |
+| `registry.costgraph.ai` | pulling the CostGraph images |
 | `pkg-containers.githubusercontent.com` | the image layers themselves, fetched directly |
+| `docker.io` / `production.cloudflare.docker.com` | vmalert, and the bundled Postgres, Redis and VictoriaMetrics if you enable them |
 | `us.i.posthog.com` | only if you set `analytics.enabled` |
 
 Nothing needs to reach the deployment from outside your network.
@@ -135,6 +140,7 @@ Nothing needs to reach the deployment from outside your network.
 | dashboard | the web UI (`dashboard.enabled`, on by default) |
 | ingestion-api | receives metrics from your clusters (`ingestionApi.enabled`, on by default) |
 | aggregator | turns those metrics into per-workload costs (`aggregator.enabled`, on by default) |
+| vmalert | two pods the aggregator depends on, installed with it |
 | Postgres, Redis, VictoriaMetrics | only when `*.bundled.enabled` is set |
 
 The operator in each of your clusters sends metrics to ingestion-api, and the
@@ -154,7 +160,7 @@ exists for evaluation only: a database holding your cost history should outlive
 a Helm release, and you almost certainly want it backed up on your own terms.
 
 Required extensions: `citext`, `pg_trgm`. Strongly recommended: `pg_partman`
-and `pg_cron` — without them performance degrades as your history grows.
+and `pg_cron` - without them performance degrades as your history grows.
 Managed Postgres (RDS, Cloud SQL) often ships neither; the install still
 works, and `selfhost-doctor` warns.
 
@@ -175,14 +181,14 @@ Resources are named `<release>-costgraph-selfhosted`, so the examples below
 assume `helm install costgraph ...` as above. `helm status costgraph` prints
 the commands with your own release name filled in.
 
-Health, any time — reads the database, makes no outbound call:
+Health, any time - reads the database, makes no outbound call:
 
 ```sh
 kubectl exec -n costgraph deploy/costgraph-costgraph-selfhosted -- \
   selfhost-doctor -offline
 ```
 
-If support asks for a bundle (version, schema state, health, redacted config —
+If support asks for a bundle (version, schema state, health, redacted config -
 no secrets, no cost data):
 
 ```sh
@@ -219,7 +225,7 @@ already saved is tied to them.
 Helm keeps this Secret across upgrades and uninstalls, so you do not need to
 do anything with it. But it cannot be regenerated. If it is deleted, every
 API key your team issued stops working and every connected cloud account has
-to be reconnected — the stored credentials can no longer be read.
+to be reconnected - the stored credentials can no longer be read.
 
 Back it up alongside the database, and keep the two together. A database
 restored next to a different Secret is a database whose credentials cannot be

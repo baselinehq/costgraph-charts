@@ -41,18 +41,10 @@ done
 
 kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
-kubectl create secret docker-registry costgraph-registry \
-  --namespace "$NAMESPACE" \
-  --docker-server=registry.costgraph.ai \
-  --docker-username=x \
-  --docker-password="$KEY" \
-  --dry-run=client -o yaml | kubectl apply -f -
-
 helm upgrade --install "$RELEASE" ../charts/costgraph-selfhosted \
   --namespace "$NAMESPACE" \
   -f kind-values.yaml \
   --set-string controlPlane.apiKey="$KEY" \
-  --set imagePullSecrets[0].name=costgraph-registry \
   ${EXTRA_HELM_ARGS:-} \
   --wait --timeout 10m
 
