@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   images:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     outputs:
       refs: ${{ steps.render.outputs.refs }}
     steps:
@@ -42,7 +42,7 @@ jobs:
 
   scan:
     needs: images
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       fail-fast: false
       matrix:
