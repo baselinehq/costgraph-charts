@@ -30,7 +30,7 @@ data:
   PRICING_SYNC_INTERVAL: "24h"
   METERING_PUSH_INTERVAL: "24h"
   MIGRATE: {{ if and .Values.global.postgres.runMigrations .Values.global.postgres.bundled.enabled }}"1"{{ else }}"0"{{ end }}
-  {{- if not .Values.redis.existingSecret }}
+  {{- if not .Values.global.redis.existingSecret }}
   {{- with (include "costgraph-selfhosted.redisURL" .) }}
   REDIS_URL: {{ . | quote }}
   {{- end }}

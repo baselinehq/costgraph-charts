@@ -8,15 +8,9 @@ replicaCount: 2
 deploymentName: ""
 
 redis:
-  url: ""                       # redis://host:6379
   # Name of a Secret you manage holding the connection URL under `redis-url`.
   # Use this rather than redis.url when the URL contains a password, so it is
   # not stored in a ConfigMap in plain text.
-  existingSecret: ""
-  bundled:
-    enabled: false
-    image: redis:7-alpine
-
   # Rendered by stakater's application chart. Its names come from
   # applicationName, a plain value, so the bundled Redis no longer carries the
   # release name; costgraph-selfhosted.redisURL points at this name.
@@ -32,7 +26,7 @@ redis:
       # Follows redis.bundled.image, which is a full reference, so no tag is
       # appended. stakater templates the repository, which is what makes this
       # possible; it does not template resources, so those live here now.
-      repository: '{{ .Values.bundled.image }}'
+      repository: '{{ .Values.global.redis.bundled.image }}'
       tag: ""
       pullPolicy: IfNotPresent
     resources:
@@ -68,7 +62,6 @@ redis:
       - name: redis
         port: 6379
         targetPort: redis
-
 dashboard:
   enabled: true
   image:
@@ -121,12 +114,81 @@ ingestionApi:
 # Without it, metrics arrive but cost breakdowns stay empty.
 aggregator:
   enabled: true
+  applicationName: costgraph-selfhosted-aggregator
   image:
     repository: registry.costgraph.ai/aggregator
     # Versioned separately from the chart, so this is pinned rather than
     # following appVersion.
     tag: sha-79f4b08
     pullPolicy: IfNotPresent
+  rbac:
+    enabled: false
+    serviceAccount:
+      create: false
+      name: costgraph-selfhosted
+  service:
+    ports:
+      - name: http
+        port: 8192
+        targetPort: http
+  deployment:
+    enabled: true
+    replicas: 1
+    strategy:
+      type: Recreate
+    image:
+      repository: '{{ .Values.image.repository }}'
+      tag: '{{ required "aggregator.image.tag is required" .Values.image.tag }}'
+      pullPolicy: IfNotPresent
+    imagePullSecrets:
+      - name: costgraph-selfhosted-registry
+    automountServiceAccountToken: false
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        memory: 2Gi
+    ports:
+      - name: http
+        containerPort: 8192
+    env:
+      ENVIRONMENT:
+        value: production
+      RULES_EVAL_INTERVAL:
+        value: "1m"
+      GOMEMLIMIT:
+        value: 1750MiB
+      DATABASE_URL:
+        valueFrom:
+          secretKeyRef:
+            name: '{{ include "costgraph-selfhosted.postgresSecretName" . }}'
+            key: postgres-url
+      # The chart's own helpers resolve here: their values live under global and
+      # fullname is fixed, so a subchart can call them.
+      REDIS_URL:
+        value: '{{ include "costgraph-selfhosted.redisURL" . }}'
+      PROMETHEUS_URL:
+        value: '{{ include "costgraph-selfhosted.metricsStoreURL" . }}'
+      REMOTE_WRITE_URL:
+        value: '{{ printf "%s/api/v1/write" (include "costgraph-selfhosted.metricsStoreURL" .) }}'
+      REMOTE_WRITE_URL_SHORT:
+        value: '{{ printf "%s/api/v1/write" (include "costgraph-selfhosted.metricsStoreURL" .) }}'
+      ENABLE_GPU:
+        value: '{{ .Values.features.ENABLE_GPU }}'
+      ENABLE_HPA:
+        value: '{{ .Values.features.ENABLE_HPA }}'
+      ENABLE_NETWORK_POLICY:
+        value: '{{ .Values.features.ENABLE_NETWORK_POLICY }}'
+      ENABLE_EPHEMERAL_STORAGE:
+        value: '{{ .Values.features.ENABLE_EPHEMERAL_STORAGE }}'
+      ENABLE_DISK_IOPS:
+        value: '{{ .Values.features.ENABLE_DISK_IOPS }}'
+      # Replaces the checksum over the rendered Secret: stakater does not
+      # template pod annotations, but env is templated, so a change to anything
+      # under global changes the pod spec and rolls the Deployment.
+      VALUES_HASH:
+        value: '{{ toYaml .Values.global | sha256sum }}'
   vmalert:
     image:
       repository: victoriametrics/vmalert
@@ -145,12 +207,6 @@ aggregator:
     ENABLE_NETWORK_POLICY: "true"
     ENABLE_EPHEMERAL_STORAGE: "true"
     ENABLE_DISK_IOPS: "true"
-  resources:
-    requests:
-      cpu: 250m
-      memory: 512Mi
-    limits:
-      memory: 2Gi
 
 service:
   type: ClusterIP
@@ -286,3 +342,9 @@ global:
   tolerations: []
   affinity: {}
   podAnnotations: {}
+  redis:
+    url: ""                       # redis://host:6379
+    existingSecret: ""
+    bundled:
+      enabled: false
+      image: redis:7-alpine

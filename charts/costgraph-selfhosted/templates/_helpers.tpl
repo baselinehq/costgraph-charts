@@ -2,17 +2,14 @@
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{/*
+Fixed rather than release-derived. Components rendered by stakater's chart name
+themselves from a plain value and cannot resolve this helper, so every object in
+the chart uses a name they can also reference. One release per namespace, which
+is how this chart is deployed, so the release prefix bought nothing.
+*/}}
 {{- define "costgraph-selfhosted.fullname" -}}
-{{- if .Values.fullnameOverride -}}
-{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- if contains $name .Release.Name -}}
-{{- .Release.Name | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-{{- end -}}
+{{- default "costgraph-selfhosted" .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{- define "costgraph-selfhosted.labels" -}}
@@ -68,10 +65,10 @@ An explicit url always wins; a bundled dependency supplies one when none is
 set, so an evaluation install needs no addresses.
 */}}
 {{- define "costgraph-selfhosted.redisURL" -}}
-{{- if .Values.redis.url -}}
-{{- .Values.redis.url -}}
-{{- else if .Values.redis.bundled.enabled -}}
-{{- printf "redis://%s:6379" (default .Release.Name .Values.redis.applicationName | trunc 63 | trimSuffix "-") -}}
+{{- if .Values.global.redis.url -}}
+{{- .Values.global.redis.url -}}
+{{- else if .Values.global.redis.bundled.enabled -}}
+{{- printf "redis://%s-redis:6379" (include "costgraph-selfhosted.fullname" .) -}}
 {{- end -}}
 {{- end -}}
 

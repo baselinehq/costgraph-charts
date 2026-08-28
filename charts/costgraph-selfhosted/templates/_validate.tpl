@@ -29,7 +29,7 @@ is buried in container logs.
 {{- fail "postgres.url (or postgres.existingSecret) is required. For production, point it at a Postgres 14+ you operate — a database holding cost history should outlive a Helm release. To evaluate, set postgres.bundled.enabled=true to run one in-cluster (single replica, no backups)." -}}
 {{- end -}}
 
-{{- if and (not .Values.redis.url) (not .Values.redis.existingSecret) (not .Values.redis.bundled.enabled) -}}
+{{- if and (not .Values.global.redis.url) (not .Values.global.redis.existingSecret) (not .Values.global.redis.bundled.enabled) -}}
 {{- fail "redis.url is required (or redis.existingSecret, or redis.bundled.enabled=true)." -}}
 {{- end -}}
 
