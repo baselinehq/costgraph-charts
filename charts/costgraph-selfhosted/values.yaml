@@ -103,12 +103,69 @@ ingestionApi:
   # Largest remote_write batch to accept, in bytes. Raise it if clusters with
   # many nodes report bodies rejected as too large.
   maxBodyBytes: 52428800
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      memory: 1Gi
+  applicationName: costgraph-selfhosted-ingestion-api
+  rbac:
+    enabled: false
+    serviceAccount:
+      create: false
+      name: costgraph-selfhosted
+  service:
+    ports:
+      - name: http
+        port: 8080
+        targetPort: http
+  deployment:
+    enabled: true
+    image:
+      repository: '{{ .Values.image.repository }}'
+      tag: '{{ required "ingestionApi.image.tag is required" .Values.image.tag }}'
+      pullPolicy: IfNotPresent
+    replicas: 2
+    imagePullSecrets:
+      - name: costgraph-selfhosted-registry
+    automountServiceAccountToken: false
+    ports:
+      - name: http
+        containerPort: 8080
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 1Gi
+    env:
+      PORT:
+        value: "8080"
+      LOG_LEVEL:
+        value: '{{ .Values.logLevel }}'
+      VM_TENANT_HEADER:
+        value: X-Scope-OrgID
+      VM_WRITE_TIMEOUT:
+        value: 10s
+      MAX_BODY_BYTES:
+        value: '{{ .Values.maxBodyBytes }}'
+      AUTH_CACHE_SIZE:
+        value: "10000"
+      AUTH_CACHE_TTL:
+        value: 5m
+      AUTH_CACHE_NEGATIVE_TTL:
+        value: 5s
+      VM_WRITE_URL:
+        value: '{{ printf "%s/api/v1/write" (include "costgraph-selfhosted.metricsStoreURL" .) }}'
+      VM_SHORT_WRITE_URL:
+        value: '{{ printf "%s/api/v1/write" (include "costgraph-selfhosted.metricsStoreURL" .) }}'
+      AUTH_DB_URL:
+        valueFrom:
+          secretKeyRef:
+            name: '{{ include "costgraph-selfhosted.postgresSecretName" . }}'
+            key: postgres-url
+      API_KEY_SECRET:
+        valueFrom:
+          secretKeyRef:
+            name: costgraph-selfhosted-generated
+            key: api-key-secret
+      VALUES_HASH:
+        value: '{{ toYaml .Values.global | sha256sum }}'
 
 # Turns the raw samples into the per-workload costs the dashboard shows.
 # Without it, metrics arrive but cost breakdowns stay empty.
