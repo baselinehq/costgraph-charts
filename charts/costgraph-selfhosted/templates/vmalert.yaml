@@ -25,10 +25,10 @@ The rules come from the aggregator image, which already ships them.
     "datasourceURL" $store
     "remoteWriteURL" $store
     "resources" $.Values.aggregator.vmalert.resources
-    "podSecurityContext" $.Values.podSecurityContext
-    "containerSecurityContext" $.Values.securityContext
-    "nodeSelector" $.Values.nodeSelector
-    "tolerations" $.Values.tolerations
+    "podSecurityContext" $.Values.global.podSecurityContext
+    "containerSecurityContext" $.Values.global.securityContext
+    "nodeSelector" $.Values.global.nodeSelector
+    "tolerations" $.Values.global.tolerations
 ) }}
 {{- end }}
 {{- end }}

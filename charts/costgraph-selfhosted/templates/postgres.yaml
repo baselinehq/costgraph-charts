@@ -1,4 +1,4 @@
-{{- if .Values.postgres.bundled.enabled }}
+{{- if .Values.global.postgres.bundled.enabled }}
 {{- $fullname := include "costgraph-selfhosted.fullname" . }}
 {{- $name := printf "%s-postgres" $fullname }}
 apiVersion: v1
@@ -42,16 +42,16 @@ spec:
         fsGroup: 999
       containers:
         - name: postgres
-          image: {{ .Values.postgres.bundled.image }}
+          image: {{ .Values.global.postgres.bundled.image }}
           imagePullPolicy: IfNotPresent
           ports:
             - name: postgres
               containerPort: 5432
           env:
             - name: POSTGRES_DB
-              value: {{ .Values.postgres.bundled.database | quote }}
+              value: {{ .Values.global.postgres.bundled.database | quote }}
             - name: POSTGRES_USER
-              value: {{ .Values.postgres.bundled.username | quote }}
+              value: {{ .Values.global.postgres.bundled.username | quote }}
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -63,16 +63,16 @@ spec:
               value: /var/lib/postgresql/data/pgdata
           readinessProbe:
             exec:
-              command: ["pg_isready", "-U", {{ .Values.postgres.bundled.username | quote }}, "-d", {{ .Values.postgres.bundled.database | quote }}]
+              command: ["pg_isready", "-U", {{ .Values.global.postgres.bundled.username | quote }}, "-d", {{ .Values.global.postgres.bundled.database | quote }}]
             initialDelaySeconds: 10
             periodSeconds: 5
           livenessProbe:
             exec:
-              command: ["pg_isready", "-U", {{ .Values.postgres.bundled.username | quote }}, "-d", {{ .Values.postgres.bundled.database | quote }}]
+              command: ["pg_isready", "-U", {{ .Values.global.postgres.bundled.username | quote }}, "-d", {{ .Values.global.postgres.bundled.database | quote }}]
             initialDelaySeconds: 30
             periodSeconds: 20
           resources:
-            {{- toYaml .Values.postgres.bundled.resources | nindent 12 }}
+            {{- toYaml .Values.global.postgres.bundled.resources | nindent 12 }}
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
@@ -81,12 +81,12 @@ spec:
         name: data
       spec:
         accessModes: ["ReadWriteOnce"]
-        {{- with .Values.postgres.bundled.storageClass }}
+        {{- with .Values.global.postgres.bundled.storageClass }}
         storageClassName: {{ . | quote }}
         {{- end }}
         resources:
           requests:
-            storage: {{ .Values.postgres.bundled.storage }}
+            storage: {{ .Values.global.postgres.bundled.storage }}
 ---
 {{- $pgSecret := printf "%s-postgres" $fullname }}
 apiVersion: v1

@@ -37,7 +37,7 @@ spec:
         app.kubernetes.io/component: ingestion-api
       annotations:
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
-        {{- with .Values.podAnnotations }}
+        {{- with .Values.global.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
@@ -47,13 +47,13 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "costgraph-selfhosted.fullname" . }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.global.podSecurityContext | nindent 8 }}
       containers:
         - name: ingestion-api
           image: {{ include "costgraph-selfhosted.imageRef" (dict "repository" .Values.ingestionApi.image.repository "tag" (required "ingestionApi.image.tag is required" .Values.ingestionApi.image.tag)) | quote }}
           imagePullPolicy: {{ .Values.ingestionApi.image.pullPolicy }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.global.securityContext | nindent 12 }}
           ports:
             - name: http
               containerPort: 8080
@@ -90,15 +90,15 @@ spec:
               value: "5s"
           resources:
             {{- toYaml .Values.ingestionApi.resources | nindent 12 }}
-      {{- with .Values.nodeSelector }}
+      {{- with .Values.global.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
+      {{- with .Values.global.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with .Values.global.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}

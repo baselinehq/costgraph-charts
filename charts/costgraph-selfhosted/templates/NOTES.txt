@@ -1,6 +1,6 @@
 CostGraph is installing in {{ .Release.Namespace }}.
 
-The deployment registers itself with {{ .Values.controlPlane.url }} on first
+The deployment registers itself with {{ .Values.global.controlPlane.url }} on first
 start, fetches its signed config document and licence, then begins replicating
 the pricing catalog. Watch it happen:
 

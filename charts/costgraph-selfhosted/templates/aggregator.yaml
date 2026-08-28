@@ -38,7 +38,7 @@ spec:
         app.kubernetes.io/component: aggregator
       annotations:
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
-        {{- with .Values.podAnnotations }}
+        {{- with .Values.global.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
@@ -48,13 +48,13 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "costgraph-selfhosted.fullname" . }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.global.podSecurityContext | nindent 8 }}
       containers:
         - name: aggregator
           image: {{ include "costgraph-selfhosted.imageRef" (dict "repository" .Values.aggregator.image.repository "tag" (required "aggregator.image.tag is required" .Values.aggregator.image.tag)) | quote }}
           imagePullPolicy: {{ .Values.aggregator.image.pullPolicy }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.global.securityContext | nindent 12 }}
           ports:
             - name: http
               containerPort: 8192
@@ -92,15 +92,15 @@ spec:
               value: "1750MiB"
           resources:
             {{- toYaml .Values.aggregator.resources | nindent 12 }}
-      {{- with .Values.nodeSelector }}
+      {{- with .Values.global.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
+      {{- with .Values.global.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with .Values.global.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
