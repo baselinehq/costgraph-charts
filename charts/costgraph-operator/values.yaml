@@ -245,8 +245,6 @@ operatorKubernetes:
   # applicationName, which is a plain value, so they no longer carry the release
   # name the way the rest of this chart's objects do.
   applicationName: costgraph-operator-kubernetes
-  config:
-    operatorVersion: "1.0.0"
   rbac:
     enabled: false
     serviceAccount:
@@ -256,6 +254,10 @@ operatorKubernetes:
     enabled: false
   deployment:
     enabled: true
+    # The chart's top-level imagePullSecrets does not reach this Deployment:
+    # stakater reads its own value and does not template the field, so a private
+    # operator image needs the secret repeated here.
+    imagePullSecrets: []
     image:
       repository: ghcr.io/baselinehq/costgraph-operator-kubernetes
       tag: "v0.1.0"
@@ -279,8 +281,8 @@ operatorKubernetes:
         valueFrom:
           secretKeyRef:
             # Rendered by this chart, so the name still carries the release.
-            name: '{{ .Values.global.existingSecret | default (printf "%s-costgraph-operator-credentials" .Release.Name) }}'
-            key: '{{ .Values.global.existingSecretKey | default "apiKey" }}'
+            name: '{{ default (printf "%s-costgraph-operator-credentials" .Release.Name) .Values.global.existingSecret }}'
+            key: '{{ default "apiKey" .Values.global.existingSecretKey }}'
     resources:
       requests:
         cpu: 10m
