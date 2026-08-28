@@ -29,10 +29,17 @@ jobs:
               # Extract repository URLs from dependencies
               yq eval '.dependencies[].repository' "$chart" 2>/dev/null | while read -r repo_url; do
                 if [ -n "$repo_url" ] && [ "$repo_url" != "null" ]; then
-                  # Extract repo name from URL (e.g., bitnami from https://charts.bitnami.com/bitnami)
-                  repo_name=$(echo "$repo_url" | sed -E 's|https?://[^/]+/(.+)/?|\1|' | sed 's|/|-|g')
+                  # Name the repo after its path (bitnami from
+                  # https://charts.bitnami.com/bitnami), falling back to the host
+                  # when there is no path. Without the fallback a host-only URL
+                  # became its own name, helm rejected it, and packaging then
+                  # failed with "no repository definition".
+                  repo_name=$(echo "$repo_url" | sed -E 's|https?://[^/]+/?||' | sed 's|/$||' | sed 's|/|-|g')
+                  if [ -z "$repo_name" ]; then
+                    repo_name=$(echo "$repo_url" | sed -E 's|https?://||' | sed 's|[/.]|-|g')
+                  fi
                   echo "Adding repository: $repo_name -> $repo_url"
-                  helm repo add "$repo_name" "$repo_url" || true
+                  helm repo add "$repo_name" "$repo_url"
                 fi
               done
             fi
