@@ -2,10 +2,14 @@ apiVersion: v2
 name: costgraph-operator
 description: A Helm chart for the Costgraph operator
 type: application
-version: 0.4.1
+version: 0.5.0
 appVersion: "0.4.0"
 
 dependencies:
+  - name: application
+    version: 9.3.1
+    repository: https://stakater.github.io/stakater-charts
+    alias: operatorKubernetes
   - name: kube-state-metrics
     version: "5.27.*"
     repository: https://prometheus-community.github.io/helm-charts

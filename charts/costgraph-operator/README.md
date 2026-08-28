@@ -1,6 +1,6 @@
 # costgraph-operator
 
-![Version: 0.4.1](https://img.shields.io/badge/Version-0.4.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.4.0](https://img.shields.io/badge/AppVersion-0.4.0-informational?style=flat-square)
+![Version: 0.5.0](https://img.shields.io/badge/Version-0.5.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.4.0](https://img.shields.io/badge/AppVersion-0.4.0-informational?style=flat-square)
 
 A Helm chart for the Costgraph operator
 
@@ -12,6 +12,7 @@ A Helm chart for the Costgraph operator
 | https://nvidia.github.io/dcgm-exporter/helm-charts | dcgm-exporter | 3.* |
 | https://prometheus-community.github.io/helm-charts | kube-state-metrics | 5.27.* |
 | https://prometheus-community.github.io/helm-charts | prometheus-node-exporter | 4.* |
+| https://stakater.github.io/stakater-charts | operatorKubernetes(application) | 9.3.1 |
 
 ## Values
 
@@ -33,7 +34,7 @@ A Helm chart for the Costgraph operator
 | imagePullSecrets | list | `[]` |  |
 | kube-state-metrics | object | `{"collectors":["cronjobs","daemonsets","deployments","endpoints","horizontalpodautoscalers","ingresses","jobs","limitranges","namespaces","networkpolicies","nodes","persistentvolumeclaims","persistentvolumes","poddisruptionbudgets","pods","replicasets","replicationcontrollers","resourcequotas","services","statefulsets","storageclasses","volumeattachments"],"enabled":true}` | ------------------------------------------------------------------------ |
 | nameOverride | string | `""` |  |
-| operatorKubernetes | object | `{"affinity":{},"config":{"operatorVersion":"1.0.0"},"enabled":true,"env":[],"image":{"pullPolicy":"IfNotPresent","repository":"ghcr.io/baselinehq/costgraph-operator-kubernetes","tag":"v0.1.0"},"nodeSelector":{},"podAnnotations":{},"podLabels":{},"replicas":1,"resources":{"requests":{"cpu":"10m","memory":"64Mi"}},"securityContext":{},"tolerations":[]}` | ------------------------------------------------------------------------ |
+| operatorKubernetes | object | `{"applicationName":"costgraph-operator-kubernetes","deployment":{"additionalPodAnnotations":{},"affinity":{},"automountServiceAccountToken":true,"containerSecurityContext":null,"enabled":true,"env":{"API_KEY":{"valueFrom":{"secretKeyRef":{"key":"{{ default \"apiKey\" .Values.global.existingSecretKey }}","name":"{{ default (printf \"%s-costgraph-operator-credentials\" .Release.Name) .Values.global.existingSecret }}"}}},"BACKEND_URL":{"value":"{{ .Values.global.backendURL }}"},"CLUSTER_NAME":{"value":"{{ required \"Cluster name must be provided\" .Values.global.clusterName }}"},"OPERATOR_VERSION":{"value":"{{ .Values.deployment.image.tag }}"}},"image":{"pullPolicy":"IfNotPresent","repository":"ghcr.io/baselinehq/costgraph-operator-kubernetes","tag":"v0.1.0"},"imagePullSecrets":[],"nodeSelector":{},"podLabels":{},"ports":[{"containerPort":6060,"name":"pprof","protocol":"TCP"}],"replicas":1,"resources":{"requests":{"cpu":"10m","memory":"64Mi"}},"securityContext":{},"tolerations":[]},"rbac":{"enabled":false,"serviceAccount":{"create":false,"name":"costgraph-operator"}},"service":{"enabled":false}}` | ------------------------------------------------------------------------ |
 | operatorPrometheus | object | `{"affinity":{},"config":{"httpTimeout":"30s","prometheusAPIProvider":"prometheus","prometheusAPIVersion":"kube-state-metrics","remoteWritePath":"/api/v1/write","remoteWriteURL":""},"enabled":true,"env":[],"image":{"pullPolicy":"IfNotPresent","repository":"ghcr.io/baselinehq/costgraph-operator-prometheus","tag":"v0.4.0"},"nodeSelector":{},"podAnnotations":{},"podLabels":{},"replicas":1,"resources":{"requests":{"cpu":"100m","memory":"64Mi"}},"scrapeTargets":{"cadvisor":{"enabled":true,"labelSelector":"app.kubernetes.io/name=cadvisor","namespace":"{{ include \"costgraph-operator.namespace\" . }}","nodeMetrics":true,"port":8080},"dcgm-exporter":{"enabled":false,"labelSelector":"app.kubernetes.io/name=dcgm-exporter","namespace":"{{ include \"costgraph-operator.namespace\" . }}","nodeMetrics":true,"port":9400},"kube-state-metrics":{"enabled":true,"labelSelector":"app.kubernetes.io/name=kube-state-metrics","namespace":"{{ include \"costgraph-operator.namespace\" . }}","port":8080},"kubelet":{"enabled":true,"kind":"node","metricNamePrefixes":["kubelet_"],"nodeMetrics":true,"path":"/metrics"},"node-exporter":{"enabled":true,"labelSelector":"app.kubernetes.io/name=prometheus-node-exporter","namespace":"{{ include \"costgraph-operator.namespace\" . }}","nodeMetrics":true,"port":"{{ index .Values \"prometheus-node-exporter\" \"service\" \"port\" }}"}},"securityContext":{},"tolerations":[]}` | ------------------------------------------------------------------------ |
 | operatorPrometheus.scrapeTargets | object | `{"cadvisor":{"enabled":true,"labelSelector":"app.kubernetes.io/name=cadvisor","namespace":"{{ include \"costgraph-operator.namespace\" . }}","nodeMetrics":true,"port":8080},"dcgm-exporter":{"enabled":false,"labelSelector":"app.kubernetes.io/name=dcgm-exporter","namespace":"{{ include \"costgraph-operator.namespace\" . }}","nodeMetrics":true,"port":9400},"kube-state-metrics":{"enabled":true,"labelSelector":"app.kubernetes.io/name=kube-state-metrics","namespace":"{{ include \"costgraph-operator.namespace\" . }}","port":8080},"kubelet":{"enabled":true,"kind":"node","metricNamePrefixes":["kubelet_"],"nodeMetrics":true,"path":"/metrics"},"node-exporter":{"enabled":true,"labelSelector":"app.kubernetes.io/name=prometheus-node-exporter","namespace":"{{ include \"costgraph-operator.namespace\" . }}","nodeMetrics":true,"port":"{{ index .Values \"prometheus-node-exporter\" \"service\" \"port\" }}"}}` | ---------------------------------------------------------------------- |
 | prometheus-node-exporter | object | `{"enabled":true,"podAnnotations":{},"podLabels":{},"resources":{"requests":{"cpu":"100m","memory":"100Mi"}},"service":{"port":9101,"targetPort":9101},"tolerations":[{"operator":"Exists"}]}` | ------------------------------------------------------------------------ |
@@ -41,7 +42,7 @@ A Helm chart for the Costgraph operator
 | serviceAccount.annotations | object | `{}` |  |
 | serviceAccount.automount | bool | `true` |  |
 | serviceAccount.create | bool | `true` |  |
-| serviceAccount.name | string | `""` |  |
+| serviceAccount.name | string | `"costgraph-operator"` |  |
 
 ----------------------------------------------
 Autogenerated from chart metadata using [helm-docs v1.14.2](https://github.com/norwoodj/helm-docs/releases/v1.14.2)

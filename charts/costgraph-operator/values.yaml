@@ -31,7 +31,9 @@ serviceAccount:
   create: true
   automount: true
   annotations: {}
-  name: ""
+  # Pinned rather than release-derived: the operator Deployment is rendered by
+  # stakater\'s chart, which cannot template a service account name.
+  name: costgraph-operator
 
 # --------------------------------------------------------------------------
 # rbac
@@ -239,26 +241,58 @@ prometheus-node-exporter:
 # costgraph-operator-kubernetes deployment
 # --------------------------------------------------------------------------
 operatorKubernetes:
-  enabled: true
-  image:
-    repository: ghcr.io/baselinehq/costgraph-operator-kubernetes
-    tag: "v0.1.0"
-    pullPolicy: IfNotPresent
-  # This should always be 1
-  replicas: 1
-  config:
-    operatorVersion: "1.0.0"
-  resources:
-    requests:
-      cpu: 10m
-      memory: 64Mi
-  securityContext: {}
-  nodeSelector: {}
-  tolerations: []
-  affinity: {}
-  podAnnotations: {}
-  podLabels: {}
-  env: []
+  # Rendered by stakater's application chart. Its object names come from
+  # applicationName, which is a plain value, so they no longer carry the release
+  # name the way the rest of this chart's objects do.
+  applicationName: costgraph-operator-kubernetes
+  rbac:
+    enabled: false
+    serviceAccount:
+      create: false
+      name: costgraph-operator
+  service:
+    enabled: false
+  deployment:
+    enabled: true
+    # The chart's top-level imagePullSecrets does not reach this Deployment:
+    # stakater reads its own value and does not template the field, so a private
+    # operator image needs the secret repeated here.
+    imagePullSecrets: []
+    image:
+      repository: ghcr.io/baselinehq/costgraph-operator-kubernetes
+      tag: "v0.1.0"
+      pullPolicy: IfNotPresent
+    # This should always be 1
+    replicas: 1
+    containerSecurityContext: null
+    automountServiceAccountToken: true
+    ports:
+      - name: pprof
+        containerPort: 6060
+        protocol: TCP
+    env:
+      CLUSTER_NAME:
+        value: '{{ required "Cluster name must be provided" .Values.global.clusterName }}'
+      BACKEND_URL:
+        value: '{{ .Values.global.backendURL }}'
+      OPERATOR_VERSION:
+        value: '{{ .Values.deployment.image.tag }}'
+      API_KEY:
+        valueFrom:
+          secretKeyRef:
+            # Rendered by this chart, so the name still carries the release.
+            name: '{{ default (printf "%s-costgraph-operator-credentials" .Release.Name) .Values.global.existingSecret }}'
+            key: '{{ default "apiKey" .Values.global.existingSecretKey }}'
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+    securityContext: {}
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+    additionalPodAnnotations: {}
+    podLabels: {}
 
 # --------------------------------------------------------------------------
 # costgraph-operator-prometheus deployment
