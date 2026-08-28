@@ -285,6 +285,37 @@ entries:
   costgraph-operator:
   - apiVersion: v2
     appVersion: 0.4.0
+    created: "2026-08-28T18:18:32.772312542Z"
+    dependencies:
+    - alias: operatorKubernetes
+      name: application
+      repository: https://stakater.github.io/stakater-charts
+      version: 9.3.1
+    - condition: kube-state-metrics.enabled
+      name: kube-state-metrics
+      repository: https://prometheus-community.github.io/helm-charts
+      version: 5.27.*
+    - condition: cadvisor.enabled
+      name: cadvisor
+      repository: https://charts.bitnami.com/bitnami
+      version: 0.1.*
+    - condition: dcgm-exporter.enabled
+      name: dcgm-exporter
+      repository: https://nvidia.github.io/dcgm-exporter/helm-charts
+      version: 3.*
+    - condition: prometheus-node-exporter.enabled
+      name: prometheus-node-exporter
+      repository: https://prometheus-community.github.io/helm-charts
+      version: 4.*
+    description: A Helm chart for the Costgraph operator
+    digest: ac09bbc9b1933088e2024d06dbc8edb392a19dcbb20a772c545f7afc94cbae6e
+    name: costgraph-operator
+    type: application
+    urls:
+    - costgraph-operator-0.5.0.tgz
+    version: 0.5.0
+  - apiVersion: v2
+    appVersion: 0.4.0
     created: "2026-08-26T10:03:07.124155939Z"
     dependencies:
     - condition: kube-state-metrics.enabled
@@ -885,4 +916,4 @@ entries:
     urls:
     - costgraph-vmalert-0.1.0.tgz
     version: 0.1.0
-generated: "2026-08-28T18:18:01.111571757Z"
+generated: "2026-08-28T18:18:32.772460109Z"
