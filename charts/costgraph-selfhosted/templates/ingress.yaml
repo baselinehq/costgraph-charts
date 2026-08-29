@@ -1,66 +1,35 @@
 {{- if .Values.ingress.enabled }}
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: {{ include "costgraph-selfhosted.fullname" . }}
-  labels:
-    {{- include "costgraph-selfhosted.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
-  annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-spec:
-  {{- with .Values.ingress.className }}
-  ingressClassName: {{ . }}
-  {{- end }}
-  {{- with .Values.ingress.tls }}
-  tls:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-  rules:
-    {{- range .Values.ingress.hosts }}
-    - host: {{ .host | quote }}
-      http:
-        paths:
-          {{- if $.Values.ingestionApi.enabled }}
-          - path: /api/v1/write
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ include "costgraph-selfhosted.fullname" $ }}-ingestion-api
-                port:
-                  number: 8080
-          {{- end }}
-          {{- if $.Values.dashboard.enabled }}
-          - path: /api
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ include "costgraph-selfhosted.fullname" $ }}
-                port:
-                  number: 8080
-          - path: /healthz
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ include "costgraph-selfhosted.fullname" $ }}
-                port:
-                  number: 8080
-          {{- end }}
-          {{- range .paths }}
-          - path: {{ .path }}
-            pathType: {{ .pathType }}
-            backend:
-              service:
-                {{- if $.Values.dashboard.enabled }}
-                name: {{ include "costgraph-selfhosted.fullname" $ }}-dashboard
-                port:
-                  number: 80
-                {{- else }}
-                name: {{ include "costgraph-selfhosted.fullname" $ }}
-                port:
-                  number: 8080
-                {{- end }}
-          {{- end }}
-    {{- end }}
+{{- $fullname := include "costgraph-selfhosted.fullname" . }}
+{{- $hosts := list }}
+{{- range .Values.ingress.hosts }}
+{{- $paths := list }}
+{{- if $.Values.ingestionApi.enabled }}
+{{- $paths = append $paths (dict "path" "/api/v1/write" "pathType" "Prefix" "serviceName" (printf "%s-ingestion-api" $fullname) "servicePort" 8080) }}
+{{- end }}
+{{- if $.Values.dashboard.enabled }}
+{{- $paths = append $paths (dict "path" "/api" "pathType" "Prefix" "serviceName" $fullname "servicePort" 8080) }}
+{{- $paths = append $paths (dict "path" "/healthz" "pathType" "Prefix" "serviceName" $fullname "servicePort" 8080) }}
+{{- end }}
+{{/*
+A path the operator configured is the site itself: the dashboard serves it when
+one is deployed, and the API serves it when the chart is API-only.
+*/}}
+{{- range .paths }}
+{{- if $.Values.dashboard.enabled }}
+{{- $paths = append $paths (merge (dict "serviceName" (printf "%s-dashboard" $fullname) "servicePort" 80) (pick . "path" "pathType")) }}
+{{- else }}
+{{- $paths = append $paths (merge (dict "serviceName" $fullname "servicePort" 8080) (pick . "path" "pathType")) }}
+{{- end }}
+{{- end }}
+{{- $hosts = append $hosts (dict "host" .host "paths" $paths) }}
+{{- end }}
+{{ include "costgraph.ingress" (dict
+    "ctx" $
+    "name" $fullname
+    "labels" (include "costgraph-selfhosted.labels" . | fromYaml)
+    "annotations" .Values.ingress.annotations
+    "className" .Values.ingress.className
+    "tls" .Values.ingress.tls
+    "hosts" $hosts
+) }}
 {{- end }}

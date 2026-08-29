@@ -36,8 +36,8 @@ hostPID: true
 {{- with .dnsPolicy }}
 dnsPolicy: {{ . }}
 {{- end }}
-{{- with .terminationGracePeriodSeconds }}
-terminationGracePeriodSeconds: {{ . }}
+{{- if not (kindIs "invalid" .terminationGracePeriodSeconds) }}
+terminationGracePeriodSeconds: {{ .terminationGracePeriodSeconds }}
 {{- end }}
 {{- with .initContainers }}
 initContainers:
@@ -142,7 +142,7 @@ metadata:
   {{- end }}
 spec:
   {{- if ne $kind "DaemonSet" }}
-  replicas: {{ .replicas | default 1 }}
+  replicas: {{ if kindIs "invalid" .replicas }}1{{ else }}{{ .replicas }}{{ end }}
   {{- end }}
   {{- if eq $kind "StatefulSet" }}
   serviceName: {{ required "workload: serviceName is required for a StatefulSet" .serviceName }}

@@ -24,8 +24,8 @@ spec:
   {{- with .clusterIP }}
   clusterIP: {{ . | quote }}
   {{- end }}
-  {{- with .publishNotReadyAddresses }}
-  publishNotReadyAddresses: {{ . }}
+  {{- if not (kindIs "invalid" .publishNotReadyAddresses) }}
+  publishNotReadyAddresses: {{ .publishNotReadyAddresses }}
   {{- end }}
   selector:
     {{- toYaml (required "service: selectorLabels is required" .selectorLabels) | nindent 4 }}

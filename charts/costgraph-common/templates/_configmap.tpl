@@ -18,8 +18,8 @@ metadata:
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
-{{- with .immutable }}
-immutable: {{ . }}
+{{- if not (kindIs "invalid" .immutable) }}
+immutable: {{ .immutable }}
 {{- end }}
 {{- with .data }}
 data:
