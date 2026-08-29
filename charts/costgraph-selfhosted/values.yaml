@@ -345,6 +345,11 @@ aggregator:
       repository: registry.costgraph.ai/aggregator
       # Versioned separately from the chart, so this is pinned rather than
       # following appVersion.
+      #
+      # vmalert also runs this image: an init container copies the rules out of
+      # it with /bin/busybox. An image that ships neither leaves vmalert in
+      # Init:RunContainerError with `exec: "/bin/busybox": no such file or
+      # directory`, which reads as a vmalert fault rather than an image one.
       tag: sha-79f4b08
       pullPolicy: IfNotPresent
     imagePullSecrets:
