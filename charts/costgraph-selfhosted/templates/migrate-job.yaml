@@ -18,10 +18,12 @@
     "imagePullPolicy" .Values.backend.deployment.image.pullPolicy
     "env" (list
         (dict "name" "MIGRATE" "value" "1")
-        (dict "name" "MIGRATE_ONLY" "value" "1"))
+        (dict "name" "MIGRATE_ONLY" "value" "1")
+        (dict "name" "DB_URL" "valueFrom" (dict "secretKeyRef" (dict "name" (include "costgraph-selfhosted.postgresSecretName" .) "key" "postgres-url")))
+        (dict "name" "DB_PASSWORD" "valueFrom" (dict "secretKeyRef" (dict "name" (include "costgraph-selfhosted.postgresSecretName" .) "key" "postgres-password" "optional" true)))
+        (dict "name" "CONTROL_PLANE_API_KEY" "valueFrom" (dict "secretKeyRef" (dict "name" (include "costgraph-selfhosted.secretName" .) "key" "control-plane-api-key"))))
     "envFrom" (list
-        (dict "configMapRef" (dict "name" (include "costgraph-selfhosted.fullname" .)))
-        (dict "secretRef" (dict "name" (include "costgraph-selfhosted.secretName" .))))
+        (dict "configMapRef" (dict "name" (include "costgraph-selfhosted.fullname" .))))
     "resources" .Values.backend.deployment.resources
 ) }}
 {{- end }}

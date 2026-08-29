@@ -37,7 +37,7 @@ metadata:
 type: {{ .type | default "Opaque" }}
 {{- $stringData := dict }}
 {{- range $key, $value := .stringData }}
-{{- if ne ($value | toString) "" }}
+{{- if and (not (kindIs "invalid" $value)) (ne ($value | toString) "") }}
 {{- $_ := set $stringData $key $value }}
 {{- end }}
 {{- end }}

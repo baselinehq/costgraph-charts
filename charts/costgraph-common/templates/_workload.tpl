@@ -148,11 +148,11 @@ spec:
   serviceName: {{ required "workload: serviceName is required for a StatefulSet" .serviceName }}
   {{- end }}
   {{- with .strategy }}
-  {{- if eq $kind "DaemonSet" }}
-  updateStrategy:
+  {{- if eq $kind "Deployment" }}
+  strategy:
     {{- toYaml . | nindent 4 }}
   {{- else }}
-  strategy:
+  updateStrategy:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- end }}
@@ -162,7 +162,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- toYaml (merge (deepCopy (.podLabels | default dict)) (deepCopy .selectorLabels)) | nindent 8 }}
+        {{- toYaml (mergeOverwrite (deepCopy (.podLabels | default dict)) (deepCopy .selectorLabels)) | nindent 8 }}
       {{- with .podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}

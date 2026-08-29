@@ -8,6 +8,7 @@
     "name" $name
     "labels" $labels
     "selectorLabels" $selectorLabels
+    "clusterIP" "None"
     "ports" $c.service.ports
 ) }}
 ---

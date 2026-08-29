@@ -84,9 +84,13 @@ set, so an evaluation install needs no addresses.
 Resolved the same way the Secret resolves it, so the URL matches the password
 in use rather than a new one on every render.
 */}}
+{{- define "costgraph-selfhosted.bundledPostgresSecretName" -}}
+{{- .Values.postgres.applicationName -}}
+{{- end -}}
+
 {{- define "costgraph-selfhosted.bundledPostgresPassword" -}}
 {{- if not (hasKey .Values "_bundledPostgresPassword") -}}
-{{- $existing := lookup "v1" "Secret" .Release.Namespace (printf "%s-postgres" (include "costgraph-selfhosted.fullname" .)) -}}
+{{- $existing := lookup "v1" "Secret" .Release.Namespace (include "costgraph-selfhosted.bundledPostgresSecretName" .) -}}
 {{- $password := "" -}}
 {{- if $existing -}}
 {{- $password = index $existing.data "password" | b64dec -}}
@@ -102,7 +106,7 @@ in use rather than a new one on every render.
 
 {{- define "costgraph-selfhosted.bundledPostgresURL" -}}
 {{- $pg := .Values.postgres -}}
-{{- printf "postgres://%s:%s@%s-postgres:5432/%s?sslmode=disable" $pg.username (include "costgraph-selfhosted.bundledPostgresPassword" . | urlquery) (include "costgraph-selfhosted.fullname" .) $pg.database -}}
+{{- printf "postgres://%s:%s@%s:5432/%s?sslmode=disable" $pg.username (include "costgraph-selfhosted.bundledPostgresPassword" . | urlquery) $pg.applicationName $pg.database -}}
 {{- end -}}
 
 {{/*

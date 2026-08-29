@@ -73,14 +73,15 @@ must use these key names:
 
 | Setting | Secret keys |
 |---|---|
-| `controlPlane.existingSecret` | `control-plane-api-key`, plus `pricing-api-key` if you were issued a separate pricing key |
+| `controlPlane.existingSecret` | `control-plane-api-key` and `pricing-api-key` - copy the control-plane key into `pricing-api-key` unless you were issued a separate pricing key |
 | `postgres.existingSecret` | `postgres-url`, `postgres-password` |
 | `redis.existingSecret` | `redis-url` — use this if your Redis URL contains a password |
 
 ```sh
 kubectl create secret generic costgraph-control-plane \
   --namespace costgraph \
-  --from-literal=control-plane-api-key=bl_...
+  --from-literal=control-plane-api-key=bl_... \
+  --from-literal=pricing-api-key=bl_...
 ```
 
 A chart cannot read a Secret to build the image pull secret from it, so an

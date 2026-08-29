@@ -81,8 +81,8 @@ backend:
       PRICING_API_KEY:
         valueFrom:
           secretKeyRef:
-            name: costgraph-selfhosted
-            key: control-plane-api-key
+            name: '{{ include "costgraph-selfhosted.secretName" . }}'
+            key: pricing-api-key
       REMOTE_WRITE_URL:
         value: '{{ printf "%s/api/v1/write" (include "costgraph-selfhosted.metricsStoreURL" .) }}'
       DB_URL:
@@ -93,8 +93,9 @@ backend:
       DB_PASSWORD:
         valueFrom:
           secretKeyRef:
-            name: costgraph-selfhosted-postgres
-            key: password
+            name: '{{ include "costgraph-selfhosted.postgresSecretName" . }}'
+            key: postgres-password
+            optional: true
       API_KEY_SECRET:
         valueFrom:
           secretKeyRef:
@@ -531,7 +532,7 @@ postgres:
       POSTGRES_PASSWORD:
         valueFrom:
           secretKeyRef:
-            name: costgraph-selfhosted-postgres
+            name: '{{ include "costgraph-selfhosted.bundledPostgresSecretName" . }}'
             key: password
       # The image initialises into a subdirectory so the PVC's lost+found does
       # not block initdb.
@@ -651,8 +652,9 @@ global:
     apiKey: ""
 
     # Name of a Secret you manage, holding the key under `control-plane-api-key`
-    # (and `pricing-api-key` if you use a separate pricing key). Takes precedence
-    # over apiKey, so nothing sensitive is stored in values or Helm history.
+    # and under `pricing-api-key` - copy the same key into both unless you were
+    # issued a separate pricing key. Takes precedence over apiKey, so nothing
+    # sensitive is stored in values or Helm history.
     existingSecret: ""
 
     # CostGraph's published public key, already filled in. It is not a secret,
