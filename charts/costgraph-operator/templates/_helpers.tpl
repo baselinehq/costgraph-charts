@@ -80,7 +80,7 @@ resolve against the subchart and silently reference a Secret that does not
 exist.
 */}}
 {{- define "costgraph-operator.apiKeySecretName" -}}
-{{- .Values.global.existingSecret | default (printf "%s-costgraph-operator-credentials" .Release.Name) | trunc 63 | trimSuffix "-" -}}
+{{- .Values.global.existingSecret | default "costgraph-operator-credentials" | trunc 63 | trimSuffix "-" -}}
 {{- end }}
 
 {{/*
