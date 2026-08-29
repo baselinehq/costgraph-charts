@@ -21,24 +21,11 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
 
 {{- define "costgraph-selfhosted.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "costgraph-selfhosted.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
+{{- include "costgraph.selectorLabels" (dict "ctx" . "name" (include "costgraph-selfhosted.name" .)) -}}
 {{- end -}}
 
 {{- define "costgraph-selfhosted.image" -}}
-{{- include "costgraph-selfhosted.imageRef" (dict "repository" .Values.backend.deployment.image.repository "tag" (required "backend.deployment.image.tag is required: the chart version is not an image tag" .Values.backend.deployment.image.tag)) -}}
-{{- end -}}
-
-{{/*
-Joins a repository and a tag. A tag beginning with sha256: is a digest, which
-joins with @ rather than :.
-*/}}
-{{- define "costgraph-selfhosted.imageRef" -}}
-{{- if hasPrefix "sha256:" .tag -}}
-{{ .repository }}@{{ .tag }}
-{{- else -}}
-{{ .repository }}:{{ .tag }}
-{{- end -}}
+{{- include "costgraph.imageRef" (dict "repository" .Values.backend.deployment.image.repository "tag" (required "backend.deployment.image.tag is required: the chart version is not an image tag" .Values.backend.deployment.image.tag)) -}}
 {{- end -}}
 
 {{/*
@@ -157,7 +144,7 @@ form. This turns one into the other so both read the same values.
 */}}
 {{- define "costgraph-selfhosted.namedList" -}}
 {{- range $key, $value := .items }}
-- {{ merge (dict "name" $key) (fromYaml (tpl (toYaml $value) $.ctx)) | toYaml | nindent 2 }}
+- {{ merge (dict "name" $key) $value | toYaml | nindent 2 }}
 {{- end }}
 {{- end -}}
 
@@ -173,7 +160,7 @@ it renders.
 {{- $ctx := .ctx -}}
 {{- $spec := fromYaml (tpl (toYaml .spec) $ctx) -}}
 {{- $out := omit $spec "enabled" "image" "env" "volumes" "volumeMounts" "securityContext" "startupProbe" "readinessProbe" "livenessProbe" -}}
-{{- $_ := set $out "image" (include "costgraph-selfhosted.imageRef" (dict "repository" $spec.image.repository "tag" $spec.image.tag)) -}}
+{{- $_ := set $out "image" (include "costgraph.imageRef" (dict "repository" $spec.image.repository "tag" $spec.image.tag)) -}}
 {{- with $spec.image.pullPolicy }}{{- $_ := set $out "imagePullPolicy" . }}{{- end }}
 {{- with $spec.securityContext }}{{- $_ := set $out "podSecurityContext" . }}{{- end }}
 {{- range $key := list "env" "volumes" "volumeMounts" }}

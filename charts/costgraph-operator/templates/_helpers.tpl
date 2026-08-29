@@ -115,9 +115,7 @@ app.kubernetes.io/managed-by: {{ .ctx.Release.Service }}
 {{- end }}
 
 {{- define "costgraph-operator.componentSelectorLabels" -}}
-app.kubernetes.io/name: {{ required "componentSelectorLabels: name is required" .name }}
-app.kubernetes.io/instance: {{ .ctx.Release.Name }}
-app.kubernetes.io/component: {{ required "componentSelectorLabels: component is required" .component }}
+{{- include "costgraph.selectorLabels" (dict "ctx" .ctx "name" (required "componentSelectorLabels: name is required" .name) "component" (required "componentSelectorLabels: component is required" .component)) -}}
 {{- end }}
 
 {{/*

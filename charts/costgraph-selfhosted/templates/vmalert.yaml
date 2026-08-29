@@ -1,4 +1,3 @@
-{{- include "costgraph-selfhosted.validate" . -}}
 {{- if .Values.vmalert.enabled }}
 {{- $c := .Values.vmalert }}
 {{- $d := $c.deployment }}
@@ -19,10 +18,10 @@ The rules come from the aggregator image, which already ships them.
     "name" (printf "%s%s" $c.applicationName $suffix)
     "labels" (include "costgraph-selfhosted.componentLabels" (dict "ctx" $ "component" $component) | fromYaml)
     "selectorLabels" (include "costgraph-selfhosted.componentSelectorLabels" (dict "ctx" $ "component" $component) | fromYaml)
-    "image" (include "costgraph-selfhosted.imageRef" (dict "repository" $d.image.repository "tag" $d.image.tag))
+    "image" (include "costgraph.imageRef" (dict "repository" $d.image.repository "tag" $d.image.tag))
     "imagePullPolicy" $d.image.pullPolicy
     "imagePullSecrets" (include "costgraph-selfhosted.imagePullSecrets" $ | fromYamlArray)
-    "rulesImage" (include "costgraph-selfhosted.imageRef" (dict "repository" $.Values.aggregator.deployment.image.repository "tag" (required "aggregator.deployment.image.tag is required" $.Values.aggregator.deployment.image.tag)))
+    "rulesImage" (include "costgraph.imageRef" (dict "repository" $.Values.aggregator.deployment.image.repository "tag" (required "aggregator.deployment.image.tag is required" $.Values.aggregator.deployment.image.tag)))
     "rulesPath" (printf "/recording-rules/%s" $set)
     "datasourceURL" $store
     "remoteWriteURL" $store

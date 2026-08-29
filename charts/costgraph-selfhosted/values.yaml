@@ -69,8 +69,7 @@ backend:
         type: configmap
         name: costgraph-selfhosted
     env:
-      # Rolls the pods when anything they are built from changes, replacing the
-      # checksums over the rendered ConfigMap and Secret.
+      # Rolls the pods when anything they are built from changes.
       VALUES_HASH:
         value: '{{ toYaml .Values | sha256sum }}'
       CONTROL_PLANE_API_KEY:
@@ -181,8 +180,8 @@ dashboard:
       limits:
         memory: 256Mi
     env:
-      # Rolls the pods when anything they are built from changes, which the
-      # checksum annotation did before; stakater does not template annotations.
+      # Rolls the pods when anything they are built from changes; stakater does
+      # not template annotations.
       VALUES_HASH:
         value: '{{ toYaml .Values | sha256sum }}'
     readinessProbe:

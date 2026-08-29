@@ -5,8 +5,6 @@ serviceAccountName is emitted only when set: a pre-install hook Job runs before
 the ServiceAccount exists, and stakater's application chart always writes the
 field, which is why this pod spec exists at all.
 
-automountServiceAccountToken uses hasKey so an explicit false is distinct from
-an absent key, which leaves the cluster default in place.
 */}}
 {{- define "costgraph.workload.podSpec" -}}
 {{- $name := .name -}}

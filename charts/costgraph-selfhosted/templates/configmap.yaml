@@ -1,4 +1,3 @@
-{{- include "costgraph-selfhosted.validate" . -}}
 {{- $data := dict
     "DEPLOYMENT_MODE" "on_prem"
     "DEPLOYMENT_NAME" (.Values.deploymentName | default .Release.Name)

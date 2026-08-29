@@ -14,7 +14,7 @@ def parse(version):
 
 def prerelease_rank(prerelease):
     if prerelease is None:
-        return (1,)
+        return (1, [])
     identifiers = []
     for identifier in prerelease.split("."):
         if identifier.isdigit():
