@@ -14,5 +14,8 @@ dependencies:
 - name: prometheus-node-exporter
   repository: https://prometheus-community.github.io/helm-charts
   version: 4.56.1
-digest: sha256:70c799039b71f5c6f1589ec25a63dddc9dc5e11867cf74fee19a6a94f19102cf
-generated: "2026-08-28T15:10:11.55889+01:00"
+- name: costgraph-common
+  repository: file://../costgraph-common
+  version: 0.2.0
+digest: sha256:5a6d316d88d31372567a0d2ed64b199ac18e74a61383393cc359c06e9c4a08d6
+generated: "2026-08-29T11:41:04.394701+01:00"

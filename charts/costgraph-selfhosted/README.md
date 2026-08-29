@@ -1,6 +1,6 @@
 # costgraph-selfhosted
 
-![Version: 0.3.0](https://img.shields.io/badge/Version-0.3.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.4.0](https://img.shields.io/badge/Version-0.4.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
 
 CostGraph running in your own infrastructure. Your cost data, cloud
 credentials and telemetry stay in your network — see "Network access it
@@ -8,8 +8,8 @@ needs" below for the traffic that does leave it.
 
 ## What you need first
 
-From CostGraph, one thing: a deployment API key, which you create in the
-dashboard under Settings > API Keys. It is the only credential: the image
+From CostGraph, one thing: a deployment API key, which you create at
+https://app.costgraph.ai/settings/account/api-keys. It is the only credential: the image
 registry authenticates with the same key, and the chart wires that up for you.
 
 From your side: a Postgres 14+, a Redis, and a VictoriaMetrics you run, plus
@@ -67,6 +67,31 @@ partition maintenance never runs. See "Database" below.
 
 ### Keeping credentials out of values
 
+## Data stores you bring yourself
+
+Each store runs bundled for an evaluation, or points at one you already
+operate. Set `bundled.enabled: true` to run it in-cluster, or set the URL to
+use your own - set one or the other, never both. If both are set anyway,
+Postgres uses the bundled instance and ignores your URL, while Redis and the
+metrics store use your URL and ignore the bundled instance.
+
+| Store | Your own endpoint | Credentials |
+|---|---|---|
+| PostgreSQL 14+ | `postgres.url` | `postgres.existingSecret`, or `postgres.password` |
+| Redis | `redis.url` | `redis.existingSecret` when the URL carries a password |
+| VictoriaMetrics | `metricsStore.url` | none - the endpoint must accept unauthenticated requests |
+
+The metrics store is the exception. CostGraph reads it, writes to it through
+remote write, and evaluates recording rules against it, and none of those paths
+send credentials. A managed endpoint that requires basic auth or a bearer token
+- Grafana Cloud, an authenticated Mimir or Thanos - will reject every request.
+Reach it over network policy or a mesh instead, or run the bundled instance.
+
+The endpoint has to serve both halves of the VictoriaMetrics HTTP API, because
+the same URL is read from and written to: queries hit it directly, and remote
+write hits the `/api/v1/write` path appended to it. VictoriaMetrics single-node
+and cluster both do. A read-only Prometheus does not.
+
 In production, put credentials in Secrets you manage and reference them with
 `controlPlane.existingSecret` and `postgres.existingSecret`, so nothing
 sensitive sits in your values file or in Helm release history. Each Secret
@@ -74,14 +99,15 @@ must use these key names:
 
 | Setting | Secret keys |
 |---|---|
-| `controlPlane.existingSecret` | `control-plane-api-key`, plus `pricing-api-key` if you were issued a separate pricing key |
+| `controlPlane.existingSecret` | `control-plane-api-key` and `pricing-api-key` - copy the control-plane key into `pricing-api-key` unless you were issued a separate pricing key |
 | `postgres.existingSecret` | `postgres-url`, `postgres-password` |
 | `redis.existingSecret` | `redis-url` — use this if your Redis URL contains a password |
 
 ```sh
 kubectl create secret generic costgraph-control-plane \
   --namespace costgraph \
-  --from-literal=control-plane-api-key=bl_...
+  --from-literal=control-plane-api-key=bl_... \
+  --from-literal=pricing-api-key=bl_...
 ```
 
 A chart cannot read a Secret to build the image pull secret from it, so an

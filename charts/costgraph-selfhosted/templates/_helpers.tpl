@@ -21,24 +21,11 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
 
 {{- define "costgraph-selfhosted.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "costgraph-selfhosted.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
+{{- include "costgraph.selectorLabels" (dict "ctx" . "name" (include "costgraph-selfhosted.name" .)) -}}
 {{- end -}}
 
 {{- define "costgraph-selfhosted.image" -}}
-{{- include "costgraph-selfhosted.imageRef" (dict "repository" .Values.global.image.repository "tag" (required "image.tag is required: the chart version is not an image tag" .Values.global.image.tag)) -}}
-{{- end -}}
-
-{{/*
-Joins a repository and a tag. A tag beginning with sha256: is a digest, which
-joins with @ rather than :.
-*/}}
-{{- define "costgraph-selfhosted.imageRef" -}}
-{{- if hasPrefix "sha256:" .tag -}}
-{{ .repository }}@{{ .tag }}
-{{- else -}}
-{{ .repository }}:{{ .tag }}
-{{- end -}}
+{{- include "costgraph.imageRef" (dict "repository" .Values.backend.deployment.image.repository "tag" (required "backend.deployment.image.tag is required: the chart version is not an image tag" .Values.backend.deployment.image.tag)) -}}
 {{- end -}}
 
 {{/*
@@ -50,6 +37,10 @@ The secret holding credentials. An existingSecret you supply always wins.
 {{- else -}}
 {{- include "costgraph-selfhosted.fullname" . -}}
 {{- end -}}
+{{- end -}}
+
+{{- define "costgraph-selfhosted.generatedSecretName" -}}
+{{- printf "%s-generated" (include "costgraph-selfhosted.fullname" .) -}}
 {{- end -}}
 
 {{- define "costgraph-selfhosted.postgresSecretName" -}}
@@ -72,6 +63,14 @@ set, so an evaluation install needs no addresses.
 {{- end -}}
 {{- end -}}
 
+{{- define "costgraph-selfhosted.redisSecretName" -}}
+{{- if .Values.global.redis.existingSecret -}}
+{{- .Values.global.redis.existingSecret -}}
+{{- else -}}
+{{- include "costgraph-selfhosted.fullname" . -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "costgraph-selfhosted.metricsStoreURL" -}}
 {{- if .Values.global.metricsStore.url -}}
 {{- .Values.global.metricsStore.url -}}
@@ -84,14 +83,18 @@ set, so an evaluation install needs no addresses.
 Resolved the same way the Secret resolves it, so the URL matches the password
 in use rather than a new one on every render.
 */}}
+{{- define "costgraph-selfhosted.bundledPostgresSecretName" -}}
+{{- .Values.postgres.applicationName -}}
+{{- end -}}
+
 {{- define "costgraph-selfhosted.bundledPostgresPassword" -}}
 {{- if not (hasKey .Values "_bundledPostgresPassword") -}}
-{{- $existing := lookup "v1" "Secret" .Release.Namespace (printf "%s-postgres" (include "costgraph-selfhosted.fullname" .)) -}}
+{{- $existing := lookup "v1" "Secret" .Release.Namespace (include "costgraph-selfhosted.bundledPostgresSecretName" .) -}}
 {{- $password := "" -}}
 {{- if $existing -}}
 {{- $password = index $existing.data "password" | b64dec -}}
-{{- else if .Values.global.postgres.bundled.password -}}
-{{- $password = .Values.global.postgres.bundled.password -}}
+{{- else if .Values.postgres.password -}}
+{{- $password = .Values.postgres.password -}}
 {{- else -}}
 {{- $password = randAlphaNum 32 -}}
 {{- end -}}
@@ -101,8 +104,8 @@ in use rather than a new one on every render.
 {{- end -}}
 
 {{- define "costgraph-selfhosted.bundledPostgresURL" -}}
-{{- $pg := .Values.global.postgres.bundled -}}
-{{- printf "postgres://%s:%s@%s-postgres:5432/%s?sslmode=disable" $pg.username (include "costgraph-selfhosted.bundledPostgresPassword" . | urlquery) (include "costgraph-selfhosted.fullname" .) $pg.database -}}
+{{- $pg := .Values.postgres -}}
+{{- printf "postgres://%s:%s@%s:5432/%s?sslmode=disable" $pg.username (include "costgraph-selfhosted.bundledPostgresPassword" . | urlquery) $pg.applicationName $pg.database -}}
 {{- end -}}
 
 {{/*
@@ -144,4 +147,73 @@ not in values.
 {{- else if .Values.global.controlPlane.apiKey -}}
 - name: {{ include "costgraph-selfhosted.fullname" . }}-registry
 {{- end -}}
+{{- end -}}
+
+{{/*
+stakater's application chart keys env, volumes and volumeMounts by name and
+renders each value through tpl. The library chart takes the Kubernetes list
+form. This turns one into the other so both read the same values.
+*/}}
+{{- define "costgraph-selfhosted.namedList" -}}
+{{- range $key, $value := . }}
+- {{ merge (dict "name" $key) $value | toYaml | nindent 2 }}
+{{- end }}
+{{- end -}}
+
+{{/*
+Adapts a component's deployment/statefulSet block to the arguments
+costgraph.workload takes, so a component this chart renders itself is described
+by the same values as one stakater renders.
+
+Templates the whole block, which is what stakater does to the parts of it that
+it renders.
+*/}}
+{{- define "costgraph-selfhosted.workloadSpec" -}}
+{{- $ctx := .ctx -}}
+{{- $spec := fromYaml (tpl (toYaml .spec) $ctx) -}}
+{{- $out := omit $spec "enabled" "image" "env" "volumes" "volumeMounts" "securityContext" "startupProbe" "readinessProbe" "livenessProbe" -}}
+{{- $_ := set $out "image" (include "costgraph.imageRef" (dict "repository" $spec.image.repository "tag" $spec.image.tag)) -}}
+{{- with $spec.image.pullPolicy }}{{- $_ := set $out "imagePullPolicy" . }}{{- end }}
+{{- with $spec.securityContext }}{{- $_ := set $out "podSecurityContext" . }}{{- end }}
+{{- range $key := list "env" "volumes" "volumeMounts" }}
+{{- with index $spec $key }}
+{{- $_ := set $out $key (include "costgraph-selfhosted.namedList" . | fromYamlArray) }}
+{{- end }}
+{{- end }}
+{{- range $key := list "startupProbe" "readinessProbe" "livenessProbe" }}
+{{- $probe := index $spec $key }}
+{{- if and $probe $probe.enabled }}
+{{- $_ := set $out $key (omit $probe "enabled") }}
+{{- end }}
+{{- end }}
+{{- toYaml $out -}}
+{{- end -}}
+
+{{/*
+The volumeClaimTemplate a bundled datastore keeps its data on. storageClass is
+omitted when empty rather than written as "", which would pin the volume to no
+storage class at all instead of the cluster default.
+*/}}
+{{- define "costgraph-selfhosted.dataVolumeClaim" -}}
+- metadata:
+    name: {{ .name }}
+  spec:
+    accessModes: ["ReadWriteOnce"]
+    {{- with .storageClass }}
+    storageClassName: {{ . | quote }}
+    {{- end }}
+    resources:
+      requests:
+        storage: {{ .storage }}
+{{- end -}}
+
+{{/*
+The label sets one of this chart's own components is rendered with.
+*/}}
+{{- define "costgraph-selfhosted.componentLabels" -}}
+{{- merge (dict "app.kubernetes.io/component" .component) (include "costgraph-selfhosted.labels" .ctx | fromYaml) | toYaml -}}
+{{- end -}}
+
+{{- define "costgraph-selfhosted.componentSelectorLabels" -}}
+{{- merge (dict "app.kubernetes.io/component" .component) (include "costgraph-selfhosted.selectorLabels" .ctx | fromYaml) | toYaml -}}
 {{- end -}}

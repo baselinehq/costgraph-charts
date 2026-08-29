@@ -1,100 +1,34 @@
 {{- if .Values.global.postgres.bundled.enabled }}
-{{- $fullname := include "costgraph-selfhosted.fullname" . }}
-{{- $name := printf "%s-postgres" $fullname }}
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ $name }}
-  labels:
-    {{- include "costgraph-selfhosted.labels" . | nindent 4 }}
-    app.kubernetes.io/component: postgres
-spec:
-  clusterIP: None
-  ports:
-    - port: 5432
-      targetPort: postgres
-      name: postgres
-  selector:
-    {{- include "costgraph-selfhosted.selectorLabels" . | nindent 4 }}
-    app.kubernetes.io/component: postgres
+{{- $c := .Values.postgres }}
+{{- $name := $c.applicationName }}
+{{- $labels := include "costgraph-selfhosted.componentLabels" (dict "ctx" . "component" "postgres") | fromYaml }}
+{{- $selectorLabels := include "costgraph-selfhosted.componentSelectorLabels" (dict "ctx" . "component" "postgres") | fromYaml }}
+{{ include "costgraph.service" (dict
+    "ctx" .
+    "name" $name
+    "labels" $labels
+    "selectorLabels" $selectorLabels
+    "clusterIP" "None"
+    "ports" $c.service.ports
+) }}
 ---
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: {{ $name }}
-  labels:
-    {{- include "costgraph-selfhosted.labels" . | nindent 4 }}
-    app.kubernetes.io/component: postgres
-spec:
-  serviceName: {{ $name }}
-  replicas: 1
-  selector:
-    matchLabels:
-      {{- include "costgraph-selfhosted.selectorLabels" . | nindent 6 }}
-      app.kubernetes.io/component: postgres
-  template:
-    metadata:
-      labels:
-        {{- include "costgraph-selfhosted.selectorLabels" . | nindent 8 }}
-        app.kubernetes.io/component: postgres
-    spec:
-      securityContext:
-        fsGroup: 999
-      containers:
-        - name: postgres
-          image: {{ .Values.global.postgres.bundled.image }}
-          imagePullPolicy: IfNotPresent
-          ports:
-            - name: postgres
-              containerPort: 5432
-          env:
-            - name: POSTGRES_DB
-              value: {{ .Values.global.postgres.bundled.database | quote }}
-            - name: POSTGRES_USER
-              value: {{ .Values.global.postgres.bundled.username | quote }}
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $fullname }}-postgres
-                  key: password
-            # The image initialises into a subdirectory so the PVC's
-            # lost+found does not block initdb.
-            - name: PGDATA
-              value: /var/lib/postgresql/data/pgdata
-          readinessProbe:
-            exec:
-              command: ["pg_isready", "-U", {{ .Values.global.postgres.bundled.username | quote }}, "-d", {{ .Values.global.postgres.bundled.database | quote }}]
-            initialDelaySeconds: 10
-            periodSeconds: 5
-          livenessProbe:
-            exec:
-              command: ["pg_isready", "-U", {{ .Values.global.postgres.bundled.username | quote }}, "-d", {{ .Values.global.postgres.bundled.database | quote }}]
-            initialDelaySeconds: 30
-            periodSeconds: 20
-          resources:
-            {{- toYaml .Values.global.postgres.bundled.resources | nindent 12 }}
-          volumeMounts:
-            - name: data
-              mountPath: /var/lib/postgresql/data
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-      spec:
-        accessModes: ["ReadWriteOnce"]
-        {{- with .Values.global.postgres.bundled.storageClass }}
-        storageClassName: {{ . | quote }}
-        {{- end }}
-        resources:
-          requests:
-            storage: {{ .Values.global.postgres.bundled.storage }}
+{{ include "costgraph.workload" (merge (dict
+    "ctx" .
+    "kind" "StatefulSet"
+    "name" $name
+    "serviceName" $name
+    "labels" $labels
+    "selectorLabels" $selectorLabels
+    "serviceAccountName" $c.rbac.serviceAccount.name
+    "volumeClaimTemplates" (include "costgraph-selfhosted.dataVolumeClaim" (dict "name" "data" "storage" $c.storage "storageClass" $c.storageClass) | fromYamlArray)
+) (include "costgraph-selfhosted.workloadSpec" (dict "ctx" . "spec" $c.statefulSet) | fromYaml)) }}
 ---
-{{- $pgSecret := printf "%s-postgres" $fullname }}
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ $pgSecret }}
+  name: {{ $name }}
   labels:
-    {{- include "costgraph-selfhosted.labels" . | nindent 4 }}
+    {{- toYaml $labels | nindent 4 }}
   annotations:
     helm.sh/resource-policy: keep
 type: Opaque

@@ -22,11 +22,11 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- with .backoffLimit }}
-  backoffLimit: {{ . }}
+  {{- if not (kindIs "invalid" .backoffLimit) }}
+  backoffLimit: {{ .backoffLimit }}
   {{- end }}
-  {{- with .ttlSecondsAfterFinished }}
-  ttlSecondsAfterFinished: {{ . }}
+  {{- if not (kindIs "invalid" .ttlSecondsAfterFinished) }}
+  ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished }}
   {{- end }}
   template:
     {{- with .podLabels }}

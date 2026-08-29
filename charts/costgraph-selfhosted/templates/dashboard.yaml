@@ -1,14 +1,8 @@
 {{- if .Values.dashboard.enabled }}
-{{- $fullname := include "costgraph-selfhosted.fullname" . }}
-{{- $name := printf "%s-dashboard" $fullname }}
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ $name }}
-  labels:
-    {{- include "costgraph-selfhosted.labels" . | nindent 4 }}
-    app.kubernetes.io/component: dashboard
-data:
-  config.json: |
-    {{- include "costgraph-selfhosted.dashboardConfig" . | nindent 4 }}
+{{ include "costgraph.configMap" (dict
+    "ctx" $
+    "name" (printf "%s-dashboard" (include "costgraph-selfhosted.fullname" .))
+    "labels" (include "costgraph-selfhosted.componentLabels" (dict "ctx" . "component" "dashboard") | fromYaml)
+    "data" (dict "config.json" (printf "%s\n" (include "costgraph-selfhosted.dashboardConfig" .)))
+) }}
 {{- end }}

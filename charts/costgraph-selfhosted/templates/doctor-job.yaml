@@ -1,76 +1,36 @@
 {{- if and .Values.doctor.enabled (not .Values.global.postgres.bundled.enabled) }}
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: {{ include "costgraph-selfhosted.fullname" . }}-doctor
-  labels:
-    {{- include "costgraph-selfhosted.labels" . | nindent 4 }}
-  annotations:
-    helm.sh/hook: pre-upgrade
-    helm.sh/hook-weight: "-5"
-    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
-spec:
-  backoffLimit: 0
-  template:
-    metadata:
-      labels:
-        {{- include "costgraph-selfhosted.selectorLabels" . | nindent 8 }}
-        app.kubernetes.io/component: doctor
-    spec:
-      restartPolicy: Never
-      {{- with include "costgraph-selfhosted.imagePullSecrets" . }}
-      imagePullSecrets:
-        {{- . | nindent 8 }}
-      {{- end }}
-      # No serviceAccountName: the chart's ServiceAccount is not created until
-      # the main release, and a pre-install hook referencing it cannot
-      # schedule. The check needs no API access.
-      securityContext:
-        {{- toYaml .Values.global.podSecurityContext | nindent 8 }}
-      containers:
-        - name: doctor
-          image: {{ include "costgraph-selfhosted.image" . }}
-          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
-          securityContext:
-            {{- toYaml .Values.global.securityContext | nindent 12 }}
-          command: ["/usr/local/bin/selfhost-doctor", "-offline"]
-          envFrom:
-            - configMapRef:
-                name: {{ include "costgraph-selfhosted.fullname" . }}
-          env:
-            - name: DB_URL
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "costgraph-selfhosted.postgresSecretName" . }}
-                  key: postgres-url
-            - name: DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  {{- if .Values.global.postgres.bundled.enabled }}
-                  name: {{ include "costgraph-selfhosted.fullname" . }}-postgres
-                  key: password
-                  {{- else }}
-                  name: {{ include "costgraph-selfhosted.postgresSecretName" . }}
-                  key: postgres-password
-                  optional: true
-                  {{- end }}
-            - name: CONTROL_PLANE_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "costgraph-selfhosted.secretName" . }}
-                  key: control-plane-api-key
-            - name: API_KEY_SECRET
-              value: "doctor-preflight-placeholder"
-            - name: INTEGRATIONS_ENCRYPTION_KEY
-              value: "ZG9jdG9yLXByZWZsaWdodC0zMi1ieXRlLXBsYWNlaG9sZA=="
-          volumeMounts:
-            - name: tmp
-              mountPath: /tmp
-          resources:
-            requests:
-              cpu: 100m
-              memory: 128Mi
-      volumes:
-        - name: tmp
-          emptyDir: {}
+{{/*
+No serviceAccountName: the chart's ServiceAccount is not created until the main
+release, and a pre-upgrade hook referencing it cannot schedule. The check needs
+no API access.
+*/}}
+{{ include "costgraph.job" (dict
+    "ctx" $
+    "name" (printf "%s-doctor" (include "costgraph-selfhosted.fullname" .))
+    "labels" (include "costgraph-selfhosted.labels" . | fromYaml)
+    "podLabels" (merge (dict "app.kubernetes.io/component" "doctor") (include "costgraph-selfhosted.selectorLabels" . | fromYaml))
+    "annotations" (dict
+        "helm.sh/hook" "pre-upgrade"
+        "helm.sh/hook-weight" "-5"
+        "helm.sh/hook-delete-policy" "before-hook-creation,hook-succeeded")
+    "backoffLimit" 0
+    "restartPolicy" "Never"
+    "imagePullSecrets" (include "costgraph-selfhosted.imagePullSecrets" . | fromYamlArray)
+    "podSecurityContext" .Values.global.podSecurityContext
+    "containerSecurityContext" .Values.global.securityContext
+    "containerName" "doctor"
+    "image" (include "costgraph-selfhosted.image" .)
+    "imagePullPolicy" .Values.backend.deployment.image.pullPolicy
+    "command" (list "/usr/local/bin/selfhost-doctor" "-offline")
+    "envFrom" (list (dict "configMapRef" (dict "name" (include "costgraph-selfhosted.fullname" .))))
+    "env" (list
+        (dict "name" "DB_URL" "valueFrom" (dict "secretKeyRef" (dict "name" (include "costgraph-selfhosted.postgresSecretName" .) "key" "postgres-url")))
+        (dict "name" "DB_PASSWORD" "valueFrom" (dict "secretKeyRef" (dict "name" (include "costgraph-selfhosted.postgresSecretName" .) "key" "postgres-password" "optional" true)))
+        (dict "name" "CONTROL_PLANE_API_KEY" "valueFrom" (dict "secretKeyRef" (dict "name" (include "costgraph-selfhosted.secretName" .) "key" "control-plane-api-key")))
+        (dict "name" "API_KEY_SECRET" "value" "doctor-preflight-placeholder")
+        (dict "name" "INTEGRATIONS_ENCRYPTION_KEY" "value" "ZG9jdG9yLXByZWZsaWdodC0zMi1ieXRlLXBsYWNlaG9sZA=="))
+    "resources" (dict "requests" (dict "cpu" "100m" "memory" "128Mi"))
+    "volumeMounts" (list (dict "name" "tmp" "mountPath" "/tmp"))
+    "volumes" (list (dict "name" "tmp" "emptyDir" dict))
+) }}
 {{- end }}

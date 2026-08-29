@@ -1,143 +1,45 @@
-{{- if .Values.operatorPrometheus.enabled }}
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: {{ include "costgraph-operator.prometheusName" . }}
-  namespace: {{ include "costgraph-operator.namespace" . }}
-  labels:
-    {{- include "costgraph-operator.prometheusLabels" . | nindent 4 }}
-spec:
-  replicas: {{ .Values.operatorPrometheus.replicas }}
-  selector:
-    matchLabels:
-      {{- include "costgraph-operator.prometheusSelectorLabels" . | nindent 6 }}
-  template:
-    metadata:
-      {{- with .Values.operatorPrometheus.podAnnotations }}
-      annotations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      labels:
-        {{- include "costgraph-operator.prometheusLabels" . | nindent 8 }}
-        {{- with .Values.operatorPrometheus.podLabels }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
-    spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      serviceAccountName: {{ include "costgraph-operator.serviceAccountName" . }}
-      {{- with .Values.operatorPrometheus.securityContext }}
-      securityContext:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      containers:
-        - name: operator-prometheus
-          image: "{{ .Values.operatorPrometheus.image.repository }}:{{ .Values.operatorPrometheus.image.tag }}"
-          imagePullPolicy: {{ .Values.operatorPrometheus.image.pullPolicy }}
-          ports:
-            - name: pprof
-              containerPort: 6060
-              protocol: TCP
-          env:
-            - name: CLUSTER_NAME
-              value: {{ .Values.global.clusterName | required "Cluster name must be provided" | quote }}
-            {{- with .Values.global.backendURL }}
-            - name: BACKEND_URL
-              value: {{ . | quote }}
-            {{- end }}
-            - name: API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "costgraph-operator.apiKeySecretName" . }}
-                  key: {{ include "costgraph-operator.apiKeySecretKey" . }}
-            - name: PROMETHEUS_URL
-              value: "{{ .Release.Name }}-kube-state-metrics.{{ include "costgraph-operator.namespace" . }}.svc.cluster.local:8080"
-            - name: REMOTE_WRITE_URL
-              value: {{ include "costgraph-operator.remoteWriteURL" (dict "component" .Values.operatorPrometheus.config.remoteWriteURL "root" $) | quote }}
-            - name: REMOTE_WRITE_PATH
-              value: {{ .Values.operatorPrometheus.config.remoteWritePath | quote }}
-            - name: PROMETHEUS_API_PROVIDER
-              value: {{ .Values.operatorPrometheus.config.prometheusAPIProvider | quote }}
-            - name: PROMETHEUS_API_VERSION
-              value: {{ .Values.operatorPrometheus.config.prometheusAPIVersion | quote }}
-            - name: HTTP_TIMEOUT
-              value: {{ .Values.operatorPrometheus.config.httpTimeout | quote }}
-            {{- /*
-            Build SCRAPE_TARGETS env var as JSON from operatorPrometheus.scrapeTargets.
-            scrapeTargets is a map keyed by target name so callers can override
-            individual fields via `--set` without clobbering siblings.
-            Required fields are validated with `required` so misconfigured values
-            fail Helm rendering with a clear message instead of a cryptic
-            tpl-on-nil error. String fields are coerced via toString before tpl so
-            non-string YAML values don't blow up tpl. Entries that are nil or non-map
-            (e.g. produced by `--set foo[3].x=y` against a map) are skipped
-            defensively. Entries with enabled: false are excluded.
-            Validate port bounds at render time. `int` coerces non-numeric input
-            to 0, so checking < 1 also catches strings like "foo" or true.
-            port is templated so a target can follow the port of the subchart
-            that serves it rather than repeating the number.
-            */}}
-            {{- $targets := list }}
-            {{- range $name, $tgt := .Values.operatorPrometheus.scrapeTargets }}
-              {{- if and $tgt (kindIs "map" $tgt) }}
-                {{- $enabled := true }}
-                {{- if hasKey $tgt "enabled" }}{{- $enabled = $tgt.enabled }}{{- end }}
-                {{- if $enabled }}
-                  {{- $kind := default "pod" $tgt.kind }}
-                  {{- if eq $kind "node" }}
-                    {{- /* Node targets scrape kubelets via the API-server node
-                    proxy; namespace/port do not apply. labelSelector is an
-                    optional node filter. */}}
-                    {{- $t := dict "name" $name "kind" "node" }}
-                    {{- if $tgt.labelSelector }}{{- $_ := set $t "label_selector" (tpl ($tgt.labelSelector | toString) $) }}{{- end }}
-                    {{- if $tgt.path }}{{- $_ := set $t "path" (tpl ($tgt.path | toString) $) }}{{- end }}
-                    {{- if $tgt.nodeMetrics }}{{- $_ := set $t "node_metrics" true }}{{- end }}
-                    {{- if $tgt.metricNamePrefixes }}{{- $_ := set $t "metric_name_prefixes" $tgt.metricNamePrefixes }}{{- end }}
-                    {{- $targets = append $targets $t }}
-                  {{- else if eq $kind "pod" }}
-                    {{- $namespace := required (printf "operatorPrometheus.scrapeTargets.%s: namespace is required" $name) $tgt.namespace }}
-                    {{- $selector := required (printf "operatorPrometheus.scrapeTargets.%s: labelSelector is required" $name) $tgt.labelSelector }}
-                    {{- $port := required (printf "operatorPrometheus.scrapeTargets.%s: port is required" $name) $tgt.port }}
-                    {{- $portInt := int (tpl ($port | toString) $) }}
-                    {{- if or (lt $portInt 1) (gt $portInt 65535) }}
-                      {{- fail (printf "operatorPrometheus.scrapeTargets.%s: port must be an integer between 1 and 65535, got %v" $name $port) }}
-                    {{- end }}
-                    {{- $t := dict
-                        "name"           $name
-                        "namespace"      (tpl ($namespace | toString) $)
-                        "label_selector" (tpl ($selector | toString) $)
-                        "port"           $portInt }}
-                    {{- if $tgt.path }}{{- $_ := set $t "path" (tpl ($tgt.path | toString) $) }}{{- end }}
-                    {{- if $tgt.nodeMetrics }}{{- $_ := set $t "node_metrics" true }}{{- end }}
-                    {{- if $tgt.metricNamePrefixes }}{{- $_ := set $t "metric_name_prefixes" $tgt.metricNamePrefixes }}{{- end }}
-                    {{- $targets = append $targets $t }}
-                  {{- else }}
-                    {{- fail (printf "operatorPrometheus.scrapeTargets.%s: kind must be \"pod\" or \"node\", got %v" $name $kind) }}
-                  {{- end }}
-                {{- end }}
-              {{- end }}
-            {{- end }}
-            - name: SCRAPE_TARGETS
-              value: {{ $targets | toJson | quote }}
-            {{- with .Values.operatorPrometheus.env }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
-          {{- with .Values.operatorPrometheus.resources }}
-          resources:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-      {{- with .Values.operatorPrometheus.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.operatorPrometheus.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.operatorPrometheus.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+{{- $c := .Values.operatorPrometheus }}
+{{- if and $c.enabled $c.deployment.enabled }}
+{{- $w := $c.deployment }}
+{{- $name := required "operatorPrometheus.applicationName is required" $c.applicationName }}
+{{- $component := "operator-prometheus" }}
+{{- $labels := fromYaml (include "costgraph-operator.componentLabels" (dict "ctx" $ "name" $name "component" $component)) }}
+{{- $env := dict
+    "CLUSTER_NAME"          (dict "value" (required "Cluster name must be provided" .Values.global.clusterName))
+    "API_KEY"               (dict "valueFrom" (dict "secretKeyRef" (dict "name" (include "costgraph-operator.apiKeySecretName" .) "key" (include "costgraph-operator.apiKeySecretKey" .))))
+    "PROMETHEUS_URL"        (dict "value" (printf "%s-kube-state-metrics.%s.svc.cluster.local:8080" .Release.Name (include "costgraph-operator.namespace" .)))
+    "REMOTE_WRITE_URL"      (dict "value" (include "costgraph-operator.remoteWriteURL" (dict "component" $c.config.remoteWriteURL "root" $)))
+    "REMOTE_WRITE_PATH"     (dict "value" $c.config.remoteWritePath)
+    "PROMETHEUS_API_PROVIDER" (dict "value" $c.config.prometheusAPIProvider)
+    "PROMETHEUS_API_VERSION"  (dict "value" $c.config.prometheusAPIVersion)
+    "HTTP_TIMEOUT"          (dict "value" $c.config.httpTimeout)
+    "SCRAPE_TARGETS"        (dict "value" (include "costgraph-operator.scrapeTargets" (dict "ctx" $ "targets" $c.scrapeTargets)))
+}}
+{{- with .Values.global.backendURL }}{{- $_ := set $env "BACKEND_URL" (dict "value" .) }}{{- end }}
+{{- $env = mergeOverwrite $env (deepCopy ($w.env | default dict)) }}
+{{- $args := dict
+    "ctx"                      $
+    "kind"                     "Deployment"
+    "name"                     $name
+    "containerName"            $component
+    "labels"                   $labels
+    "selectorLabels"           (fromYaml (include "costgraph-operator.componentSelectorLabels" (dict "ctx" $ "name" $name "component" $component)))
+    "podLabels"                (merge (deepCopy ($w.podLabels | default dict)) (deepCopy $labels))
+    "podAnnotations"           $w.podAnnotations
+    "replicas"                 $w.replicas
+    "image"                    (include "costgraph.imageRef" $w.image)
+    "imagePullPolicy"          $w.image.pullPolicy
+    "imagePullSecrets"         ($w.imagePullSecrets | default .Values.imagePullSecrets)
+    "serviceAccountName"       (include "costgraph-operator.serviceAccountName" .)
+    "podSecurityContext"       $w.podSecurityContext
+    "containerSecurityContext" $w.containerSecurityContext
+    "resources"                $w.resources
+    "ports"                    $w.ports
+    "env"                      (fromYamlArray (include "costgraph-operator.env" (dict "ctx" $ "env" $env)))
+    "nodeSelector"             $w.nodeSelector
+    "tolerations"              $w.tolerations
+    "affinity"                 $w.affinity
+}}
+{{- if hasKey $w "automountServiceAccountToken" }}{{- $_ := set $args "automountServiceAccountToken" $w.automountServiceAccountToken }}{{- end }}
+{{- include "costgraph.workload" $args }}
 {{- end }}

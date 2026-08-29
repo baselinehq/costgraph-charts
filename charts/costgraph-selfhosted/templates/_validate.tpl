@@ -6,7 +6,7 @@ is buried in container logs.
 {{- define "costgraph-selfhosted.validate" -}}
 
 {{- if and (not .Values.global.controlPlane.apiKey) (not .Values.global.controlPlane.existingSecret) -}}
-{{- fail "controlPlane.apiKey (or controlPlane.existingSecret) is required: it is the key CostGraph issued you during onboarding. Without it this deployment cannot start." -}}
+{{- fail "controlPlane.apiKey (or controlPlane.existingSecret) is required: it is the key CostGraph issued you during onboarding. Create one at https://app.costgraph.ai/settings/account/api-keys. Without it this deployment cannot start." -}}
 {{- end -}}
 
 {{- if and .Values.global.controlPlane.existingSecret (not .Values.global.imagePullSecrets) -}}
@@ -33,8 +33,19 @@ is buried in container logs.
 {{- fail "redis.url is required (or redis.existingSecret, or redis.bundled.enabled=true)." -}}
 {{- end -}}
 
-{{- if and (not .Values.global.metricsStore.url) (not (.Values.global.metricsStore).existingSecret) (not .Values.global.metricsStore.bundled.enabled) -}}
+{{- if and (not .Values.global.metricsStore.url) (not .Values.global.metricsStore.bundled.enabled) -}}
 {{- fail "metricsStore.url is required (or metricsStore.bundled.enabled=true). Without it the metrics your clusters send have nowhere to go, and no costs are produced." -}}
+{{- end -}}
+
+{{- if .Values.global.imagePullSecrets -}}
+{{- range $name := list "backend" "dashboard" "ingestionApi" "aggregator" -}}
+{{- $component := index $.Values $name -}}
+{{- range $secret := $component.deployment.imagePullSecrets -}}
+{{- if eq $secret.name (printf "%s-registry" (include "costgraph-selfhosted.fullname" $)) -}}
+{{- fail (printf "%s.deployment.imagePullSecrets still names the chart's own %s-registry Secret, which is not created when global.imagePullSecrets is set. stakater's application chart does not template that field, so point every component's deployment.imagePullSecrets at the Secret you created." $name (include "costgraph-selfhosted.fullname" $)) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}
 
 {{- if and .Values.ingress.enabled (not .Values.ingress.hosts) -}}

@@ -1,48 +1,30 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ include "costgraph-selfhosted.fullname" . }}
-  labels:
-    {{- include "costgraph-selfhosted.labels" . | nindent 4 }}
-data:
-  DEPLOYMENT_MODE: "on_prem"
-  DEPLOYMENT_NAME: {{ .Values.deploymentName | default .Release.Name | quote }}
-
-  CONTROL_PLANE_URL: {{ .Values.global.controlPlane.url | quote }}
-  DEPLOYMENT_CONFIG_PUBLIC_KEY: {{ .Values.global.controlPlane.configPublicKey | quote }}
-
-  {{- with (.Values.cognito).region }}
-  COGNITO_REGION: {{ . | quote }}
-  {{- end }}
-  {{- with (.Values.cognito).userPoolId }}
-  COGNITO_USER_POOL_ID: {{ . | quote }}
-  {{- end }}
-  {{- with (.Values.cognito).userPoolClientId }}
-  AUTH_AUDIENCE: {{ . | quote }}
-  {{- end }}
-  {{- with (.Values.cognito).jwksURL }}
-  COGNITO_JWKS_URL: {{ . | quote }}
-  {{- end }}
-
-  APP_BASE_URL: {{ .Values.global.appBaseURL | quote }}
-  AUTH_PROVIDER_NAME: "cognito"
-
-  PRICING_SYNC_INTERVAL: "24h"
-  METERING_PUSH_INTERVAL: "24h"
-  MIGRATE: {{ if and .Values.global.postgres.runMigrations .Values.global.postgres.bundled.enabled }}"1"{{ else }}"0"{{ end }}
-  {{- if not .Values.global.redis.existingSecret }}
-  {{- with (include "costgraph-selfhosted.redisURL" .) }}
-  REDIS_URL: {{ . | quote }}
-  {{- end }}
-  {{- end }}
-  {{- with (include "costgraph-selfhosted.metricsStoreURL" .) }}
-  METRICS_STORE_URL: {{ . | quote }}
-  {{- end }}
-
-
-  PORT: "8080"
-  ENVIRONMENT: "production"
-  # The browser calls the API from the dashboard's origin. Defaults to
-  # appBaseURL, which is that origin; override when the dashboard is served
-  # from somewhere else, or to allow several.
-  CORS_ALLOWED_ORIGINS: {{ .Values.global.corsAllowedOrigins | default .Values.global.appBaseURL | quote }}
+{{- $data := dict
+    "DEPLOYMENT_MODE" "on_prem"
+    "DEPLOYMENT_NAME" (.Values.deploymentName | default .Release.Name)
+    "CONTROL_PLANE_URL" .Values.global.controlPlane.url
+    "DEPLOYMENT_CONFIG_PUBLIC_KEY" .Values.global.controlPlane.configPublicKey
+    "APP_BASE_URL" .Values.global.appBaseURL
+    "AUTH_PROVIDER_NAME" "cognito"
+    "PRICING_SYNC_INTERVAL" "24h"
+    "METERING_PUSH_INTERVAL" "24h"
+    "MIGRATE" (ternary "1" "0" (and .Values.global.postgres.runMigrations .Values.global.postgres.bundled.enabled))
+    "PORT" "8080"
+    "ENVIRONMENT" "production"
+}}
+{{/*
+The browser calls the API from the dashboard's origin. Defaults to appBaseURL,
+which is that origin; override when the dashboard is served from somewhere
+else, or to allow several.
+*/}}
+{{- $_ := set $data "CORS_ALLOWED_ORIGINS" (.Values.global.corsAllowedOrigins | default .Values.global.appBaseURL) }}
+{{- with (.Values.cognito).region }}{{ $_ := set $data "COGNITO_REGION" . }}{{ end }}
+{{- with (.Values.cognito).userPoolId }}{{ $_ := set $data "COGNITO_USER_POOL_ID" . }}{{ end }}
+{{- with (.Values.cognito).userPoolClientId }}{{ $_ := set $data "AUTH_AUDIENCE" . }}{{ end }}
+{{- with (.Values.cognito).jwksURL }}{{ $_ := set $data "COGNITO_JWKS_URL" . }}{{ end }}
+{{- with (include "costgraph-selfhosted.metricsStoreURL" .) }}{{ $_ := set $data "METRICS_STORE_URL" . }}{{ end }}
+{{ include "costgraph.configMap" (dict
+    "ctx" $
+    "name" (include "costgraph-selfhosted.fullname" .)
+    "labels" (include "costgraph-selfhosted.labels" . | fromYaml)
+    "data" $data
+) }}
