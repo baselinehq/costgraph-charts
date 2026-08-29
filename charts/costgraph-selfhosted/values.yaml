@@ -1,6 +1,5 @@
 nameOverride: ""
 
-replicaCount: 2
 
 # Label for this deployment in the CostGraph dashboard, so you can tell
 # several of them apart. Defaults to the Helm release name.
@@ -339,8 +338,110 @@ aggregator:
     ENABLE_EPHEMERAL_STORAGE: "true"
     ENABLE_DISK_IOPS: "true"
 
-service:
-  type: ClusterIP
+backend:
+  applicationName: costgraph-selfhosted
+  rbac:
+    enabled: false
+    serviceAccount:
+      create: false
+      name: costgraph-selfhosted
+  service:
+    type: ClusterIP
+    ports:
+      - name: http
+        port: 8080
+        targetPort: http
+        protocol: TCP
+  deployment:
+    enabled: true
+    replicas: 2
+    image:
+      repository: '{{ .Values.global.image.repository }}'
+      tag: '{{ required "image.tag is required" .Values.global.image.tag }}'
+      pullPolicy: IfNotPresent
+    # Not templated by stakater, so global.imagePullSecrets does not reach it.
+    # Replace this entry when you supply your own registry credentials.
+    imagePullSecrets:
+      - name: costgraph-selfhosted-registry
+    automountServiceAccountToken: false
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 10001
+      fsGroup: 10001
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    ports:
+      - name: http
+        containerPort: 8080
+        protocol: TCP
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        memory: 2Gi
+    envFrom:
+      config:
+        type: configmap
+        name: costgraph-selfhosted
+    env:
+      # Rolls the pods when anything they are built from changes, replacing the
+      # checksums over the rendered ConfigMap and Secret.
+      VALUES_HASH:
+        value: '{{ toYaml .Values | sha256sum }}'
+      CONTROL_PLANE_API_KEY:
+        valueFrom:
+          secretKeyRef:
+            name: costgraph-selfhosted
+            key: control-plane-api-key
+      PRICING_API_KEY:
+        valueFrom:
+          secretKeyRef:
+            name: costgraph-selfhosted
+            key: control-plane-api-key
+      DB_URL:
+        valueFrom:
+          secretKeyRef:
+            name: '{{ include "costgraph-selfhosted.postgresSecretName" . }}'
+            key: postgres-url
+      DB_PASSWORD:
+        valueFrom:
+          secretKeyRef:
+            name: costgraph-selfhosted-postgres
+            key: password
+      API_KEY_SECRET:
+        valueFrom:
+          secretKeyRef:
+            name: costgraph-selfhosted-generated
+            key: api-key-secret
+      INTEGRATIONS_ENCRYPTION_KEY:
+        valueFrom:
+          secretKeyRef:
+            name: costgraph-selfhosted-generated
+            key: integrations-encryption-key
+    readinessProbe:
+      enabled: true
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      httpGet:
+        path: /healthz
+        port: http
+    livenessProbe:
+      enabled: true
+      initialDelaySeconds: 30
+      periodSeconds: 20
+      httpGet:
+        path: /healthz
+        port: http
+    volumeMounts:
+      tmp:
+        mountPath: /tmp
+    volumes:
+      tmp:
+        emptyDir: {}
 
 ingress:
   enabled: false
@@ -349,12 +450,6 @@ ingress:
   hosts: []
   tls: []
 
-resources:
-  requests:
-    cpu: 500m
-    memory: 512Mi
-  limits:
-    memory: 2Gi
 
 # A preflight job that runs before install and upgrade and fails the release
 # with the real reason if the database cannot support the schema. Turn it off
