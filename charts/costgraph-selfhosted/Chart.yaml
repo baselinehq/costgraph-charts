@@ -15,8 +15,8 @@ dependencies:
     version: 9.3.1
     repository: https://stakater.github.io/stakater-charts
     alias: redis
-    # The bundled Redis is opt-in; without this the alias renders regardless,
-    # where the template it replaced was guarded.
+    # The bundled datastores are opt-in, and the flag lives under global
+    # because the subcharts that build connection URLs can only read global.
     condition: global.redis.bundled.enabled
   - name: application
     version: 9.3.1
@@ -37,6 +37,7 @@ dependencies:
     version: 9.3.1
     repository: https://stakater.github.io/stakater-charts
     alias: backend
+    condition: backend.enabled
   - name: costgraph-common
     version: "*"
     repository: file://../costgraph-common

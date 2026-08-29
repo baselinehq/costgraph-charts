@@ -65,21 +65,22 @@ Create the name of the service account to use
 Namespace helper
 */}}
 {{- define "costgraph-operator.namespace" -}}
-{{- default .Release.Namespace .Values.namespace }}
+{{- .Release.Namespace }}
 {{- end }}
-*/}}
 
 {{/*
 Resolve the name of the Secret holding the API key.
 Uses an existing secret when global.existingSecret is set; otherwise uses
 the Secret created by this chart.
+
+The body reads only .Release and .Values.global so that stakater's application
+subchart, which templates its env values in its own scope, resolves the same
+name as this chart's own templates. Deriving it from fullname instead would
+resolve against the subchart and silently reference a Secret that does not
+exist.
 */}}
 {{- define "costgraph-operator.apiKeySecretName" -}}
-{{- if .Values.global.existingSecret -}}
-{{- .Values.global.existingSecret -}}
-{{- else -}}
-{{- printf "%s-credentials" (include "costgraph-operator.fullname" .) | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
+{{- .Values.global.existingSecret | default (printf "%s-costgraph-operator-credentials" .Release.Name) | trunc 63 | trimSuffix "-" -}}
 {{- end }}
 
 {{/*
@@ -96,95 +97,52 @@ apiKey
 {{- end }}
 
 {{/*
-
 ------------------------------------------------------------------------------
-costgraph-operator-kubernetes helpers
+Per-component helpers
+
+Every component in this chart is named by its own applicationName rather than
+by the release, so that the objects stakater's application chart renders and
+the ones rendered here are named the same way.
 ------------------------------------------------------------------------------
 */}}
-{{- define "costgraph-operator.kubernetesName" -}}
-{{- printf "%s-kubernetes" (include "costgraph-operator.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- define "costgraph-operator.componentLabels" -}}
+helm.sh/chart: {{ include "costgraph-operator.chart" .ctx }}
+{{ include "costgraph-operator.componentSelectorLabels" . }}
+{{- with .ctx.Chart.AppVersion }}
+app.kubernetes.io/version: {{ . | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .ctx.Release.Service }}
 {{- end }}
 
-{{- define "costgraph-operator.kubernetesLabels" -}}
-helm.sh/chart: {{ include "costgraph-operator.chart" . }}
-{{ include "costgraph-operator.kubernetesSelectorLabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- end }}
-
-{{- define "costgraph-operator.kubernetesSelectorLabels" -}}
-app.kubernetes.io/name: {{ include "costgraph-operator.kubernetesName" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/component: operator-kubernetes
+{{- define "costgraph-operator.componentSelectorLabels" -}}
+app.kubernetes.io/name: {{ required "componentSelectorLabels: name is required" .name }}
+app.kubernetes.io/instance: {{ .ctx.Release.Name }}
+app.kubernetes.io/component: {{ required "componentSelectorLabels: component is required" .component }}
 {{- end }}
 
 {{/*
-------------------------------------------------------------------------------
-costgraph-operator-prometheus helpers
-------------------------------------------------------------------------------
+Turn stakater's env map into the list a PodSpec takes.
+
+The map form is what the application chart accepts, so keeping it here is what
+lets every component in this chart be configured the same way. String values
+are templated, again matching stakater, so a value can reach back into the
+release.
 */}}
-{{- define "costgraph-operator.prometheusName" -}}
-{{- printf "%s-prometheus" (include "costgraph-operator.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- define "costgraph-operator.env" -}}
+{{- $ctx := required "env: ctx is required" .ctx -}}
+{{- range $name, $spec := .env }}
+- name: {{ $name }}
+{{- if kindIs "map" $spec }}
+{{- if hasKey $spec "valueFrom" }}
+  valueFrom:
+    {{- toYaml $spec.valueFrom | nindent 4 }}
+{{- else }}
+  value: {{ tpl (toString $spec.value) $ctx | quote }}
 {{- end }}
-
-{{- define "costgraph-operator.prometheusLabels" -}}
-helm.sh/chart: {{ include "costgraph-operator.chart" . }}
-{{ include "costgraph-operator.prometheusSelectorLabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- else }}
+  value: {{ tpl (toString $spec) $ctx | quote }}
 {{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
-
-{{- define "costgraph-operator.prometheusSelectorLabels" -}}
-app.kubernetes.io/name: {{ include "costgraph-operator.prometheusName" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/component: operator-prometheus
-{{- end }}
-
-{{- define "costgraph-operator.aiGatewayScraperName" -}}
-{{- printf "%s-ai-gateway" (include "costgraph-operator.fullname" .) | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{- define "costgraph-operator.aiGatewayScraperLabels" -}}
-helm.sh/chart: {{ include "costgraph-operator.chart" . }}
-{{ include "costgraph-operator.aiGatewayScraperSelectorLabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- end }}
-
-{{- define "costgraph-operator.aiGatewayScraperSelectorLabels" -}}
-app.kubernetes.io/name: {{ include "costgraph-operator.aiGatewayScraperName" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/component: operator-ai-gateway
-{{- end }}
-
-{{/*
-------------------------------------------------------------------------------
-costgraph-operator-flowtrace helpers
-------------------------------------------------------------------------------
-*/}}
-{{- define "costgraph-operator.flowtraceName" -}}
-{{- printf "%s-flowtrace" (include "costgraph-operator.fullname" .) | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{- define "costgraph-operator.flowtraceLabels" -}}
-helm.sh/chart: {{ include "costgraph-operator.chart" . }}
-{{ include "costgraph-operator.flowtraceSelectorLabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- end }}
-
-{{- define "costgraph-operator.flowtraceSelectorLabels" -}}
-app.kubernetes.io/name: {{ include "costgraph-operator.flowtraceName" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/component: flowtrace
 {{- end }}
 
 {{/*

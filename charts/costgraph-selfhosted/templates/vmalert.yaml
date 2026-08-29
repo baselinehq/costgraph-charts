@@ -1,5 +1,7 @@
-{{- if .Values.aggregator.enabled }}
-{{- $name := printf "%s-vmalert" (include "costgraph-selfhosted.fullname" .) }}
+{{- include "costgraph-selfhosted.validate" . -}}
+{{- if .Values.vmalert.enabled }}
+{{- $c := .Values.vmalert }}
+{{- $d := $c.deployment }}
 {{- $store := include "costgraph-selfhosted.metricsStoreURL" . }}
 {{/*
 Two rule sets, two deployments: long-window rules feed the daily rollups,
@@ -14,21 +16,21 @@ The rules come from the aggregator image, which already ships them.
 ---
 {{ include "costgraph.vmalert" (dict
     "ctx" $
-    "name" (printf "%s%s" $name $suffix)
-    "labels" (merge (dict "app.kubernetes.io/component" $component) (include "costgraph-selfhosted.labels" $ | fromYaml))
-    "selectorLabels" (merge (dict "app.kubernetes.io/component" $component) (include "costgraph-selfhosted.selectorLabels" $ | fromYaml))
-    "image" (printf "%s:%s" $.Values.aggregator.vmalert.image.repository $.Values.aggregator.vmalert.image.tag)
-    "imagePullPolicy" $.Values.aggregator.image.pullPolicy
+    "name" (printf "%s%s" $c.applicationName $suffix)
+    "labels" (include "costgraph-selfhosted.componentLabels" (dict "ctx" $ "component" $component) | fromYaml)
+    "selectorLabels" (include "costgraph-selfhosted.componentSelectorLabels" (dict "ctx" $ "component" $component) | fromYaml)
+    "image" (include "costgraph-selfhosted.imageRef" (dict "repository" $d.image.repository "tag" $d.image.tag))
+    "imagePullPolicy" $d.image.pullPolicy
     "imagePullSecrets" (include "costgraph-selfhosted.imagePullSecrets" $ | fromYamlArray)
-    "rulesImage" (include "costgraph-selfhosted.imageRef" (dict "repository" $.Values.aggregator.image.repository "tag" (required "aggregator.image.tag is required" $.Values.aggregator.image.tag)))
+    "rulesImage" (include "costgraph-selfhosted.imageRef" (dict "repository" $.Values.aggregator.deployment.image.repository "tag" (required "aggregator.deployment.image.tag is required" $.Values.aggregator.deployment.image.tag)))
     "rulesPath" (printf "/recording-rules/%s" $set)
     "datasourceURL" $store
     "remoteWriteURL" $store
-    "resources" $.Values.aggregator.vmalert.resources
-    "podSecurityContext" $.Values.global.podSecurityContext
-    "containerSecurityContext" $.Values.global.securityContext
-    "nodeSelector" $.Values.global.nodeSelector
-    "tolerations" $.Values.global.tolerations
+    "resources" $d.resources
+    "podSecurityContext" $d.securityContext
+    "containerSecurityContext" $d.containerSecurityContext
+    "nodeSelector" $d.nodeSelector
+    "tolerations" $d.tolerations
 ) }}
 {{- end }}
 {{- end }}

@@ -1,75 +1,24 @@
 {{- if .Values.global.metricsStore.bundled.enabled }}
-{{- $name := printf "%s-victoria-metrics" (include "costgraph-selfhosted.fullname" .) }}
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ $name }}
-  labels:
-    {{- include "costgraph-selfhosted.labels" . | nindent 4 }}
-    app.kubernetes.io/component: metrics-store
-spec:
-  ports:
-    - port: 8428
-      targetPort: http
-      name: http
-  selector:
-    {{- include "costgraph-selfhosted.selectorLabels" . | nindent 4 }}
-    app.kubernetes.io/component: metrics-store
+{{- $c := .Values.victoriametrics }}
+{{- $name := $c.applicationName }}
+{{- $labels := include "costgraph-selfhosted.componentLabels" (dict "ctx" . "component" "metrics-store") | fromYaml }}
+{{- $selectorLabels := include "costgraph-selfhosted.componentSelectorLabels" (dict "ctx" . "component" "metrics-store") | fromYaml }}
+{{ include "costgraph.service" (dict
+    "ctx" .
+    "name" $name
+    "labels" $labels
+    "selectorLabels" $selectorLabels
+    "ports" $c.service.ports
+) }}
 ---
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: {{ $name }}
-  labels:
-    {{- include "costgraph-selfhosted.labels" . | nindent 4 }}
-    app.kubernetes.io/component: metrics-store
-spec:
-  serviceName: {{ $name }}
-  replicas: 1
-  selector:
-    matchLabels:
-      {{- include "costgraph-selfhosted.selectorLabels" . | nindent 6 }}
-      app.kubernetes.io/component: metrics-store
-  template:
-    metadata:
-      labels:
-        {{- include "costgraph-selfhosted.selectorLabels" . | nindent 8 }}
-        app.kubernetes.io/component: metrics-store
-    spec:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        fsGroup: 1000
-      containers:
-        - name: victoria-metrics
-          image: {{ .Values.global.metricsStore.bundled.image }}
-          imagePullPolicy: IfNotPresent
-          args:
-            - --storageDataPath=/storage
-            - --retentionPeriod={{ .Values.global.metricsStore.bundled.retentionPeriod }}
-          ports:
-            - name: http
-              containerPort: 8428
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: http
-            initialDelaySeconds: 10
-            periodSeconds: 10
-          resources:
-            {{- toYaml .Values.global.metricsStore.bundled.resources | nindent 12 }}
-          volumeMounts:
-            - name: storage
-              mountPath: /storage
-  volumeClaimTemplates:
-    - metadata:
-        name: storage
-      spec:
-        accessModes: ["ReadWriteOnce"]
-        {{- with .Values.global.metricsStore.bundled.storageClass }}
-        storageClassName: {{ . | quote }}
-        {{- end }}
-        resources:
-          requests:
-            storage: {{ .Values.global.metricsStore.bundled.storage }}
+{{ include "costgraph.workload" (merge (dict
+    "ctx" .
+    "kind" "StatefulSet"
+    "name" $name
+    "serviceName" $name
+    "labels" $labels
+    "selectorLabels" $selectorLabels
+    "serviceAccountName" $c.rbac.serviceAccount.name
+    "volumeClaimTemplates" (include "costgraph-selfhosted.dataVolumeClaim" (dict "name" "storage" "storage" $c.storage "storageClass" $c.storageClass) | fromYamlArray)
+) (include "costgraph-selfhosted.workloadSpec" (dict "ctx" . "spec" $c.statefulSet) | fromYaml)) }}
 {{- end }}

@@ -30,7 +30,7 @@ spec:
       containers:
         - name: doctor
           image: {{ include "costgraph-selfhosted.image" . }}
-          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.backend.deployment.image.pullPolicy }}
           securityContext:
             {{- toYaml .Values.global.securityContext | nindent 12 }}
           command: ["/usr/local/bin/selfhost-doctor", "-offline"]

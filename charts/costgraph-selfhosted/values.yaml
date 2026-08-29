@@ -1,348 +1,28 @@
 nameOverride: ""
 
-
 # Label for this deployment in the CostGraph dashboard, so you can tell
 # several of them apart. Defaults to the Helm release name.
 deploymentName: ""
 
-redis:
-  # Name of a Secret you manage holding the connection URL under `redis-url`.
-  # Use this rather than redis.url when the URL contains a password, so it is
-  # not stored in a ConfigMap in plain text.
-  # Rendered by stakater's application chart. Its names come from
-  # applicationName, a plain value, so the bundled Redis no longer carries the
-  # release name; costgraph-selfhosted.redisURL points at this name.
-  applicationName: costgraph-selfhosted-redis
-  rbac:
-    enabled: false
-  deployment:
-    enabled: true
-    replicas: 1
-    strategy:
-      type: Recreate
-    image:
-      # Follows redis.bundled.image, which is a full reference, so no tag is
-      # appended. stakater templates the repository, which is what makes this
-      # possible; it does not template resources, so those live here now.
-      repository: '{{ .Values.global.redis.bundled.image }}'
-      tag: ""
-      pullPolicy: IfNotPresent
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
-    securityContext:
-      runAsNonRoot: true
-      runAsUser: 999
-    containerSecurityContext:
-      allowPrivilegeEscalation: false
-      readOnlyRootFilesystem: true
-      capabilities:
-        drop: ["ALL"]
-    automountServiceAccountToken: false
-    ports:
-      - name: redis
-        containerPort: 6379
-    readinessProbe:
-      enabled: true
-      initialDelaySeconds: 5
-      periodSeconds: 5
-      exec:
-        command: ["redis-cli", "ping"]
-    volumeMounts:
-      data:
-        mountPath: /data
-    volumes:
-      data:
-        emptyDir: {}
-  service:
-    ports:
-      - name: redis
-        port: 6379
-        targetPort: redis
-dashboard:
-  enabled: true
-  image:
-    repository: registry.costgraph.ai/costgraph-dashboard
-    tag: sha-2060465
-  # Where the browser reaches this deployment's API. Defaults to appBaseURL
-  # + /api/v1, which is right when one ingress fronts both; set it when the
-  # API is on a different host.
-  apiBaseURL: ""
-  # Domain for SSO sign-in. Leave empty unless CostGraph has set up SSO for
-  # your deployment; setting it otherwise shows a sign-in button that cannot
-  # complete a login.
-  cognitoOAuthDomain: ""
-  # Base URL of the CostGraph AI assistant, if you run one. Empty hides the
-  # assistant from the dashboard.
-  graphAiBaseURL: ""
-  applicationName: costgraph-selfhosted-dashboard
-  rbac:
-    enabled: false
-    serviceAccount:
-      create: false
-      name: costgraph-selfhosted
-  service:
-    ports:
-      - name: http
-        port: 80
-        targetPort: http
-        protocol: TCP
-  deployment:
-    enabled: true
-    replicas: 2
-    image:
-      repository: '{{ .Values.image.repository }}'
-      tag: '{{ required "dashboard.image.tag is required" .Values.image.tag }}'
-      pullPolicy: IfNotPresent
-    # Not templated by stakater, so global.imagePullSecrets does not reach it.
-    # Replace this entry when you supply your own registry credentials.
-    imagePullSecrets:
-      - name: costgraph-selfhosted-registry
-    automountServiceAccountToken: false
-    securityContext:
-      runAsNonRoot: true
-      runAsUser: 101
-      fsGroup: 101
-    containerSecurityContext:
-      allowPrivilegeEscalation: false
-      readOnlyRootFilesystem: true
-      capabilities:
-        drop: ["ALL"]
-    ports:
-      - name: http
-        containerPort: 8080
-    resources:
-      requests:
-        cpu: 50m
-        memory: 64Mi
-      limits:
-        memory: 256Mi
-    env:
-      # Rolls the pods when anything they are built from changes, which the
-      # checksum annotation did before; stakater does not template annotations.
-      # Hashing this alias's own values covers global and the dashboard
-      # settings that config.json is rendered from.
-      VALUES_HASH:
-        value: '{{ toYaml .Values | sha256sum }}'
-    readinessProbe:
-      enabled: true
-      initialDelaySeconds: 3
-      periodSeconds: 10
-      httpGet:
-        path: /config.json
-        port: http
-    livenessProbe:
-      enabled: true
-      initialDelaySeconds: 10
-      periodSeconds: 20
-      httpGet:
-        path: /index.html
-        port: http
-    volumeMounts:
-      runtime-config:
-        mountPath: /usr/share/nginx/html/config.json
-        subPath: config.json
-        readOnly: true
-      cache:
-        mountPath: /var/cache/nginx
-      run:
-        mountPath: /var/run
-      tmp:
-        mountPath: /tmp
-    volumes:
-      runtime-config:
-        configMap:
-          name: costgraph-selfhosted-dashboard
-      cache:
-        emptyDir: {}
-      run:
-        emptyDir: {}
-      tmp:
-        emptyDir: {}
-
-# Receives metrics from the CostGraph operator running in your clusters. Turn
-# it off only if you are not collecting cluster metrics at all.
-ingestionApi:
-  enabled: true
-  image:
-    repository: registry.costgraph.ai/ingestion-api
-    # Versioned separately from the chart, so this is pinned rather than
-    # following appVersion.
-    tag: sha-5dc610b
-    pullPolicy: IfNotPresent
-  logLevel: info
-
-  # Largest remote_write batch to accept, in bytes. Raise it if clusters with
-  # many nodes report bodies rejected as too large.
-  maxBodyBytes: 52428800
-  applicationName: costgraph-selfhosted-ingestion-api
-  rbac:
-    enabled: false
-    serviceAccount:
-      create: false
-      name: costgraph-selfhosted
-  service:
-    ports:
-      - name: http
-        port: 8080
-        targetPort: http
-  deployment:
-    enabled: true
-    image:
-      repository: '{{ .Values.image.repository }}'
-      tag: '{{ required "ingestionApi.image.tag is required" .Values.image.tag }}'
-      pullPolicy: IfNotPresent
-    replicas: 2
-    imagePullSecrets:
-      - name: costgraph-selfhosted-registry
-    automountServiceAccountToken: false
-    ports:
-      - name: http
-        containerPort: 8080
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        memory: 1Gi
-    env:
-      PORT:
-        value: "8080"
-      LOG_LEVEL:
-        value: '{{ .Values.logLevel }}'
-      VM_TENANT_HEADER:
-        value: X-Scope-OrgID
-      VM_WRITE_TIMEOUT:
-        value: 10s
-      MAX_BODY_BYTES:
-        value: '{{ .Values.maxBodyBytes }}'
-      AUTH_CACHE_SIZE:
-        value: "10000"
-      AUTH_CACHE_TTL:
-        value: 5m
-      AUTH_CACHE_NEGATIVE_TTL:
-        value: 5s
-      VM_WRITE_URL:
-        value: '{{ printf "%s/api/v1/write" (include "costgraph-selfhosted.metricsStoreURL" .) }}'
-      VM_SHORT_WRITE_URL:
-        value: '{{ printf "%s/api/v1/write" (include "costgraph-selfhosted.metricsStoreURL" .) }}'
-      AUTH_DB_URL:
-        valueFrom:
-          secretKeyRef:
-            name: '{{ include "costgraph-selfhosted.postgresSecretName" . }}'
-            key: postgres-url
-      API_KEY_SECRET:
-        valueFrom:
-          secretKeyRef:
-            name: costgraph-selfhosted-generated
-            key: api-key-secret
-      VALUES_HASH:
-        value: '{{ toYaml .Values.global | sha256sum }}'
-
-# Turns the raw samples into the per-workload costs the dashboard shows.
-# Without it, metrics arrive but cost breakdowns stay empty.
-aggregator:
-  enabled: true
-  applicationName: costgraph-selfhosted-aggregator
-  image:
-    repository: registry.costgraph.ai/aggregator
-    # Versioned separately from the chart, so this is pinned rather than
-    # following appVersion.
-    tag: sha-79f4b08
-    pullPolicy: IfNotPresent
-  rbac:
-    enabled: false
-    serviceAccount:
-      create: false
-      name: costgraph-selfhosted
-  service:
-    ports:
-      - name: http
-        port: 8192
-        targetPort: http
-  deployment:
-    enabled: true
-    replicas: 1
-    strategy:
-      type: Recreate
-    image:
-      repository: '{{ .Values.image.repository }}'
-      tag: '{{ required "aggregator.image.tag is required" .Values.image.tag }}'
-      pullPolicy: IfNotPresent
-    imagePullSecrets:
-      - name: costgraph-selfhosted-registry
-    automountServiceAccountToken: false
-    resources:
-      requests:
-        cpu: 250m
-        memory: 512Mi
-      limits:
-        memory: 2Gi
-    ports:
-      - name: http
-        containerPort: 8192
-    env:
-      ENVIRONMENT:
-        value: production
-      RULES_EVAL_INTERVAL:
-        value: "1m"
-      GOMEMLIMIT:
-        value: 1750MiB
-      DATABASE_URL:
-        valueFrom:
-          secretKeyRef:
-            name: '{{ include "costgraph-selfhosted.postgresSecretName" . }}'
-            key: postgres-url
-      # The chart's own helpers resolve here: their values live under global and
-      # fullname is fixed, so a subchart can call them.
-      REDIS_URL:
-        value: '{{ include "costgraph-selfhosted.redisURL" . }}'
-      PROMETHEUS_URL:
-        value: '{{ include "costgraph-selfhosted.metricsStoreURL" . }}'
-      REMOTE_WRITE_URL:
-        value: '{{ printf "%s/api/v1/write" (include "costgraph-selfhosted.metricsStoreURL" .) }}'
-      REMOTE_WRITE_URL_SHORT:
-        value: '{{ printf "%s/api/v1/write" (include "costgraph-selfhosted.metricsStoreURL" .) }}'
-      ENABLE_GPU:
-        value: '{{ .Values.features.ENABLE_GPU }}'
-      ENABLE_HPA:
-        value: '{{ .Values.features.ENABLE_HPA }}'
-      ENABLE_NETWORK_POLICY:
-        value: '{{ .Values.features.ENABLE_NETWORK_POLICY }}'
-      ENABLE_EPHEMERAL_STORAGE:
-        value: '{{ .Values.features.ENABLE_EPHEMERAL_STORAGE }}'
-      ENABLE_DISK_IOPS:
-        value: '{{ .Values.features.ENABLE_DISK_IOPS }}'
-      # Replaces the checksum over the rendered Secret: stakater does not
-      # template pod annotations, but env is templated, so a change to anything
-      # under global changes the pod spec and rolls the Deployment.
-      VALUES_HASH:
-        value: '{{ toYaml .Values.global | sha256sum }}'
-  vmalert:
-    image:
-      repository: victoriametrics/vmalert
-      tag: v1.130.0
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        memory: 1Gi
-
-  # Cost dimensions to compute. Turning one off drops it from the dashboard.
-  features:
-    ENABLE_GPU: "true"
-    ENABLE_HPA: "true"
-    ENABLE_NETWORK_POLICY: "true"
-    ENABLE_EPHEMERAL_STORAGE: "true"
-    ENABLE_DISK_IOPS: "true"
+# Every component below is described the same way, whichever chart renders it:
+#
+#   <component>:
+#     enabled:          whether the component is deployed at all
+#     applicationName:  the name of its objects
+#     rbac:             serviceAccount to run as
+#     service:          the ports it publishes
+#     deployment:       the pod, or statefulSet: for the ones that keep state
+#
+# The five that stakater's application chart renders and the three this chart
+# renders itself read the same keys, so a component can be turned on, pinned or
+# resized without knowing which of the two produced it.
 
 backend:
+  enabled: true
   applicationName: costgraph-selfhosted
   rbac:
     enabled: true
-    # Rendered here rather than by this chart, and shared by every component.
+    # The ServiceAccount every component runs as. Created here, once.
     serviceAccount:
       create: true
       name: costgraph-selfhosted
@@ -357,8 +37,8 @@ backend:
     enabled: true
     replicas: 2
     image:
-      repository: '{{ .Values.global.image.repository }}'
-      tag: '{{ required "image.tag is required" .Values.global.image.tag }}'
+      repository: registry.costgraph.ai/backend
+      tag: sha-13ae198
       pullPolicy: IfNotPresent
     # Not templated by stakater, so global.imagePullSecrets does not reach it.
     # Replace this entry when you supply your own registry credentials.
@@ -446,13 +126,487 @@ backend:
       tmp:
         emptyDir: {}
 
+dashboard:
+  enabled: true
+  applicationName: costgraph-selfhosted-dashboard
+  # Where the browser reaches this deployment's API. Defaults to appBaseURL
+  # + /api/v1, which is right when one ingress fronts both; set it when the
+  # API is on a different host.
+  apiBaseURL: ""
+  # Domain for SSO sign-in. Leave empty unless CostGraph has set up SSO for
+  # your deployment; setting it otherwise shows a sign-in button that cannot
+  # complete a login.
+  cognitoOAuthDomain: ""
+  # Base URL of the CostGraph AI assistant, if you run one. Empty hides the
+  # assistant from the dashboard.
+  graphAiBaseURL: ""
+  rbac:
+    enabled: false
+    serviceAccount:
+      create: false
+      name: costgraph-selfhosted
+  service:
+    ports:
+      - name: http
+        port: 80
+        targetPort: http
+        protocol: TCP
+  deployment:
+    enabled: true
+    replicas: 2
+    image:
+      repository: registry.costgraph.ai/costgraph-dashboard
+      tag: sha-2060465
+      pullPolicy: IfNotPresent
+    imagePullSecrets:
+      - name: costgraph-selfhosted-registry
+    automountServiceAccountToken: false
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 101
+      fsGroup: 101
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    ports:
+      - name: http
+        containerPort: 8080
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
+    env:
+      # Rolls the pods when anything they are built from changes, which the
+      # checksum annotation did before; stakater does not template annotations.
+      VALUES_HASH:
+        value: '{{ toYaml .Values | sha256sum }}'
+    readinessProbe:
+      enabled: true
+      initialDelaySeconds: 3
+      periodSeconds: 10
+      httpGet:
+        path: /config.json
+        port: http
+    livenessProbe:
+      enabled: true
+      initialDelaySeconds: 10
+      periodSeconds: 20
+      httpGet:
+        path: /index.html
+        port: http
+    volumeMounts:
+      runtime-config:
+        mountPath: /usr/share/nginx/html/config.json
+        subPath: config.json
+        readOnly: true
+      cache:
+        mountPath: /var/cache/nginx
+      run:
+        mountPath: /var/run
+      tmp:
+        mountPath: /tmp
+    volumes:
+      runtime-config:
+        configMap:
+          name: costgraph-selfhosted-dashboard
+      cache:
+        emptyDir: {}
+      run:
+        emptyDir: {}
+      tmp:
+        emptyDir: {}
+
+# Receives metrics from the CostGraph operator running in your clusters. Turn
+# it off only if you are not collecting cluster metrics at all.
+ingestionApi:
+  enabled: true
+  applicationName: costgraph-selfhosted-ingestion-api
+  logLevel: info
+  # Largest remote_write batch to accept, in bytes. Raise it if clusters with
+  # many nodes report bodies rejected as too large.
+  maxBodyBytes: 52428800
+  rbac:
+    enabled: false
+    serviceAccount:
+      create: false
+      name: costgraph-selfhosted
+  service:
+    ports:
+      - name: http
+        port: 8080
+        targetPort: http
+  deployment:
+    enabled: true
+    replicas: 2
+    image:
+      repository: registry.costgraph.ai/ingestion-api
+      # Versioned separately from the chart, so this is pinned rather than
+      # following appVersion.
+      tag: sha-5dc610b
+      pullPolicy: IfNotPresent
+    imagePullSecrets:
+      - name: costgraph-selfhosted-registry
+    automountServiceAccountToken: false
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 10001
+      fsGroup: 10001
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    ports:
+      - name: http
+        containerPort: 8080
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 1Gi
+    env:
+      PORT:
+        value: "8080"
+      LOG_LEVEL:
+        value: '{{ .Values.logLevel }}'
+      VM_TENANT_HEADER:
+        value: X-Scope-OrgID
+      VM_WRITE_TIMEOUT:
+        value: 10s
+      MAX_BODY_BYTES:
+        value: '{{ .Values.maxBodyBytes }}'
+      AUTH_CACHE_SIZE:
+        value: "10000"
+      AUTH_CACHE_TTL:
+        value: 5m
+      AUTH_CACHE_NEGATIVE_TTL:
+        value: 5s
+      VM_WRITE_URL:
+        value: '{{ printf "%s/api/v1/write" (include "costgraph-selfhosted.metricsStoreURL" .) }}'
+      VM_SHORT_WRITE_URL:
+        value: '{{ printf "%s/api/v1/write" (include "costgraph-selfhosted.metricsStoreURL" .) }}'
+      AUTH_DB_URL:
+        valueFrom:
+          secretKeyRef:
+            name: '{{ include "costgraph-selfhosted.postgresSecretName" . }}'
+            key: postgres-url
+      API_KEY_SECRET:
+        valueFrom:
+          secretKeyRef:
+            name: costgraph-selfhosted-generated
+            key: api-key-secret
+      VALUES_HASH:
+        value: '{{ toYaml .Values | sha256sum }}'
+    volumeMounts:
+      tmp:
+        mountPath: /tmp
+    volumes:
+      tmp:
+        emptyDir: {}
+
+# Turns the raw samples into the per-workload costs the dashboard shows.
+# Without it, metrics arrive but cost breakdowns stay empty.
+aggregator:
+  enabled: true
+  applicationName: costgraph-selfhosted-aggregator
+  # Cost dimensions to compute. Turning one off drops it from the dashboard.
+  features:
+    ENABLE_GPU: "true"
+    ENABLE_HPA: "true"
+    ENABLE_NETWORK_POLICY: "true"
+    ENABLE_EPHEMERAL_STORAGE: "true"
+    ENABLE_DISK_IOPS: "true"
+  rbac:
+    enabled: false
+    serviceAccount:
+      create: false
+      name: costgraph-selfhosted
+  service:
+    ports:
+      - name: http
+        port: 8192
+        targetPort: http
+  deployment:
+    enabled: true
+    replicas: 1
+    strategy:
+      type: Recreate
+    image:
+      repository: registry.costgraph.ai/aggregator
+      # Versioned separately from the chart, so this is pinned rather than
+      # following appVersion.
+      tag: sha-79f4b08
+      pullPolicy: IfNotPresent
+    imagePullSecrets:
+      - name: costgraph-selfhosted-registry
+    automountServiceAccountToken: false
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 10001
+      fsGroup: 10001
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    ports:
+      - name: http
+        containerPort: 8192
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        memory: 2Gi
+    env:
+      ENVIRONMENT:
+        value: production
+      RULES_EVAL_INTERVAL:
+        value: "1m"
+      GOMEMLIMIT:
+        value: 1750MiB
+      DATABASE_URL:
+        valueFrom:
+          secretKeyRef:
+            name: '{{ include "costgraph-selfhosted.postgresSecretName" . }}'
+            key: postgres-url
+      # The chart's own helpers resolve here: their values live under global and
+      # fullname is fixed, so a subchart can call them.
+      REDIS_URL:
+        value: '{{ include "costgraph-selfhosted.redisURL" . }}'
+      PROMETHEUS_URL:
+        value: '{{ include "costgraph-selfhosted.metricsStoreURL" . }}'
+      REMOTE_WRITE_URL:
+        value: '{{ printf "%s/api/v1/write" (include "costgraph-selfhosted.metricsStoreURL" .) }}'
+      REMOTE_WRITE_URL_SHORT:
+        value: '{{ printf "%s/api/v1/write" (include "costgraph-selfhosted.metricsStoreURL" .) }}'
+      ENABLE_GPU:
+        value: '{{ .Values.features.ENABLE_GPU }}'
+      ENABLE_HPA:
+        value: '{{ .Values.features.ENABLE_HPA }}'
+      ENABLE_NETWORK_POLICY:
+        value: '{{ .Values.features.ENABLE_NETWORK_POLICY }}'
+      ENABLE_EPHEMERAL_STORAGE:
+        value: '{{ .Values.features.ENABLE_EPHEMERAL_STORAGE }}'
+      ENABLE_DISK_IOPS:
+        value: '{{ .Values.features.ENABLE_DISK_IOPS }}'
+      VALUES_HASH:
+        value: '{{ toYaml .Values | sha256sum }}'
+    volumeMounts:
+      tmp:
+        mountPath: /tmp
+    volumes:
+      tmp:
+        emptyDir: {}
+
+# Evaluates the recording rules the cost maths reads. Two Deployments, one per
+# rule set: long-window rules feed the daily rollups, short-window rules the
+# recent views. The rules themselves come from the aggregator image.
+vmalert:
+  enabled: true
+  applicationName: costgraph-selfhosted-vmalert
+  deployment:
+    enabled: true
+    replicas: 1
+    image:
+      repository: victoriametrics/vmalert
+      tag: v1.130.0
+      pullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 1Gi
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 10001
+      fsGroup: 10001
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+
+# The bundled Redis, Postgres and VictoriaMetrics below are switched on by
+# global.<name>.bundled.enabled rather than by an enabled key of their own: the
+# components that build connection URLs are subcharts, and a subchart can only
+# read global. Everything about their shape lives here, like every other
+# component.
+redis:
+  applicationName: costgraph-selfhosted-redis
+  rbac:
+    enabled: false
+    serviceAccount:
+      create: false
+      name: costgraph-selfhosted
+  service:
+    ports:
+      - name: redis
+        port: 6379
+        targetPort: redis
+  deployment:
+    enabled: true
+    replicas: 1
+    strategy:
+      type: Recreate
+    image:
+      repository: redis
+      tag: 7-alpine
+      pullPolicy: IfNotPresent
+    # No imagePullSecrets: this one comes from a public registry.
+    automountServiceAccountToken: false
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 999
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    ports:
+      - name: redis
+        containerPort: 6379
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+    readinessProbe:
+      enabled: true
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      exec:
+        command: ["redis-cli", "ping"]
+    volumeMounts:
+      data:
+        mountPath: /data
+    volumes:
+      data:
+        emptyDir: {}
+
+postgres:
+  applicationName: costgraph-selfhosted-postgres
+  database: costgraph
+  username: costgraph
+  password: ""                  # generated per-install when empty
+  storage: 20Gi
+  storageClass: ""
+  rbac:
+    serviceAccount:
+      create: false
+      name: costgraph-selfhosted
+  service:
+    ports:
+      - name: postgres
+        port: 5432
+        targetPort: postgres
+  statefulSet:
+    enabled: true
+    replicas: 1
+    containerName: postgres
+    image:
+      repository: timescale/timescaledb
+      tag: 2.17.2-pg17
+      pullPolicy: IfNotPresent
+    automountServiceAccountToken: false
+    securityContext:
+      fsGroup: 999
+    ports:
+      - name: postgres
+        containerPort: 5432
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+    env:
+      POSTGRES_DB:
+        value: '{{ .Values.postgres.database }}'
+      POSTGRES_USER:
+        value: '{{ .Values.postgres.username }}'
+      POSTGRES_PASSWORD:
+        valueFrom:
+          secretKeyRef:
+            name: costgraph-selfhosted-postgres
+            key: password
+      # The image initialises into a subdirectory so the PVC's lost+found does
+      # not block initdb.
+      PGDATA:
+        value: /var/lib/postgresql/data/pgdata
+    readinessProbe:
+      enabled: true
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      exec:
+        command: ["pg_isready", "-U", "{{ .Values.postgres.username }}", "-d", "{{ .Values.postgres.database }}"]
+    livenessProbe:
+      enabled: true
+      initialDelaySeconds: 30
+      periodSeconds: 20
+      exec:
+        command: ["pg_isready", "-U", "{{ .Values.postgres.username }}", "-d", "{{ .Values.postgres.database }}"]
+    volumeMounts:
+      data:
+        mountPath: /var/lib/postgresql/data
+
+victoriametrics:
+  applicationName: costgraph-selfhosted-victoria-metrics
+  retentionPeriod: "12"         # months
+  storage: 20Gi
+  storageClass: ""
+  rbac:
+    serviceAccount:
+      create: false
+      name: costgraph-selfhosted
+  service:
+    ports:
+      - name: http
+        port: 8428
+        targetPort: http
+  statefulSet:
+    enabled: true
+    replicas: 1
+    containerName: victoria-metrics
+    image:
+      repository: victoriametrics/victoria-metrics
+      tag: v1.106.1
+      pullPolicy: IfNotPresent
+    automountServiceAccountToken: false
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      fsGroup: 1000
+    args:
+      - --storageDataPath=/storage
+      - --retentionPeriod={{ .Values.victoriametrics.retentionPeriod }}
+    ports:
+      - name: http
+        containerPort: 8428
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+    readinessProbe:
+      enabled: true
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      httpGet:
+        path: /health
+        port: http
+    volumeMounts:
+      storage:
+        mountPath: /storage
+
 ingress:
   enabled: false
   className: ""
   annotations: {}
   hosts: []
   tls: []
-
 
 # A preflight job that runs before install and upgrade and fails the release
 # with the real reason if the database cannot support the schema. Turn it off
@@ -475,29 +629,19 @@ global:
     # them yourself as a separate step.
     runMigrations: true
     bundled:
+      # Run the Postgres described by the `postgres` component above.
       enabled: false
-      image: timescale/timescaledb:2.17.2-pg17
-      database: costgraph
-      username: costgraph
-      password: ""            # generated per-install when empty
-      storage: 20Gi
-      storageClass: ""
-      resources:
-        requests:
-          cpu: 250m
-          memory: 512Mi
   metricsStore:
     url: ""                       # http://victoria-metrics:8428
     bundled:
+      # Run the VictoriaMetrics described by the `victoriametrics` component.
       enabled: false
-      image: victoriametrics/victoria-metrics:v1.106.1
-      retentionPeriod: "12"       # months
-      storage: 20Gi
-      storageClass: ""
-      resources:
-        requests:
-          cpu: 250m
-          memory: 512Mi
+  redis:
+    url: ""                       # redis://host:6379
+    existingSecret: ""
+    bundled:
+      # Run the Redis described by the `redis` component above.
+      enabled: false
   controlPlane:
     url: https://api.costgraph.ai
 
@@ -543,14 +687,11 @@ global:
   # Set enabled: false to send nothing.
   analytics:
     enabled: true
-  image:
-    repository: registry.costgraph.ai/backend
-    tag: sha-13ae198
-    pullPolicy: IfNotPresent
   # Leave empty and the chart creates the pull secret from controlPlane.apiKey,
   # since the registry authenticates with that same key. Set it to a secret you
   # created yourself if you use controlPlane.existingSecret - a chart cannot read
-  # a Secret to build one
+  # a Secret to build one - and point every component's
+  # deployment.imagePullSecrets at it too.
   #
   #   kubectl create secret docker-registry costgraph-registry \
   #     --namespace costgraph \
@@ -558,6 +699,8 @@ global:
   #     --docker-username=x \
   #     --docker-password=<your deployment API key>
   imagePullSecrets: []
+  # Applied to the pre-install/pre-upgrade Jobs, which are not components and
+  # have no block of their own.
   podSecurityContext:
     runAsNonRoot: true
     runAsUser: 10001
@@ -567,13 +710,3 @@ global:
     readOnlyRootFilesystem: true
     capabilities:
       drop: ["ALL"]
-  nodeSelector: {}
-  tolerations: []
-  affinity: {}
-  podAnnotations: {}
-  redis:
-    url: ""                       # redis://host:6379
-    existingSecret: ""
-    bundled:
-      enabled: false
-      image: redis:7-alpine

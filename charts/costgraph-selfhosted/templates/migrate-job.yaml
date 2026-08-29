@@ -28,7 +28,7 @@ spec:
       containers:
         - name: migrate
           image: {{ include "costgraph-selfhosted.image" . }}
-          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.backend.deployment.image.pullPolicy }}
           securityContext:
             {{- toYaml .Values.global.securityContext | nindent 12 }}
           env:
@@ -42,5 +42,5 @@ spec:
             - secretRef:
                 name: {{ include "costgraph-selfhosted.secretName" . }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.backend.deployment.resources | nindent 12 }}
 {{- end }}

@@ -18,7 +18,6 @@ global:
   # Where cluster metrics are sent. A self-hosted install points this at its
   # own ingestion endpoint; left unset, metrics go to hosted CostGraph.
   remoteWriteURL: ""
-  namespace: "costgraph"
   # Flag to enable use of our custom image in the cadvisor chart
   security:
     allowInsecureImages: true
@@ -32,7 +31,7 @@ serviceAccount:
   automount: true
   annotations: {}
   # Pinned rather than release-derived: the operator Deployment is rendered by
-  # stakater\'s chart, which cannot template a service account name.
+  # stakater's chart, which cannot template a service account name.
   name: costgraph-operator
 
 # --------------------------------------------------------------------------
@@ -165,25 +164,23 @@ cadvisor:
 # --------------------------------------------------------------------------
 aiGatewayScraper:
   enabled: false
-  image:
-    repository: ghcr.io/baselinehq/costgraph-operator-prometheus
-    tag: "v0.4.0"
-    pullPolicy: IfNotPresent
+  applicationName: costgraph-operator-ai-gateway
+  deployment:
+    enabled: true
+    image:
+      repository: ghcr.io/baselinehq/costgraph-operator-prometheus
+      tag: "v0.4.0"
+      pullPolicy: IfNotPresent
+    # This should always be 1
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 64Mi
   config:
     remoteWriteURL: ""
     remoteWritePath: "/api/v1/write/short"
     httpTimeout: "30s"
-  resources:
-    requests:
-      cpu: 100m
-      memory: 64Mi
-  securityContext: {}
-  nodeSelector: {}
-  tolerations: []
-  affinity: {}
-  podAnnotations: {}
-  podLabels: {}
-  env: []
 
 # --------------------------------------------------------------------------
 # dcgm-exporter (subchart from NVIDIA)
@@ -244,6 +241,7 @@ operatorKubernetes:
   # Rendered by stakater's application chart. Its object names come from
   # applicationName, which is a plain value, so they no longer carry the release
   # name the way the rest of this chart's objects do.
+  enabled: true
   applicationName: costgraph-operator-kubernetes
   rbac:
     enabled: false
@@ -280,31 +278,35 @@ operatorKubernetes:
       API_KEY:
         valueFrom:
           secretKeyRef:
-            # Rendered by this chart, so the name still carries the release.
-            name: '{{ default (printf "%s-costgraph-operator-credentials" .Release.Name) .Values.global.existingSecret }}'
-            key: '{{ default "apiKey" .Values.global.existingSecretKey }}'
+            name: '{{ include "costgraph-operator.apiKeySecretName" . }}'
+            key: '{{ include "costgraph-operator.apiKeySecretKey" . }}'
     resources:
       requests:
         cpu: 10m
         memory: 64Mi
-    securityContext: {}
-    nodeSelector: {}
-    tolerations: []
-    affinity: {}
-    additionalPodAnnotations: {}
-    podLabels: {}
 
 # --------------------------------------------------------------------------
 # costgraph-operator-prometheus deployment
 # --------------------------------------------------------------------------
 operatorPrometheus:
   enabled: true
-  image:
-    repository: ghcr.io/baselinehq/costgraph-operator-prometheus
-    tag: "v0.4.0"
-    pullPolicy: IfNotPresent
-  # This should always be 1
-  replicas: 1
+  applicationName: costgraph-operator-prometheus
+  deployment:
+    enabled: true
+    image:
+      repository: ghcr.io/baselinehq/costgraph-operator-prometheus
+      tag: "v0.4.0"
+      pullPolicy: IfNotPresent
+    # This should always be 1
+    replicas: 1
+    ports:
+      - name: pprof
+        containerPort: 6060
+        protocol: TCP
+    resources:
+      requests:
+        cpu: 100m
+        memory: 64Mi
   config:
     remoteWriteURL: ""
     remoteWritePath: "/api/v1/write"
@@ -380,17 +382,6 @@ operatorPrometheus:
       nodeMetrics: true
       metricNamePrefixes:
         - kubelet_
-  resources:
-    requests:
-      cpu: 100m
-      memory: 64Mi
-  securityContext: {}
-  nodeSelector: {}
-  tolerations: []
-  affinity: {}
-  podAnnotations: {}
-  podLabels: {}
-  env: []
 # --------------------------------------------------------------------------
 # costgraph flowtrace daemonset (eBPF network flow tracing)
 # Runs the flowtrace binary from the costgraph-operator-prometheus image on
@@ -404,10 +395,36 @@ operatorPrometheus:
 # --------------------------------------------------------------------------
 flowtrace:
   enabled: true
-  image:
-    repository: ghcr.io/baselinehq/costgraph-operator-prometheus
-    tag: "v0.4.0"
-    pullPolicy: IfNotPresent
+  applicationName: costgraph-operator-flowtrace
+  daemonSet:
+    enabled: true
+    image:
+      repository: ghcr.io/baselinehq/costgraph-operator-prometheus
+      tag: "v0.4.0"
+      pullPolicy: IfNotPresent
+    containerSecurityContext:
+      privileged: true
+      # Overrides the image's USER nonroot. Resolving container identity reads
+      # other processes' /proc entries (cgroup, ns/net, net/tcp), which needs
+      # root even with full capabilities.
+      runAsUser: 0
+    # No Kubernetes API access is needed, and withholding the token keeps a
+    # privileged per-node pod off the chart's cluster-wide read ClusterRole.
+    automountServiceAccountToken: false
+    # system-node-critical is appropriate here but is namespace-restricted on
+    # some clusters - set deliberately rather than by default.
+    priorityClassName: ""
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        # No CPU limit: throttling the 15s sampler produces gaps that read as
+        # counter stalls. Memory is capped because the accumulator maps scale
+        # with flow cardinality.
+        memory: 256Mi
+    tolerations:
+      - operator: Exists
   config:
     remoteWriteURL: ""
     # Short-retention tier: flow series are high cardinality and are not
@@ -421,22 +438,3 @@ flowtrace:
     httpTimeout: "30s"
   # Raise on large fleets to speed up rollouts, e.g. "10%".
   maxUnavailable: 1
-  # system-node-critical is appropriate here but is namespace-restricted on
-  # some clusters — set deliberately rather than by default.
-  priorityClassName: ""
-  resources:
-    requests:
-      cpu: 50m
-      memory: 64Mi
-    limits:
-      # No CPU limit: throttling the 15s sampler produces gaps that read as
-      # counter stalls. Memory is capped because the accumulator maps scale
-      # with flow cardinality.
-      memory: 256Mi
-  tolerations:
-    - operator: Exists
-  nodeSelector: {}
-  affinity: {}
-  podAnnotations: {}
-  podLabels: {}
-  env: []
