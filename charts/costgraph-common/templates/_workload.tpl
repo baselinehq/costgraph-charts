@@ -4,7 +4,6 @@ One pod spec shared by the Deployment, StatefulSet and DaemonSet forms.
 serviceAccountName is emitted only when set: a pre-install hook Job runs before
 the ServiceAccount exists, and stakater's application chart always writes the
 field, which is why this pod spec exists at all.
-
 */}}
 {{- define "costgraph.workload.podSpec" -}}
 {{- $name := .name -}}

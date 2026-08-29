@@ -27,6 +27,7 @@ cannot express it the way a CostGraph chart needs:
 | `costgraph.externalSecret` | Chart-specific shape |
 | `costgraph.vmalert` | Composite: Service plus two Deployments plus a rules init container |
 | `costgraph.selectorLabels` | Selector labels are hardcoded and not overridable |
+| `costgraph.imageRef` | A repository and tag are joined in values, where a digest tag needs `@` |
 
 Anything outside that table is a duplicate. Use the `application` alias instead.
 

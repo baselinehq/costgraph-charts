@@ -67,6 +67,31 @@ partition maintenance never runs. See "Database" below.
 
 ### Keeping credentials out of values
 
+## Data stores you bring yourself
+
+Each store runs bundled for an evaluation, or points at one you already
+operate. Set `bundled.enabled: true` to run it in-cluster, or set the URL to
+use your own - set one or the other, never both. If both are set anyway,
+Postgres uses the bundled instance and ignores your URL, while Redis and the
+metrics store use your URL and ignore the bundled instance.
+
+| Store | Your own endpoint | Credentials |
+|---|---|---|
+| PostgreSQL 14+ | `postgres.url` | `postgres.existingSecret`, or `postgres.password` |
+| Redis | `redis.url` | `redis.existingSecret` when the URL carries a password |
+| VictoriaMetrics | `metricsStore.url` | none - the endpoint must accept unauthenticated requests |
+
+The metrics store is the exception. CostGraph reads it, writes to it through
+remote write, and evaluates recording rules against it, and none of those paths
+send credentials. A managed endpoint that requires basic auth or a bearer token
+- Grafana Cloud, an authenticated Mimir or Thanos - will reject every request.
+Reach it over network policy or a mesh instead, or run the bundled instance.
+
+The endpoint has to serve both halves of the VictoriaMetrics HTTP API, because
+the same URL is read from and written to: queries hit it directly, and remote
+write hits the `/api/v1/write` path appended to it. VictoriaMetrics single-node
+and cluster both do. A read-only Prometheus does not.
+
 In production, put credentials in Secrets you manage and reference them with
 `controlPlane.existingSecret` and `postgres.existingSecret`, so nothing
 sensitive sits in your values file or in Helm release history. Each Secret

@@ -103,12 +103,12 @@ backend:
       API_KEY_SECRET:
         valueFrom:
           secretKeyRef:
-            name: costgraph-selfhosted-generated
+            name: '{{ include "costgraph-selfhosted.generatedSecretName" . }}'
             key: api-key-secret
       INTEGRATIONS_ENCRYPTION_KEY:
         valueFrom:
           secretKeyRef:
-            name: costgraph-selfhosted-generated
+            name: '{{ include "costgraph-selfhosted.generatedSecretName" . }}'
             key: integrations-encryption-key
     readinessProbe:
       enabled: true
@@ -303,7 +303,7 @@ ingestionApi:
       API_KEY_SECRET:
         valueFrom:
           secretKeyRef:
-            name: costgraph-selfhosted-generated
+            name: '{{ include "costgraph-selfhosted.generatedSecretName" . }}'
             key: api-key-secret
       VALUES_HASH:
         value: '{{ toYaml .Values | sha256sum }}'

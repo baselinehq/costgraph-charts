@@ -39,6 +39,10 @@ The secret holding credentials. An existingSecret you supply always wins.
 {{- end -}}
 {{- end -}}
 
+{{- define "costgraph-selfhosted.generatedSecretName" -}}
+{{- printf "%s-generated" (include "costgraph-selfhosted.fullname" .) -}}
+{{- end -}}
+
 {{- define "costgraph-selfhosted.postgresSecretName" -}}
 {{- if .Values.global.postgres.existingSecret -}}
 {{- .Values.global.postgres.existingSecret -}}
@@ -151,7 +155,7 @@ renders each value through tpl. The library chart takes the Kubernetes list
 form. This turns one into the other so both read the same values.
 */}}
 {{- define "costgraph-selfhosted.namedList" -}}
-{{- range $key, $value := .items }}
+{{- range $key, $value := . }}
 - {{ merge (dict "name" $key) $value | toYaml | nindent 2 }}
 {{- end }}
 {{- end -}}
@@ -173,7 +177,7 @@ it renders.
 {{- with $spec.securityContext }}{{- $_ := set $out "podSecurityContext" . }}{{- end }}
 {{- range $key := list "env" "volumes" "volumeMounts" }}
 {{- with index $spec $key }}
-{{- $_ := set $out $key (include "costgraph-selfhosted.namedList" (dict "ctx" $ctx "items" .) | fromYamlArray) }}
+{{- $_ := set $out $key (include "costgraph-selfhosted.namedList" . | fromYamlArray) }}
 {{- end }}
 {{- end }}
 {{- range $key := list "startupProbe" "readinessProbe" "livenessProbe" }}
