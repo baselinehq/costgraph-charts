@@ -26,7 +26,7 @@ cannot express it the way a CostGraph chart needs:
 | `costgraph.serviceAccount` | Name is not templated |
 | `costgraph.externalSecret` | Chart-specific shape |
 | `costgraph.vmalert` | Composite: Service plus two Deployments plus a rules init container |
-| `costgraph.labels` and friends | Selector labels are hardcoded and not overridable |
+| `costgraph.selectorLabels` | Selector labels are hardcoded and not overridable |
 
 Anything outside that table is a duplicate. Use the `application` alias instead.
 
@@ -35,6 +35,10 @@ Anything outside that table is a duplicate. Use the `application` alias instead.
 Every define takes one dict containing `ctx` and derives no names internally.
 `env`, `volumes` and `volumeMounts` are in raw Kubernetes list form, so a caller
 can build them with `append`.
+
+Defines are added when a chart calls them, not ahead of one. A define with no
+caller is deleted rather than carried, since git holds it until the change that
+needs it lands.
 
 `costgraph.workload` renders exactly one main container. Sidecars are out of
 scope: for a Deployment use `application`'s `additionalContainers`, and extend

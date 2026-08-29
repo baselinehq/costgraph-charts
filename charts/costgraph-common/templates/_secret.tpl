@@ -62,25 +62,6 @@ data:
 {{- end }}
 {{- end -}}
 
-{{/*
-The plaintext behind a preserved key, for a caller that has to embed the same
-generated password in a connection URL. Reads the live Secret so the URL matches
-the credential already in use instead of a freshly generated one.
-
-Required: ctx, name, key, spec.
-*/}}
-{{- define "costgraph.preservedValue" -}}
-{{- $ctx := required "preservedValue: ctx is required" .ctx -}}
-{{- $name := required "preservedValue: name is required" .name -}}
-{{- $key := required "preservedValue: key is required" .key -}}
-{{- $existing := (lookup "v1" "Secret" $ctx.Release.Namespace $name) | default dict -}}
-{{- if and $existing.data (hasKey ($existing.data | default dict) $key) -}}
-{{- index $existing.data $key | b64dec -}}
-{{- else -}}
-{{- include "costgraph.generatedValue" (dict "spec" (required "preservedValue: spec is required" .spec)) -}}
-{{- end -}}
-{{- end -}}
-
 {{- define "costgraph.generatedValue" -}}
 {{- $spec := required "generatedValue: spec is required" .spec -}}
 {{- $encode := hasSuffix "|b64enc" $spec -}}

@@ -1,21 +1,4 @@
 {{/*
-The full label set. Callers pass the component and any extra labels, because a
-library chart cannot know which of the caller's workloads it is rendering.
-*/}}
-{{- define "costgraph.labels" -}}
-{{- $ctx := required "labels: ctx is required" .ctx -}}
-helm.sh/chart: {{ printf "%s-%s" $ctx.Chart.Name $ctx.Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
-{{ include "costgraph.selectorLabels" (dict "ctx" $ctx "name" $ctx.Chart.Name "component" .component) }}
-{{- with $ctx.Chart.AppVersion }}
-app.kubernetes.io/version: {{ . | quote }}
-{{- end }}
-app.kubernetes.io/managed-by: {{ $ctx.Release.Service }}
-{{- with .extra }}
-{{ toYaml . }}
-{{- end }}
-{{- end -}}
-
-{{/*
 Only the trio that lands in spec.selector.matchLabels, which is immutable on a
 Deployment and StatefulSet: anything that changes between upgrades (chart
 version, app version) must stay out of it.
@@ -39,8 +22,4 @@ joins with @ rather than :.
 {{- else -}}
 {{ required "imageRef: repository is required" .repository }}:{{ .tag }}
 {{- end -}}
-{{- end -}}
-
-{{- define "costgraph.componentName" -}}
-{{- printf "%s-%s" (required "componentName: prefix is required" .prefix) (required "componentName: component is required" .component) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
