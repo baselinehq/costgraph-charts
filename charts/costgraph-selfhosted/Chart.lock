@@ -15,7 +15,7 @@ dependencies:
   repository: https://stakater.github.io/stakater-charts
   version: 9.3.1
 - name: costgraph-common
-  repository: https://charts.costgraph.ai
-  version: 0.1.1
-digest: sha256:4e86b962d032052ee8d269ec3f7affac8450c47e997b9cec7c78d8eb2304b117
-generated: "2026-08-29T09:24:32.043188+01:00"
+  repository: file://../costgraph-common
+  version: 0.2.0
+digest: sha256:8b4f9faf20a7d2504c0e24ad163a1543f652f49078eca51c0728b8c6ea9f6f48
+generated: "2026-08-29T11:29:48.372772+01:00"

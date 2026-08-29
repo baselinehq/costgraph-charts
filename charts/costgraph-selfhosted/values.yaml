@@ -403,6 +403,8 @@ backend:
           secretKeyRef:
             name: costgraph-selfhosted
             key: control-plane-api-key
+      REMOTE_WRITE_URL:
+        value: '{{ printf "%s/api/v1/write" (include "costgraph-selfhosted.metricsStoreURL" .) }}'
       DB_URL:
         valueFrom:
           secretKeyRef:

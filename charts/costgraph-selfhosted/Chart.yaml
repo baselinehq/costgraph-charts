@@ -2,7 +2,7 @@ apiVersion: v2
 name: costgraph-selfhosted
 description: CostGraph running in your own infrastructure
 type: application
-version: 0.4.0
+version: 0.5.0
 appVersion: "0.1.0"
 home: https://costgraph.ai
 sources:
@@ -38,5 +38,5 @@ dependencies:
     repository: https://stakater.github.io/stakater-charts
     alias: backend
   - name: costgraph-common
-    version: 0.1.1
-    repository: https://charts.costgraph.ai
+    version: "*"
+    repository: file://../costgraph-common
