@@ -27,11 +27,22 @@ jobs:
           for chart in $charts; do
             [ -f "$chart/Chart.yaml" ] || continue                       # deleted
             git cat-file -e "$BASE_SHA:$chart/Chart.yaml" 2>/dev/null || continue  # new chart
-            base=$(git show "$BASE_SHA:$chart/Chart.yaml" | yq -r '.version')
-            head=$(yq -r '.version' "$chart/Chart.yaml")
+            base=$(git show "$BASE_SHA:$chart/Chart.yaml" | yq -r '.version') || { rc=1; continue; }
+            head=$(yq -r '.version' "$chart/Chart.yaml") || { rc=1; continue; }
 
-            if [ "$base" -le "$head" ]; then
-              echo "::error file=$chart/Chart.yaml::$chart changed but version is still $head — bump it or the release publishes nothing."
+            case "$base$head" in
+              *null*|"")
+                echo "::error file=$chart/Chart.yaml::$chart has no version"
+                rc=1
+                continue
+                ;;
+            esac
+
+            if [ "$base" = "$head" ]; then
+              echo "::error file=$chart/Chart.yaml::$chart changed but version is still $head - bump it or the release publishes nothing."
+              rc=1
+            elif [ "$(printf '%s\n%s\n' "$base" "$head" | sort -V | head -n1)" != "$base" ]; then
+              echo "::error file=$chart/Chart.yaml::$chart version went backwards: $base -> $head"
               rc=1
             else
               echo "$chart: $base -> $head"
