@@ -59,6 +59,14 @@ set, so an evaluation install needs no addresses.
 {{- end -}}
 {{- end -}}
 
+{{- define "costgraph-selfhosted.redisSecretName" -}}
+{{- if .Values.global.redis.existingSecret -}}
+{{- .Values.global.redis.existingSecret -}}
+{{- else -}}
+{{- include "costgraph-selfhosted.fullname" . -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "costgraph-selfhosted.metricsStoreURL" -}}
 {{- if .Values.global.metricsStore.url -}}
 {{- .Values.global.metricsStore.url -}}

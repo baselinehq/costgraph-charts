@@ -21,9 +21,6 @@ else, or to allow several.
 {{- with (.Values.cognito).userPoolId }}{{ $_ := set $data "COGNITO_USER_POOL_ID" . }}{{ end }}
 {{- with (.Values.cognito).userPoolClientId }}{{ $_ := set $data "AUTH_AUDIENCE" . }}{{ end }}
 {{- with (.Values.cognito).jwksURL }}{{ $_ := set $data "COGNITO_JWKS_URL" . }}{{ end }}
-{{- if not .Values.global.redis.existingSecret }}
-{{- with (include "costgraph-selfhosted.redisURL" .) }}{{ $_ := set $data "REDIS_URL" . }}{{ end }}
-{{- end }}
 {{- with (include "costgraph-selfhosted.metricsStoreURL" .) }}{{ $_ := set $data "METRICS_STORE_URL" . }}{{ end }}
 {{ include "costgraph.configMap" (dict
     "ctx" $

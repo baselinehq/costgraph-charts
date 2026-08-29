@@ -89,6 +89,11 @@ backend:
           secretKeyRef:
             name: '{{ include "costgraph-selfhosted.postgresSecretName" . }}'
             key: postgres-url
+      REDIS_URL:
+        valueFrom:
+          secretKeyRef:
+            name: '{{ include "costgraph-selfhosted.redisSecretName" . }}'
+            key: redis-url
       DB_PASSWORD:
         valueFrom:
           secretKeyRef:
@@ -378,7 +383,10 @@ aggregator:
       # The chart's own helpers resolve here: their values live under global and
       # fullname is fixed, so a subchart can call them.
       REDIS_URL:
-        value: '{{ include "costgraph-selfhosted.redisURL" . }}'
+        valueFrom:
+          secretKeyRef:
+            name: '{{ include "costgraph-selfhosted.redisSecretName" . }}'
+            key: redis-url
       PROMETHEUS_URL:
         value: '{{ include "costgraph-selfhosted.metricsStoreURL" . }}'
       REMOTE_WRITE_URL:
@@ -638,6 +646,8 @@ global:
       enabled: false
   redis:
     url: ""                       # redis://host:6379
+    # Name of a Secret you manage holding the URL under `redis-url`. Use it
+    # instead of url when the URL carries a password.
     existingSecret: ""
     bundled:
       # Run the Redis described by the `redis` component above.
