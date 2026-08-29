@@ -341,9 +341,10 @@ aggregator:
 backend:
   applicationName: costgraph-selfhosted
   rbac:
-    enabled: false
+    enabled: true
+    # Rendered here rather than by this chart, and shared by every component.
     serviceAccount:
-      create: false
+      create: true
       name: costgraph-selfhosted
   service:
     type: ClusterIP
