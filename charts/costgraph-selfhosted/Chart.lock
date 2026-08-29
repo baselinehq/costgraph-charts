@@ -17,5 +17,5 @@ dependencies:
 - name: costgraph-common
   repository: file://../costgraph-common
   version: 0.2.0
-digest: sha256:8b4f9faf20a7d2504c0e24ad163a1543f652f49078eca51c0728b8c6ea9f6f48
-generated: "2026-08-29T11:29:48.372772+01:00"
+digest: sha256:d81a2a01e3802e6d5aefee7c8f9b8810238629be5473331406dbd43443be6ce5
+generated: "2026-08-29T12:34:02.36428+01:00"
