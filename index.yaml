@@ -263,6 +263,16 @@ entries:
     version: 0.1.2
   costgraph-common:
   - apiVersion: v2
+    created: "2026-08-29T15:20:49.48992073Z"
+    description: The objects stakater's application chart does not render, shared
+      across the CostGraph charts
+    digest: a29c63fd53af4a3160cbf1449e5e887fd6546caa94b5d2a92e163f2909bf8dac
+    name: costgraph-common
+    type: library
+    urls:
+    - https://github.com/baselinehq/costgraph-charts/releases/download/costgraph-common-0.2.0/costgraph-common-0.2.0.tgz
+    version: 0.2.0
+  - apiVersion: v2
     created: "2026-08-27T20:53:12.804169515Z"
     description: The objects stakater's application chart does not render, shared
       across the CostGraph charts
@@ -283,6 +293,41 @@ entries:
     - costgraph-common-0.1.0.tgz
     version: 0.1.0
   costgraph-operator:
+  - apiVersion: v2
+    appVersion: 0.4.0
+    created: "2026-08-29T15:20:49.660916345Z"
+    dependencies:
+    - alias: operatorKubernetes
+      condition: operatorKubernetes.enabled
+      name: application
+      repository: https://stakater.github.io/stakater-charts
+      version: 9.3.1
+    - condition: kube-state-metrics.enabled
+      name: kube-state-metrics
+      repository: https://prometheus-community.github.io/helm-charts
+      version: 5.27.*
+    - condition: cadvisor.enabled
+      name: cadvisor
+      repository: https://charts.bitnami.com/bitnami
+      version: 0.1.*
+    - condition: dcgm-exporter.enabled
+      name: dcgm-exporter
+      repository: https://nvidia.github.io/dcgm-exporter/helm-charts
+      version: 3.*
+    - condition: prometheus-node-exporter.enabled
+      name: prometheus-node-exporter
+      repository: https://prometheus-community.github.io/helm-charts
+      version: 4.*
+    - name: costgraph-common
+      repository: file://../costgraph-common
+      version: '*'
+    description: A Helm chart for the Costgraph operator
+    digest: 11a238855aa75c20cdb7954eb1a32d906de8b19eff883a8ebb5c7db4bd347c01
+    name: costgraph-operator
+    type: application
+    urls:
+    - https://github.com/baselinehq/costgraph-charts/releases/download/costgraph-operator-0.6.0/costgraph-operator-0.6.0.tgz
+    version: 0.6.0
   - apiVersion: v2
     appVersion: 0.4.0
     created: "2026-08-28T18:18:32.772312542Z"
@@ -836,6 +881,51 @@ entries:
   costgraph-selfhosted:
   - apiVersion: v2
     appVersion: 0.1.0
+    created: "2026-08-29T15:20:49.794557785Z"
+    dependencies:
+    - alias: redis
+      condition: global.redis.bundled.enabled
+      name: application
+      repository: https://stakater.github.io/stakater-charts
+      version: 9.3.1
+    - alias: aggregator
+      condition: aggregator.enabled
+      name: application
+      repository: https://stakater.github.io/stakater-charts
+      version: 9.3.1
+    - alias: ingestionApi
+      condition: ingestionApi.enabled
+      name: application
+      repository: https://stakater.github.io/stakater-charts
+      version: 9.3.1
+    - alias: dashboard
+      condition: dashboard.enabled
+      name: application
+      repository: https://stakater.github.io/stakater-charts
+      version: 9.3.1
+    - alias: backend
+      condition: backend.enabled
+      name: application
+      repository: https://stakater.github.io/stakater-charts
+      version: 9.3.1
+    - name: costgraph-common
+      repository: file://../costgraph-common
+      version: '*'
+    description: CostGraph running in your own infrastructure
+    digest: bd2e5875e2d06ba27a89478e1bdcf0a4e9034e70d9a342dbe5714013e0603f48
+    home: https://costgraph.ai
+    maintainers:
+    - name: Baseline
+      url: https://baselinehq.cloud
+    name: costgraph-selfhosted
+    sources:
+    - https://github.com/baselinehq/backend
+    type: application
+    urls:
+    - https://github.com/baselinehq/costgraph-charts/releases/download/costgraph-selfhosted-0.4.0/costgraph-selfhosted-0.4.0.tgz
+    version: 0.4.0
+  - apiVersion: v2
+    appVersion: 0.1.0
     created: "2026-08-28T18:18:01.111486149Z"
     dependencies:
     - alias: redis
@@ -916,4 +1006,4 @@ entries:
     urls:
     - costgraph-vmalert-0.1.0.tgz
     version: 0.1.0
-generated: "2026-08-28T18:18:32.772460109Z"
+generated: "2026-08-29T15:20:49.79481882Z"
