@@ -4,6 +4,7 @@
 global:
   clusterName: ""
   # apiKey is used to create a Secret when existingSecret is not set.
+  # Create one at https://app.costgraph.ai/settings/account/api-keys
   # Do not commit a real key here; prefer existingSecret in production.
   apiKey: ""
   # existingSecret: name of a pre-existing Secret that contains the API key.

@@ -646,8 +646,9 @@ global:
   controlPlane:
     url: https://api.costgraph.ai
 
-    # Issued during onboarding. Create it in the CostGraph dashboard under
-    # Settings > API Keys. For production use existingSecret instead, so the key
+    # Issued during onboarding. Create it at
+    # https://app.costgraph.ai/settings/account/api-keys
+    # For production use existingSecret instead, so the key
     # is not stored in values or in Helm release history.
     apiKey: ""
 

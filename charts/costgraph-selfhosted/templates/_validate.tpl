@@ -6,7 +6,7 @@ is buried in container logs.
 {{- define "costgraph-selfhosted.validate" -}}
 
 {{- if and (not .Values.global.controlPlane.apiKey) (not .Values.global.controlPlane.existingSecret) -}}
-{{- fail "controlPlane.apiKey (or controlPlane.existingSecret) is required: it is the key CostGraph issued you during onboarding. Without it this deployment cannot start." -}}
+{{- fail "controlPlane.apiKey (or controlPlane.existingSecret) is required: it is the key CostGraph issued you during onboarding. Create one at https://app.costgraph.ai/settings/account/api-keys. Without it this deployment cannot start." -}}
 {{- end -}}
 
 {{- if and .Values.global.controlPlane.existingSecret (not .Values.global.imagePullSecrets) -}}

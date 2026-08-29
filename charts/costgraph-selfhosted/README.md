@@ -8,8 +8,8 @@ needs" below for the traffic that does leave it.
 
 ## What you need first
 
-From CostGraph, one thing: a deployment API key, which you create in the
-dashboard under Settings > API Keys. It is the only credential: the image
+From CostGraph, one thing: a deployment API key, which you create at
+https://app.costgraph.ai/settings/account/api-keys. It is the only credential: the image
 registry authenticates with the same key, and the chart wires that up for you.
 
 From your side: a Postgres 14+, a Redis, and a VictoriaMetrics you run, plus
