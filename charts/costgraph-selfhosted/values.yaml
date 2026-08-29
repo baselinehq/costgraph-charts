@@ -172,7 +172,6 @@ ingestionApi:
     # following appVersion.
     tag: sha-5dc610b
     pullPolicy: IfNotPresent
-  replicaCount: 2
   logLevel: info
 
   # Largest remote_write batch to accept, in bytes. Raise it if clusters with
