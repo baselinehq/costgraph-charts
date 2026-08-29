@@ -24,7 +24,16 @@ immutable: {{ .immutable }}
 {{- with .data }}
 data:
   {{- range $key, $value := . }}
-  {{ $key }}: {{ $value | quote }}
+  {{- $v := $value | toString }}
+  {{- if or (not (contains "\n" $v)) (hasPrefix " " $v) (hasPrefix "\t" $v) (hasSuffix "\n\n" $v) }}
+  {{ $key }}: {{ $v | quote }}
+  {{- else if hasSuffix "\n" $v }}
+  {{ $key }}: |
+    {{- $v | trimSuffix "\n" | nindent 4 }}
+  {{- else }}
+  {{ $key }}: |-
+    {{- $v | nindent 4 }}
+  {{- end }}
   {{- end }}
 {{- end }}
 {{- with .binaryData }}
