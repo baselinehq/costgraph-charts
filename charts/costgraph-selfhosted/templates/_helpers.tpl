@@ -9,7 +9,7 @@ the chart uses a name they can also reference. One release per namespace, which
 is how this chart is deployed, so the release prefix bought nothing.
 */}}
 {{- define "costgraph-selfhosted.fullname" -}}
-{{- default "costgraph-selfhosted" .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
+{{- "costgraph-selfhosted" -}}
 {{- end -}}
 
 {{- define "costgraph-selfhosted.labels" -}}
