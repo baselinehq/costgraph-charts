@@ -75,7 +75,7 @@ backend:
       CONTROL_PLANE_API_KEY:
         valueFrom:
           secretKeyRef:
-            name: costgraph-selfhosted
+            name: '{{ include "costgraph-selfhosted.secretName" . }}'
             key: control-plane-api-key
       PRICING_API_KEY:
         valueFrom:
