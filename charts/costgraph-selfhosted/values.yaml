@@ -1,5 +1,4 @@
 nameOverride: ""
-fullnameOverride: ""
 
 replicaCount: 2
 
@@ -67,8 +66,6 @@ dashboard:
   image:
     repository: registry.costgraph.ai/costgraph-dashboard
     tag: sha-2060465
-    pullPolicy: IfNotPresent
-  replicaCount: 2
   # Where the browser reaches this deployment's API. Defaults to appBaseURL
   # + /api/v1, which is right when one ingress fronts both; set it when the
   # API is on a different host.
@@ -80,12 +77,90 @@ dashboard:
   # Base URL of the CostGraph AI assistant, if you run one. Empty hides the
   # assistant from the dashboard.
   graphAiBaseURL: ""
-  resources:
-    requests:
-      cpu: 50m
-      memory: 64Mi
-    limits:
-      memory: 256Mi
+  applicationName: costgraph-selfhosted-dashboard
+  rbac:
+    enabled: false
+    serviceAccount:
+      create: false
+      name: costgraph-selfhosted
+  service:
+    ports:
+      - name: http
+        port: 80
+        targetPort: http
+        protocol: TCP
+  deployment:
+    enabled: true
+    replicas: 2
+    image:
+      repository: '{{ .Values.image.repository }}'
+      tag: '{{ required "dashboard.image.tag is required" .Values.image.tag }}'
+      pullPolicy: IfNotPresent
+    # Not templated by stakater, so global.imagePullSecrets does not reach it.
+    # Replace this entry when you supply your own registry credentials.
+    imagePullSecrets:
+      - name: costgraph-selfhosted-registry
+    automountServiceAccountToken: false
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 101
+      fsGroup: 101
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    ports:
+      - name: http
+        containerPort: 8080
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
+    env:
+      # Rolls the pods when anything they are built from changes, which the
+      # checksum annotation did before; stakater does not template annotations.
+      # Hashing this alias's own values covers global and the dashboard
+      # settings that config.json is rendered from.
+      VALUES_HASH:
+        value: '{{ toYaml .Values | sha256sum }}'
+    readinessProbe:
+      enabled: true
+      initialDelaySeconds: 3
+      periodSeconds: 10
+      httpGet:
+        path: /config.json
+        port: http
+    livenessProbe:
+      enabled: true
+      initialDelaySeconds: 10
+      periodSeconds: 20
+      httpGet:
+        path: /index.html
+        port: http
+    volumeMounts:
+      runtime-config:
+        mountPath: /usr/share/nginx/html/config.json
+        subPath: config.json
+        readOnly: true
+      cache:
+        mountPath: /var/cache/nginx
+      run:
+        mountPath: /var/run
+      tmp:
+        mountPath: /tmp
+    volumes:
+      runtime-config:
+        configMap:
+          name: costgraph-selfhosted-dashboard
+      cache:
+        emptyDir: {}
+      run:
+        emptyDir: {}
+      tmp:
+        emptyDir: {}
 
 # Receives metrics from the CostGraph operator running in your clusters. Turn
 # it off only if you are not collecting cluster metrics at all.
@@ -97,7 +172,6 @@ ingestionApi:
     # following appVersion.
     tag: sha-5dc610b
     pullPolicy: IfNotPresent
-  replicaCount: 2
   logLevel: info
 
   # Largest remote_write batch to accept, in bytes. Raise it if clusters with
