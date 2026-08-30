@@ -68,6 +68,15 @@ release PR unmerged.
 5. Verify the new version appears in
    https://charts.costgraph.ai/index.yaml.
 
+The **focus-exporter** chart follows the same flow against its own files:
+
+1. Confirm `ghcr.io/baselinehq/focus-exporter:vX.Y.Z` exists, released from the
+   `baselinehq/focus-exporter` repository.
+2. In `charts/focus-exporter/values.yaml`, set `image.tag` to the new `vX.Y.Z`.
+3. Bump `version` in `charts/focus-exporter/Chart.yaml`, and `appVersion` to the
+   exporter image it ships.
+4. Open a PR; `chart-releaser` publishes it on merge, as above.
+
 ## Customer changelog
 
 Per-repo `CHANGELOG.md` files are engineering history. The customer-facing

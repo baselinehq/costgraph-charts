@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "focus-exporter.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "focus-exporter.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  concurrencyPolicy: {{ .Values.concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .Values.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.backoffLimit }}
+      template:
+        metadata:
+          labels:
+            {{- include "focus-exporter.labels" . | nindent 12 }}
+          {{- with .Values.podAnnotations }}
+          annotations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        spec:
+          restartPolicy: {{ .Values.restartPolicy }}
+          {{- include "costgraph.workload.podSpec" (dict
+              "name" (include "focus-exporter.fullname" .)
+              "containerName" "focus-exporter"
+              "image" (include "costgraph.imageRef" (dict "repository" .Values.image.repository "tag" (default .Chart.AppVersion .Values.image.tag)))
+              "imagePullPolicy" .Values.image.pullPolicy
+              "serviceAccountName" (include "focus-exporter.serviceAccountName" .)
+              "automountServiceAccountToken" false
+              "imagePullSecrets" (list (dict "name" (include "focus-exporter.pullSecretName" .)))
+              "podSecurityContext" .Values.podSecurityContext
+              "containerSecurityContext" .Values.containerSecurityContext
+              "args" (concat (list "--provider" .Values.provider "--sink" "costgraph") (ternary (list "--month" .Values.month) (list) (ne .Values.month "")))
+              "envFrom" (list
+                (dict "secretRef" (dict "name" (include "focus-exporter.costgraphSecretName" .)))
+                (dict "secretRef" (dict "name" (include "focus-exporter.credentialsSecretName" .) "optional" true)))
+              "resources" .Values.resources
+              "volumeMounts" (list
+                (dict "name" "config" "mountPath" "/etc/focus-exporter" "readOnly" true)
+                (dict "name" "tmp" "mountPath" "/tmp"))
+              "volumes" (list
+                (dict "name" "config" "configMap" (dict "name" (include "focus-exporter.configMapName" .)))
+                (dict "name" "tmp" "emptyDir" dict))
+              "nodeSelector" .Values.nodeSelector
+              "tolerations" .Values.tolerations
+              "affinity" .Values.affinity
+            ) | nindent 10 }}

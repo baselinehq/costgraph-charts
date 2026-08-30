@@ -35,9 +35,14 @@ looks for them by name and creates nothing:
 
 | Secret | Keys | Replaces |
 | --- | --- | --- |
-| `focus-exporter-costgraph` | `COSTGRAPH_API_KEY`, `COSTGRAPH_CONNECTION_ID`, `COSTGRAPH_URL` | `costgraph.*` |
-| `focus-exporter-credentials` | whatever variables your provider reads | `credentials` |
-| `focus-exporter-registry` | a `kubernetes.io/dockerconfigjson` for `registry.costgraph.ai` | `imagePullSecret.apiKey` |
+| `<release>-focus-exporter-costgraph` | `COSTGRAPH_API_KEY`, `COSTGRAPH_CONNECTION_ID` | `costgraph.apiKey`, `costgraph.connectionId` |
+| `<release>-focus-exporter-credentials` | whatever variables your provider reads | `credentials` |
+| `<release>-focus-exporter-registry` | a `kubernetes.io/dockerconfigjson` for `registry.costgraph.ai` | `imagePullSecret.apiKey` |
+
+Point the chart at yours with `costgraph.existingSecret`,
+`credentialsExistingSecret`, and `imagePullSecret.existingSecret`. The CostGraph
+URL is not a credential - it rides in the config file, so a custom
+`costgraph.url` is honoured even when the credentials come from your own Secret.
 
 ## Choosing a provider
 
@@ -95,67 +100,46 @@ focusExporter:
 
 | Repository | Name | Version |
 |------------|------|---------|
-| https://stakater.github.io/stakater-charts | focusExporter(application) | 9.3.1 |
-
-## Rendering it without a cluster
-
-`helm template` cannot see what the cluster supports, so the upstream
-application chart falls back to the removed `batch/v1beta1` for the CronJob.
-Ask for the API explicitly when rendering offline; an install against a real
-cluster picks `batch/v1` on its own.
-
-```bash
-helm template focus-exporter costgraph/focus-exporter --api-versions batch/v1/CronJob
-```
+| https://charts.costgraph.ai | costgraph-common | 0.2.0 |
 
 ## Values
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| affinity | object | `{}` |  |
+| backoffLimit | int | `3` |  |
+| concurrencyPolicy | string | `"Forbid"` |  |
 | config.OBJECTSTORE_LAYOUT | string | `"manifest"` |  |
+| containerSecurityContext.allowPrivilegeEscalation | bool | `false` |  |
+| containerSecurityContext.capabilities.drop[0] | string | `"ALL"` |  |
+| containerSecurityContext.readOnlyRootFilesystem | bool | `true` |  |
 | costgraph.apiKey | string | `""` |  |
 | costgraph.connectionId | string | `""` |  |
+| costgraph.existingSecret | string | `""` |  |
 | costgraph.url | string | `"https://api.costgraph.ai"` |  |
 | credentials | object | `{}` |  |
-| focusExporter.applicationName | string | `"focus-exporter"` |  |
-| focusExporter.cronJob.enabled | bool | `true` |  |
-| focusExporter.cronJob.jobs.export.backoffLimit | int | `3` |  |
-| focusExporter.cronJob.jobs.export.concurrencyPolicy | string | `"Forbid"` |  |
-| focusExporter.cronJob.jobs.export.containerSecurityContext.allowPrivilegeEscalation | bool | `false` |  |
-| focusExporter.cronJob.jobs.export.containerSecurityContext.capabilities.drop[0] | string | `"ALL"` |  |
-| focusExporter.cronJob.jobs.export.containerSecurityContext.readOnlyRootFilesystem | bool | `true` |  |
-| focusExporter.cronJob.jobs.export.envFrom.costgraph.name | string | `"focus-exporter-costgraph"` |  |
-| focusExporter.cronJob.jobs.export.envFrom.costgraph.type | string | `"secret"` |  |
-| focusExporter.cronJob.jobs.export.envFrom.credentials.name | string | `"focus-exporter-credentials"` |  |
-| focusExporter.cronJob.jobs.export.envFrom.credentials.optional | bool | `true` |  |
-| focusExporter.cronJob.jobs.export.envFrom.credentials.type | string | `"secret"` |  |
-| focusExporter.cronJob.jobs.export.failedJobsHistoryLimit | int | `3` |  |
-| focusExporter.cronJob.jobs.export.image.imagePullPolicy | string | `"IfNotPresent"` |  |
-| focusExporter.cronJob.jobs.export.image.repository | string | `"registry.costgraph.ai/baselinehq/focus-exporter"` |  |
-| focusExporter.cronJob.jobs.export.image.tag | string | `"0.1.0"` |  |
-| focusExporter.cronJob.jobs.export.imagePullSecrets[0].name | string | `"focus-exporter-registry"` |  |
-| focusExporter.cronJob.jobs.export.resources.limits.memory | string | `"1Gi"` |  |
-| focusExporter.cronJob.jobs.export.resources.requests.cpu | string | `"100m"` |  |
-| focusExporter.cronJob.jobs.export.resources.requests.memory | string | `"256Mi"` |  |
-| focusExporter.cronJob.jobs.export.restartPolicy | string | `"OnFailure"` |  |
-| focusExporter.cronJob.jobs.export.schedule | string | `"0 6 * * *"` |  |
-| focusExporter.cronJob.jobs.export.securityContext.runAsNonRoot | bool | `true` |  |
-| focusExporter.cronJob.jobs.export.securityContext.runAsUser | int | `65532` |  |
-| focusExporter.cronJob.jobs.export.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
-| focusExporter.cronJob.jobs.export.successfulJobsHistoryLimit | int | `3` |  |
-| focusExporter.cronJob.jobs.export.volumeMounts[0].mountPath | string | `"/etc/focus-exporter"` |  |
-| focusExporter.cronJob.jobs.export.volumeMounts[0].name | string | `"config"` |  |
-| focusExporter.cronJob.jobs.export.volumeMounts[0].readOnly | bool | `true` |  |
-| focusExporter.cronJob.jobs.export.volumeMounts[1].mountPath | string | `"/tmp"` |  |
-| focusExporter.cronJob.jobs.export.volumeMounts[1].name | string | `"tmp"` |  |
-| focusExporter.cronJob.jobs.export.volumes[0].configMap.name | string | `"focus-exporter-config"` |  |
-| focusExporter.cronJob.jobs.export.volumes[0].name | string | `"config"` |  |
-| focusExporter.cronJob.jobs.export.volumes[1].emptyDir | object | `{}` |  |
-| focusExporter.cronJob.jobs.export.volumes[1].name | string | `"tmp"` |  |
-| focusExporter.deployment.enabled | bool | `false` |  |
-| focusExporter.service.enabled | bool | `false` |  |
-| focusExporter.serviceAccount.automountServiceAccountToken | bool | `false` |  |
-| focusExporter.serviceAccount.enabled | bool | `true` |  |
+| credentialsExistingSecret | string | `""` |  |
+| failedJobsHistoryLimit | int | `3` |  |
+| image.pullPolicy | string | `"IfNotPresent"` |  |
+| image.repository | string | `"registry.costgraph.ai/baselinehq/focus-exporter"` |  |
+| image.tag | string | `""` |  |
 | imagePullSecret.apiKey | string | `""` |  |
+| imagePullSecret.existingSecret | string | `""` |  |
 | month | string | `""` |  |
+| nodeSelector | object | `{}` |  |
+| podAnnotations | object | `{}` |  |
+| podSecurityContext.runAsGroup | int | `65532` |  |
+| podSecurityContext.runAsNonRoot | bool | `true` |  |
+| podSecurityContext.runAsUser | int | `65532` |  |
+| podSecurityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
 | provider | string | `"objectstore"` |  |
+| resources.limits.memory | string | `"1Gi"` |  |
+| resources.requests.cpu | string | `"100m"` |  |
+| resources.requests.memory | string | `"256Mi"` |  |
+| restartPolicy | string | `"OnFailure"` |  |
+| schedule | string | `"0 6 * * *"` |  |
+| serviceAccount.annotations | object | `{}` |  |
+| serviceAccount.create | bool | `true` |  |
+| serviceAccount.name | string | `""` |  |
+| successfulJobsHistoryLimit | int | `3` |  |
+| tolerations | list | `[]` |  |

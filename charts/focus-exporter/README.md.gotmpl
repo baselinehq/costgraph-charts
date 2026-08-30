@@ -34,9 +34,14 @@ looks for them by name and creates nothing:
 
 | Secret | Keys | Replaces |
 | --- | --- | --- |
-| `focus-exporter-costgraph` | `COSTGRAPH_API_KEY`, `COSTGRAPH_CONNECTION_ID`, `COSTGRAPH_URL` | `costgraph.*` |
-| `focus-exporter-credentials` | whatever variables your provider reads | `credentials` |
-| `focus-exporter-registry` | a `kubernetes.io/dockerconfigjson` for `registry.costgraph.ai` | `imagePullSecret.apiKey` |
+| `<release>-focus-exporter-costgraph` | `COSTGRAPH_API_KEY`, `COSTGRAPH_CONNECTION_ID` | `costgraph.apiKey`, `costgraph.connectionId` |
+| `<release>-focus-exporter-credentials` | whatever variables your provider reads | `credentials` |
+| `<release>-focus-exporter-registry` | a `kubernetes.io/dockerconfigjson` for `registry.costgraph.ai` | `imagePullSecret.apiKey` |
+
+Point the chart at yours with `costgraph.existingSecret`,
+`credentialsExistingSecret`, and `imagePullSecret.existingSecret`. The CostGraph
+URL is not a credential - it rides in the config file, so a custom
+`costgraph.url` is honoured even when the credentials come from your own Secret.
 
 ## Choosing a provider
 
@@ -92,15 +97,5 @@ focusExporter:
 
 {{ template "chart.requirementsSection" . }}
 
-## Rendering it without a cluster
-
-`helm template` cannot see what the cluster supports, so the upstream
-application chart falls back to the removed `batch/v1beta1` for the CronJob.
-Ask for the API explicitly when rendering offline; an install against a real
-cluster picks `batch/v1` on its own.
-
-```bash
-helm template focus-exporter costgraph/focus-exporter --api-versions batch/v1/CronJob
-```
 
 {{ template "chart.valuesSection" . }}

@@ -6,7 +6,6 @@ version: 0.1.0
 appVersion: "0.1.0"
 
 dependencies:
-  - name: application
-    version: 9.3.1
-    repository: https://stakater.github.io/stakater-charts
-    alias: focusExporter
+  - name: costgraph-common
+    version: 0.2.0
+    repository: https://charts.costgraph.ai

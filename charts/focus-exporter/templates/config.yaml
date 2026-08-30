@@ -1,14 +1,11 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Values.focusExporter.applicationName }}-config
-data:
-  config.yaml: |
-    provider: {{ .Values.provider }}
-    sink: costgraph
-    {{- with .Values.month }}
-    month: {{ . }}
-    {{- end }}
-    {{- with .Values.config }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
+{{- $config := merge (dict) .Values.config -}}
+{{- $_ := set $config "provider" .Values.provider -}}
+{{- $_ := set $config "sink" "costgraph" -}}
+{{- $_ := set $config "COSTGRAPH_URL" .Values.costgraph.url -}}
+{{- with .Values.month }}{{- $_ := set $config "month" . -}}{{- end }}
+{{- include "costgraph.configMap" (dict
+    "ctx" .
+    "name" (include "focus-exporter.configMapName" .)
+    "labels" (include "focus-exporter.labels" . | fromYaml)
+    "data" (dict "config.yaml" (toYaml $config))
+  ) }}
