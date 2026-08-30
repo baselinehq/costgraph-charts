@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.focusExporter.applicationName }}-config
+data:
+  config.yaml: |
+    provider: {{ .Values.provider }}
+    sink: costgraph
+    {{- with .Values.month }}
+    month: {{ . }}
+    {{- end }}
+    {{- with .Values.config }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}

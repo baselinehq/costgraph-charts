@@ -1,0 +1,99 @@
+# Which provider to read. Every provider and the variables it takes are listed
+# in https://github.com/baselinehq/focus-exporter/blob/main/docs/providers
+provider: objectstore
+
+# The window to read. Empty means the current month, which is what a daily
+# schedule wants.
+month: ""
+
+# CostGraph credentials. Leave these empty and create a Secret named
+# focus-exporter-costgraph yourself, with the keys COSTGRAPH_API_KEY and
+# COSTGRAPH_CONNECTION_ID; a value set here is stored in the Helm release in
+# plain text.
+costgraph:
+  url: https://api.costgraph.ai
+  apiKey: ""
+  connectionId: ""
+
+# Pulling from registry.costgraph.ai is authorised with a CostGraph API key
+# carrying deployment:register - the same key that pushes the bill. Leave it
+# empty to use a docker-registry Secret named focus-exporter-registry that you
+# created yourself.
+imagePullSecret:
+  apiKey: ""
+
+# Provider settings that are not credentials, read from
+# /etc/focus-exporter/config.yaml.
+config:
+  OBJECTSTORE_LAYOUT: manifest
+
+# Provider credentials, passed as environment variables. Leave empty and
+# create a Secret named focus-exporter-credentials instead, whose keys are the
+# variables the provider reads.
+credentials: {}
+
+focusExporter:
+  applicationName: focus-exporter
+
+  # This chart runs a CronJob: nothing is served and nothing listens.
+  deployment:
+    enabled: false
+  service:
+    enabled: false
+
+  cronJob:
+    enabled: true
+    jobs:
+      export:
+        schedule: "0 6 * * *"
+        concurrencyPolicy: Forbid
+        successfulJobsHistoryLimit: 3
+        failedJobsHistoryLimit: 3
+        restartPolicy: OnFailure
+        backoffLimit: 3
+        image:
+          repository: registry.costgraph.ai/baselinehq/focus-exporter
+          tag: "0.1.0"
+          imagePullPolicy: IfNotPresent
+        imagePullSecrets:
+          - name: focus-exporter-registry
+        envFrom:
+          costgraph:
+            type: secret
+            name: focus-exporter-costgraph
+          credentials:
+            type: secret
+            name: focus-exporter-credentials
+            optional: true
+        volumes:
+          - name: config
+            configMap:
+              name: focus-exporter-config
+          - name: tmp
+            emptyDir: {}
+        volumeMounts:
+          - name: config
+            mountPath: /etc/focus-exporter
+            readOnly: true
+          - name: tmp
+            mountPath: /tmp
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 65532
+          seccompProfile:
+            type: RuntimeDefault
+        containerSecurityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            memory: 1Gi
+
+  serviceAccount:
+    enabled: true
+    automountServiceAccountToken: false
