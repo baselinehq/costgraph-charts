@@ -14,6 +14,7 @@ helm install <name> costgraph/<chart> -f my-values.yaml
 |---|---|
 | [costgraph-selfhosted](charts/costgraph-selfhosted) | You run CostGraph itself on your own infrastructure|
 | [costgraph-operator](charts/costgraph-operator) | You use CostGraph (hosted or self-hosted) and want Costgraph's kubernetes support |
+| [focus-exporter](charts/focus-exporter) | You want CostGraph to see a bill it cannot reach itself, read where it lives and pushed from your own cluster |
 | [costgraph](charts/costgraph) | **Deprecated.** The single-binary operator, broken out into the domain-specific operators above. New installs should use `costgraph-selfhosted`. |
 
 Most self-hosted customers install two: `costgraph-selfhosted` once, then
