@@ -3,7 +3,7 @@ name: focus-exporter
 description: Reads a provider's bill where it already lives and pushes it to CostGraph as FOCUS
 type: application
 version: 0.1.0
-appVersion: "0.1.0"
+appVersion: "0.1.1"
 
 dependencies:
   - name: costgraph-common
