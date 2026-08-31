@@ -36,7 +36,7 @@ credentials: {}
 credentialsExistingSecret: ""
 
 image:
-  repository: registry.costgraph.ai/baselinehq/focus-exporter
+  repository: registry.costgraph.ai/focus-exporter
   tag: ""
   pullPolicy: IfNotPresent
 

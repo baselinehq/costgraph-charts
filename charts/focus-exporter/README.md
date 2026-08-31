@@ -121,7 +121,7 @@ focusExporter:
 | credentialsExistingSecret | string | `""` |  |
 | failedJobsHistoryLimit | int | `3` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
-| image.repository | string | `"registry.costgraph.ai/baselinehq/focus-exporter"` |  |
+| image.repository | string | `"registry.costgraph.ai/focus-exporter"` |  |
 | image.tag | string | `""` |  |
 | imagePullSecret.apiKey | string | `""` |  |
 | imagePullSecret.existingSecret | string | `""` |  |
