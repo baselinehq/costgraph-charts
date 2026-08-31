@@ -1051,4 +1051,20 @@ entries:
     urls:
     - costgraph-vmalert-0.1.0.tgz
     version: 0.1.0
-generated: "2026-08-29T15:36:17.293712394Z"
+  focus-exporter:
+  - apiVersion: v2
+    appVersion: 0.1.1
+    created: "2026-08-31T18:45:11.430148524Z"
+    dependencies:
+    - name: costgraph-common
+      repository: https://charts.costgraph.ai
+      version: 0.2.0
+    description: Reads a provider's bill where it already lives and pushes it to CostGraph
+      as FOCUS
+    digest: abf1fbb7ea3118ab31f5af0a37334f52b5d2455f520eb8f534296af2e9a3f81d
+    name: focus-exporter
+    type: application
+    urls:
+    - https://github.com/baselinehq/costgraph-charts/releases/download/focus-exporter-0.1.0/focus-exporter-0.1.0.tgz
+    version: 0.1.0
+generated: "2026-08-31T18:45:11.430272586Z"
