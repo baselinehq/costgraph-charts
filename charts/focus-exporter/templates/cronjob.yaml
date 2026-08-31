@@ -26,7 +26,7 @@ spec:
           {{- include "costgraph.workload.podSpec" (dict
               "name" (include "focus-exporter.fullname" .)
               "containerName" "focus-exporter"
-              "image" (include "costgraph.imageRef" (dict "repository" .Values.image.repository "tag" (default .Chart.AppVersion .Values.image.tag)))
+              "image" (include "costgraph.imageRef" (dict "repository" .Values.image.repository "tag" (default (printf "v%s" .Chart.AppVersion) .Values.image.tag)))
               "imagePullPolicy" .Values.image.pullPolicy
               "serviceAccountName" (include "focus-exporter.serviceAccountName" .)
               "automountServiceAccountToken" false
