@@ -1,0 +1,78 @@
+# Which provider to read. Every provider and the variables it takes are listed
+# in https://github.com/baselinehq/focus-exporter/tree/main/docs/providers
+provider: objectstore
+
+# The window to read. Empty means the current month, which is what a daily
+# schedule wants.
+month: ""
+
+# CostGraph credentials. Leave these empty and create a Secret named
+# <release>-focus-exporter-costgraph yourself (keys COSTGRAPH_API_KEY and
+# COSTGRAPH_CONNECTION_ID); a value set here is stored in the Helm release in
+# plain text. url is not a credential and travels in the config file, so a
+# custom one is honoured even with an external secret.
+costgraph:
+  url: https://api.costgraph.ai
+  apiKey: ""
+  connectionId: ""
+  existingSecret: ""
+
+# Pulling from registry.costgraph.ai is authorised with a CostGraph API key
+# carrying deployment:register - the same key that pushes the bill. Leave it
+# empty to use a docker-registry Secret you created yourself.
+imagePullSecret:
+  apiKey: ""
+  existingSecret: ""
+
+# Provider settings that are not credentials, written to
+# /etc/focus-exporter/config.yaml.
+config:
+  OBJECTSTORE_LAYOUT: manifest
+
+# Provider credentials, passed as environment variables. Leave empty and create
+# a Secret named <release>-focus-exporter-credentials instead, whose keys are
+# the variables the provider reads.
+credentials: {}
+credentialsExistingSecret: ""
+
+image:
+  repository: registry.costgraph.ai/focus-exporter
+  tag: ""
+  pullPolicy: IfNotPresent
+
+schedule: "0 6 * * *"
+concurrencyPolicy: Forbid
+successfulJobsHistoryLimit: 3
+failedJobsHistoryLimit: 3
+restartPolicy: OnFailure
+backoffLimit: 3
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 1Gi
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]

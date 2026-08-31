@@ -10,6 +10,8 @@ binaries and the Helm chart that ships them.
 | Kubernetes operator | `baselinehq/costgraph-operator-kubernetes` | `ghcr.io/baselinehq/costgraph-operator-kubernetes:vX.Y.Z` |
 | Prometheus operator | `baselinehq/costgraph-operator-prometheus` | `ghcr.io/baselinehq/costgraph-operator-prometheus:vX.Y.Z` |
 | Helm chart | `baselinehq/costgraph-charts` | `charts/costgraph-operator` published to https://charts.costgraph.ai |
+| FOCUS exporter | `baselinehq/focus-exporter` | `ghcr.io/baselinehq/focus-exporter:vX.Y.Z`, mirrored at `registry.costgraph.ai` |
+| FOCUS exporter chart | `baselinehq/costgraph-charts` | `charts/focus-exporter` published to https://charts.costgraph.ai |
 
 The two binaries version independently. The chart is the customer-facing
 release unit: a customer upgrades a chart version, not an image tag.
@@ -65,6 +67,15 @@ release PR unmerged.
    publishes it to the chart repository and updates `index.yaml`.
 5. Verify the new version appears in
    https://charts.costgraph.ai/index.yaml.
+
+The **focus-exporter** chart follows the same flow against its own files:
+
+1. Confirm `ghcr.io/baselinehq/focus-exporter:vX.Y.Z` exists, released from the
+   `baselinehq/focus-exporter` repository.
+2. In `charts/focus-exporter/values.yaml`, set `image.tag` to the new `vX.Y.Z`.
+3. Bump `version` in `charts/focus-exporter/Chart.yaml`, and `appVersion` to the
+   exporter image it ships.
+4. Open a PR; `chart-releaser` publishes it on merge, as above.
 
 ## Customer changelog
 
