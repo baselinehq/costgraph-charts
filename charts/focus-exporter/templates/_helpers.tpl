@@ -3,25 +3,17 @@
 {{- end -}}
 
 {{/* Capped at 52 so the Job the CronJob controller spawns (<name>-<timestamp>)
-stays within Kubernetes' 63-character limit. A name over the cap keeps its
-first 43 characters and gains a hash of the whole, so two long names that share
-a prefix still render distinct. */}}
+stays within Kubernetes' 63-character limit. */}}
 {{- define "focus-exporter.fullname" -}}
-{{- $name := "" -}}
 {{- if .Values.fullnameOverride -}}
-{{- $name = .Values.fullnameOverride -}}
+{{- .Values.fullnameOverride | trunc 52 | trimSuffix "-" -}}
 {{- else -}}
-{{- $chartName := default .Chart.Name .Values.nameOverride -}}
-{{- if contains $chartName .Release.Name -}}
-{{- $name = .Release.Name -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- if contains $name .Release.Name -}}
+{{- .Release.Name | trunc 52 | trimSuffix "-" -}}
 {{- else -}}
-{{- $name = printf "%s-%s" .Release.Name $chartName -}}
+{{- printf "%s-%s" .Release.Name $name | trunc 52 | trimSuffix "-" -}}
 {{- end -}}
-{{- end -}}
-{{- if gt (len $name) 52 -}}
-{{- printf "%s-%s" (trunc 43 $name | trimSuffix "-") (substr 0 8 (sha256sum $name)) -}}
-{{- else -}}
-{{- $name | trimSuffix "-" -}}
 {{- end -}}
 {{- end -}}
 
