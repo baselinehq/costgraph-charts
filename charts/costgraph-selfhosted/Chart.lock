@@ -1,0 +1,21 @@
+dependencies:
+- name: application
+  repository: https://stakater.github.io/stakater-charts
+  version: 9.3.1
+- name: application
+  repository: https://stakater.github.io/stakater-charts
+  version: 9.3.1
+- name: application
+  repository: https://stakater.github.io/stakater-charts
+  version: 9.3.1
+- name: application
+  repository: https://stakater.github.io/stakater-charts
+  version: 9.3.1
+- name: application
+  repository: https://stakater.github.io/stakater-charts
+  version: 9.3.1
+- name: costgraph-common
+  repository: file://../costgraph-common
+  version: 0.2.0
+digest: sha256:d81a2a01e3802e6d5aefee7c8f9b8810238629be5473331406dbd43443be6ce5
+generated: "2026-08-29T12:34:02.36428+01:00"

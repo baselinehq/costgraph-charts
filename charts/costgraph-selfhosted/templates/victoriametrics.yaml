@@ -1,0 +1,25 @@
+{{- if .Values.global.metricsStore.bundled.enabled }}
+{{- $c := .Values.victoriametrics }}
+{{- $name := $c.applicationName }}
+{{- $labels := include "costgraph-selfhosted.componentLabels" (dict "ctx" . "component" "metrics-store") | fromYaml }}
+{{- $selectorLabels := include "costgraph-selfhosted.componentSelectorLabels" (dict "ctx" . "component" "metrics-store") | fromYaml }}
+{{ include "costgraph.service" (dict
+    "ctx" .
+    "name" $name
+    "labels" $labels
+    "selectorLabels" $selectorLabels
+    "clusterIP" "None"
+    "ports" $c.service.ports
+) }}
+---
+{{ include "costgraph.workload" (merge (dict
+    "ctx" .
+    "kind" "StatefulSet"
+    "name" $name
+    "serviceName" $name
+    "labels" $labels
+    "selectorLabels" $selectorLabels
+    "serviceAccountName" $c.rbac.serviceAccount.name
+    "volumeClaimTemplates" (include "costgraph-selfhosted.dataVolumeClaim" (dict "name" "storage" "storage" $c.storage "storageClass" $c.storageClass) | fromYamlArray)
+) (include "costgraph-selfhosted.workloadSpec" (dict "ctx" . "spec" $c.statefulSet) | fromYaml)) }}
+{{- end }}

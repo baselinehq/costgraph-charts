@@ -10,6 +10,8 @@ binaries and the Helm chart that ships them.
 | Kubernetes operator | `baselinehq/costgraph-operator-kubernetes` | `ghcr.io/baselinehq/costgraph-operator-kubernetes:vX.Y.Z` |
 | Prometheus operator | `baselinehq/costgraph-operator-prometheus` | `ghcr.io/baselinehq/costgraph-operator-prometheus:vX.Y.Z` |
 | Helm chart | `baselinehq/costgraph-charts` | `charts/costgraph-operator` published to https://charts.costgraph.ai |
+| FOCUS exporter | `baselinehq/focus-exporter` | `ghcr.io/baselinehq/focus-exporter:vX.Y.Z`, mirrored at `registry.costgraph.ai` |
+| FOCUS exporter chart | `baselinehq/costgraph-charts` | `charts/focus-exporter` published to https://charts.costgraph.ai |
 
 The two binaries version independently. The chart is the customer-facing
 release unit: a customer upgrades a chart version, not an image tag.
@@ -38,20 +40,37 @@ never fire and no image would be published for the release.
 The token needs `contents: write` and `pull-requests: write`. If releases stop
 producing images, check that it has not expired.
 
-## Binary release flow (automated)
+## Binary release flow
 
-1. Merge a PR into `main`. The `Release Please` workflow opens (or updates)
-   a release PR titled `chore(main): release X.Y.Z`, containing the version
-   bump and the generated `CHANGELOG.md` section.
+`Release Please` is wired **dispatch-only** (`on: workflow_dispatch`) in every
+first-party repository. Merging to `main` neither opens a release PR nor lands a
+release; both steps need an explicit dispatch.
+
+1. Dispatch `release-please.yml`. It opens (or updates) a release PR titled
+   `chore(main): release X.Y.Z`, containing the version bump and the generated
+   `CHANGELOG.md` section.
+
+   ```bash
+   gh workflow run release-please.yml --repo baselinehq/<repo> --ref main
+   ```
 2. Review the release PR. Edit the changelog wording in that PR if the
    generated entries are not customer-legible.
-3. Merge the release PR. Release Please creates the `vX.Y.Z` git tag and a
-   GitHub Release.
-4. The `Docker` workflow triggers on the tag and publishes
+3. Merge the release PR. On its own this produces no tag and no release.
+4. **Dispatch `release-please.yml` again.** This is what creates the `vX.Y.Z`
+   git tag and the GitHub Release. Skipping it leaves the version bump merged
+   with nothing published.
+5. The `Docker` workflow triggers on the tag and publishes
    `vX.Y.Z`, `vX.Y` and `vX` image tags to GHCR.
 
+Confirm the tag landed on the release-PR merge commit rather than a later
+`Deploy ...` commit, which carries no image:
+
+```bash
+gh api repos/baselinehq/<repo>/git/refs/tags/vX.Y.Z --jq '.object.sha'
+```
+
 Nothing is tagged or published by hand. To hold a release, leave the
-release PR unmerged.
+release PR unmerged, or merge it and withhold the second dispatch.
 
 ## Chart release flow
 
@@ -65,6 +84,15 @@ release PR unmerged.
    publishes it to the chart repository and updates `index.yaml`.
 5. Verify the new version appears in
    https://charts.costgraph.ai/index.yaml.
+
+The **focus-exporter** chart follows the same flow against its own files:
+
+1. Confirm `ghcr.io/baselinehq/focus-exporter:vX.Y.Z` exists, released from the
+   `baselinehq/focus-exporter` repository.
+2. In `charts/focus-exporter/values.yaml`, set `image.tag` to the new `vX.Y.Z`.
+3. Bump `version` in `charts/focus-exporter/Chart.yaml`, and `appVersion` to the
+   exporter image it ships.
+4. Open a PR; `chart-releaser` publishes it on merge, as above.
 
 ## Customer changelog
 

@@ -1,19 +1,25 @@
-{{- $c := .Values.operatorPrometheus }}
+{{- $c := .Values.aiGatewayScraper }}
 {{- if and $c.enabled $c.deployment.enabled }}
 {{- $w := $c.deployment }}
-{{- $name := required "operatorPrometheus.applicationName is required" $c.applicationName }}
-{{- $component := "operator-prometheus" }}
+{{- $name := required "aiGatewayScraper.applicationName is required" $c.applicationName }}
+{{- $component := "operator-ai-gateway" }}
 {{- $labels := fromYaml (include "costgraph-operator.componentLabels" (dict "ctx" $ "name" $name "component" $component)) }}
+{{- /*
+SCRAPE_TARGETS is an empty list, not an absent value: the scraper requires it to
+parse, and gateway targets are served by CostGraph from the connections the
+customer created rather than set here, so connecting a gateway never edits Helm
+values. Both deployments run the same binary, so without MANAGED_SCRAPE_TARGETS
+the statically configured scraper would fetch the same served targets and scrape
+every gateway twice, into both retention tiers.
+*/}}
 {{- $env := dict
-    "CLUSTER_NAME"          (dict "value" (required "Cluster name must be provided" .Values.global.clusterName))
-    "API_KEY"               (dict "valueFrom" (dict "secretKeyRef" (dict "name" (include "costgraph-operator.apiKeySecretName" .) "key" (include "costgraph-operator.apiKeySecretKey" .))))
-    "PROMETHEUS_URL"        (dict "value" (printf "%s-kube-state-metrics.%s.svc.cluster.local:8080" .Release.Name (include "costgraph-operator.namespace" .)))
-    "REMOTE_WRITE_URL"      (dict "value" (include "costgraph-operator.remoteWriteURL" (dict "component" $c.config.remoteWriteURL "root" $)))
-    "REMOTE_WRITE_PATH"     (dict "value" $c.config.remoteWritePath)
-    "PROMETHEUS_API_PROVIDER" (dict "value" $c.config.prometheusAPIProvider)
-    "PROMETHEUS_API_VERSION"  (dict "value" $c.config.prometheusAPIVersion)
-    "HTTP_TIMEOUT"          (dict "value" $c.config.httpTimeout)
-    "SCRAPE_TARGETS"        (dict "value" (include "costgraph-operator.scrapeTargets" (dict "ctx" $ "targets" $c.scrapeTargets)))
+    "CLUSTER_NAME"      (dict "value" (required "Cluster name must be provided" .Values.global.clusterName))
+    "API_KEY"           (dict "valueFrom" (dict "secretKeyRef" (dict "name" (include "costgraph-operator.apiKeySecretName" .) "key" (include "costgraph-operator.apiKeySecretKey" .))))
+    "REMOTE_WRITE_URL"  (dict "value" (include "costgraph-operator.remoteWriteURL" (dict "component" $c.config.remoteWriteURL "root" $)))
+    "REMOTE_WRITE_PATH" (dict "value" $c.config.remoteWritePath)
+    "HTTP_TIMEOUT"      (dict "value" $c.config.httpTimeout)
+    "SCRAPE_TARGETS"    (dict "value" "[]")
+    "MANAGED_SCRAPE_TARGETS" (dict "value" "true")
 }}
 {{- with .Values.global.backendURL }}{{- $_ := set $env "BACKEND_URL" (dict "value" .) }}{{- end }}
 {{- $env = mergeOverwrite $env (deepCopy ($w.env | default dict)) }}

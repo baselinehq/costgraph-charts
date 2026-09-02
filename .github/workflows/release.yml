@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+# gh-pages is a shared branch and chart-releaser pushes to it directly, so two
+# runs would race and one would be rejected as non-fast-forward.
+concurrency:
+  group: release-charts
+  cancel-in-progress: false
 
 jobs:
   release:
@@ -23,25 +30,29 @@ jobs:
 
       - name: Add Helm Dependency Repositories
         run: |
+          set -euo pipefail
           for chart in charts/*/Chart.yaml; do
-            if [ -f "$chart" ]; then
-              echo "Processing $chart"
-              # Extract repository URLs from dependencies
-              yq eval '.dependencies[].repository' "$chart" 2>/dev/null | while read -r repo_url; do
-                if [ -n "$repo_url" ] && [ "$repo_url" != "null" ]; then
-                  # Extract repo name from URL (e.g., bitnami from https://charts.bitnami.com/bitnami)
-                  repo_name=$(echo "$repo_url" | sed -E 's|https?://[^/]+/(.+)/?|\1|' | sed 's|/|-|g')
-                  echo "Adding repository: $repo_name -> $repo_url"
-                  helm repo add "$repo_name" "$repo_url" || true
-                fi
-              done
-            fi
+            [ -f "$chart" ] || continue
+            yq eval -r '.dependencies[]?.repository // ""' "$chart" | while read -r repo_url; do
+              case "$repo_url" in
+                http://*|https://*) ;;
+                *) continue ;;
+              esac
+              repo_name=$(printf '%s' "$repo_url" | sed -E -e 's|^https?://||' -e 's|/+$||' -e 's|[/.]|-|g')
+              echo "Adding repository: $repo_name -> $repo_url"
+              helm repo add "$repo_name" "$repo_url"
+            done
           done
           helm repo update
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.6.0
         with:
-          packages_with_index: true
+          # Not packages_with_index: with it chart-releaser resets its gh-pages
+          # worktree to the ref it fetched at the start before every chart, so
+          # in a run publishing more than one chart the second push is rejected
+          # as non-fast-forward. Packages go to the GitHub release instead and
+          # gh-pages is pushed once, for the index.
+          skip_existing: true
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

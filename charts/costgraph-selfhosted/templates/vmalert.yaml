@@ -1,0 +1,35 @@
+{{- if .Values.vmalert.enabled }}
+{{- $c := .Values.vmalert }}
+{{- $d := $c.deployment }}
+{{- $store := include "costgraph-selfhosted.metricsStoreURL" . }}
+{{/*
+Two rule sets, two deployments: long-window rules feed the daily rollups,
+short-window rules feed the recent views. One replica each on purpose -- a
+second would evaluate the same rules and write the same series.
+
+The rules come from the aggregator image, which already ships them.
+*/}}
+{{- range $set := list "long" "short" }}
+{{- $suffix := ternary "" "-short" (eq $set "long") }}
+{{- $component := printf "vmalert%s" $suffix }}
+---
+{{ include "costgraph.vmalert" (dict
+    "ctx" $
+    "name" (printf "%s%s" $c.applicationName $suffix)
+    "labels" (include "costgraph-selfhosted.componentLabels" (dict "ctx" $ "component" $component) | fromYaml)
+    "selectorLabels" (include "costgraph-selfhosted.componentSelectorLabels" (dict "ctx" $ "component" $component) | fromYaml)
+    "image" (include "costgraph.imageRef" (dict "repository" $d.image.repository "tag" $d.image.tag))
+    "imagePullPolicy" $d.image.pullPolicy
+    "imagePullSecrets" (include "costgraph-selfhosted.imagePullSecrets" $ | fromYamlArray)
+    "rulesImage" (include "costgraph.imageRef" (dict "repository" $.Values.aggregator.deployment.image.repository "tag" (required "aggregator.deployment.image.tag is required" $.Values.aggregator.deployment.image.tag)))
+    "rulesPath" (printf "/recording-rules/%s" $set)
+    "datasourceURL" $store
+    "remoteWriteURL" $store
+    "resources" $d.resources
+    "podSecurityContext" $d.securityContext
+    "containerSecurityContext" $d.containerSecurityContext
+    "nodeSelector" $d.nodeSelector
+    "tolerations" $d.tolerations
+) }}
+{{- end }}
+{{- end }}

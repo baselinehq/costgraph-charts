@@ -1,0 +1,37 @@
+{{- if .Values.global.postgres.bundled.enabled }}
+{{- $c := .Values.postgres }}
+{{- $name := $c.applicationName }}
+{{- $labels := include "costgraph-selfhosted.componentLabels" (dict "ctx" . "component" "postgres") | fromYaml }}
+{{- $selectorLabels := include "costgraph-selfhosted.componentSelectorLabels" (dict "ctx" . "component" "postgres") | fromYaml }}
+{{ include "costgraph.service" (dict
+    "ctx" .
+    "name" $name
+    "labels" $labels
+    "selectorLabels" $selectorLabels
+    "clusterIP" "None"
+    "ports" $c.service.ports
+) }}
+---
+{{ include "costgraph.workload" (merge (dict
+    "ctx" .
+    "kind" "StatefulSet"
+    "name" $name
+    "serviceName" $name
+    "labels" $labels
+    "selectorLabels" $selectorLabels
+    "serviceAccountName" $c.rbac.serviceAccount.name
+    "volumeClaimTemplates" (include "costgraph-selfhosted.dataVolumeClaim" (dict "name" "data" "storage" $c.storage "storageClass" $c.storageClass) | fromYamlArray)
+) (include "costgraph-selfhosted.workloadSpec" (dict "ctx" . "spec" $c.statefulSet) | fromYaml)) }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- toYaml $labels | nindent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep
+type: Opaque
+data:
+  password: {{ include "costgraph-selfhosted.bundledPostgresPassword" . | b64enc | quote }}
+{{- end }}

@@ -1,0 +1,35 @@
+{{- if .Values.ingress.enabled }}
+{{- $fullname := include "costgraph-selfhosted.fullname" . }}
+{{- $hosts := list }}
+{{- range .Values.ingress.hosts }}
+{{- $paths := list }}
+{{- if $.Values.ingestionApi.enabled }}
+{{- $paths = append $paths (dict "path" "/api/v1/write" "pathType" "Prefix" "serviceName" (printf "%s-ingestion-api" $fullname) "servicePort" 8080) }}
+{{- end }}
+{{- if $.Values.dashboard.enabled }}
+{{- $paths = append $paths (dict "path" "/api" "pathType" "Prefix" "serviceName" $fullname "servicePort" 8080) }}
+{{- $paths = append $paths (dict "path" "/healthz" "pathType" "Prefix" "serviceName" $fullname "servicePort" 8080) }}
+{{- end }}
+{{/*
+A path the operator configured is the site itself: the dashboard serves it when
+one is deployed, and the API serves it when the chart is API-only.
+*/}}
+{{- range .paths }}
+{{- if $.Values.dashboard.enabled }}
+{{- $paths = append $paths (merge (dict "serviceName" (printf "%s-dashboard" $fullname) "servicePort" 80) (pick . "path" "pathType")) }}
+{{- else }}
+{{- $paths = append $paths (merge (dict "serviceName" $fullname "servicePort" 8080) (pick . "path" "pathType")) }}
+{{- end }}
+{{- end }}
+{{- $hosts = append $hosts (dict "host" .host "paths" $paths) }}
+{{- end }}
+{{ include "costgraph.ingress" (dict
+    "ctx" $
+    "name" $fullname
+    "labels" (include "costgraph-selfhosted.labels" . | fromYaml)
+    "annotations" .Values.ingress.annotations
+    "className" .Values.ingress.className
+    "tls" .Values.ingress.tls
+    "hosts" $hosts
+) }}
+{{- end }}

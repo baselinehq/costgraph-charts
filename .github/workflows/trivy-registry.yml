@@ -1,0 +1,66 @@
+name: Trivy registry scan
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    outputs:
+      refs: ${{ steps.render.outputs.refs }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4
+
+      - name: Render chart and collect image references
+        id: render
+        run: |
+          i=0
+          for repo in $(grep -oE 'https://[^ ]+' charts/costgraph-operator/Chart.yaml | sort -u); do
+            i=$((i + 1))
+            helm repo add "dep$i" "$repo"
+          done
+          helm dependency build charts/costgraph-operator
+          helm template costgraph charts/costgraph-operator \
+            --set rbac.requireClusterDiscovery=false \
+            --set global.apiKey=scan \
+            --set global.clusterName=scan \
+            | grep -hoE '^\s*image:\s*"?[^"\s]+"?' \
+            | sed -E 's/^\s*image:\s*//; s/"//g' \
+            | sort -u > images.txt
+          cat images.txt
+          echo "refs=$(jq -R -s -c 'split("\n") | map(select(length > 0))' images.txt)" >> "$GITHUB_OUTPUT"
+
+  scan:
+    needs: images
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJson(needs.images.outputs.refs) }}
+    steps:
+      - name: Log into ghcr.io
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Scan ${{ matrix.image }}
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ matrix.image }}
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"

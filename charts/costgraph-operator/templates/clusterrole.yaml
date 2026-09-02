@@ -1,13 +1,5 @@
 {{- if .Values.serviceAccount.create -}}
 {{- include "costgraph-operator.assertClusterDiscovery" . }}
-{{ include "costgraph.serviceAccount" (dict
-    "ctx" $
-    "name" (include "costgraph-operator.serviceAccountName" .)
-    "labels" (include "costgraph-operator.labels" . | fromYaml)
-    "annotations" .Values.serviceAccount.annotations
-    "automount" .Values.serviceAccount.automount
-) }}
----
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:

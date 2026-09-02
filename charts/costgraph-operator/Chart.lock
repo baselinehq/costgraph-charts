@@ -1,4 +1,7 @@
 dependencies:
+- name: application
+  repository: https://stakater.github.io/stakater-charts
+  version: 9.3.1
 - name: kube-state-metrics
   repository: https://prometheus-community.github.io/helm-charts
   version: 5.27.1
@@ -10,6 +13,9 @@ dependencies:
   version: 3.6.1
 - name: prometheus-node-exporter
   repository: https://prometheus-community.github.io/helm-charts
-  version: 4.55.0
-digest: sha256:c02cf544ad86455880c75e2bcc9f399f7cd53aedc7f0cc9802440e99b8b915c0
-generated: "2026-05-06T19:15:03.240206235-04:00"
+  version: 4.56.1
+- name: costgraph-common
+  repository: file://../costgraph-common
+  version: 0.2.0
+digest: sha256:5a6d316d88d31372567a0d2ed64b199ac18e74a61383393cc359c06e9c4a08d6
+generated: "2026-08-29T11:41:04.394701+01:00"

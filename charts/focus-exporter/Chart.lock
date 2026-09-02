@@ -1,0 +1,6 @@
+dependencies:
+- name: costgraph-common
+  repository: https://charts.costgraph.ai
+  version: 0.2.0
+digest: sha256:fdc76a4cc8fa27fae85348088f66295e390897f2178cce6552d6a0b696e8651b
+generated: "2026-08-31T18:23:12.053482+01:00"

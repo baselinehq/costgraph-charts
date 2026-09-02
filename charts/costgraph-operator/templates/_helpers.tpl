@@ -65,21 +65,22 @@ Create the name of the service account to use
 Namespace helper
 */}}
 {{- define "costgraph-operator.namespace" -}}
-{{- default .Release.Namespace .Values.namespace }}
+{{- .Release.Namespace }}
 {{- end }}
-*/}}
 
 {{/*
 Resolve the name of the Secret holding the API key.
 Uses an existing secret when global.existingSecret is set; otherwise uses
 the Secret created by this chart.
+
+The body reads only .Release and .Values.global so that stakater's application
+subchart, which templates its env values in its own scope, resolves the same
+name as this chart's own templates. Deriving it from fullname instead would
+resolve against the subchart and silently reference a Secret that does not
+exist.
 */}}
 {{- define "costgraph-operator.apiKeySecretName" -}}
-{{- if .Values.global.existingSecret -}}
-{{- .Values.global.existingSecret -}}
-{{- else -}}
-{{- printf "%s-credentials" (include "costgraph-operator.fullname" .) | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
+{{- .Values.global.existingSecret | default (printf "%s-credentials" .Release.Name) | trunc 63 | trimSuffix "-" -}}
 {{- end }}
 
 {{/*
@@ -96,76 +97,50 @@ apiKey
 {{- end }}
 
 {{/*
-
 ------------------------------------------------------------------------------
-costgraph-operator-kubernetes helpers
+Per-component helpers
+
+Every component in this chart is named by its own applicationName rather than
+by the release, so that the objects stakater's application chart renders and
+the ones rendered here are named the same way.
 ------------------------------------------------------------------------------
 */}}
-{{- define "costgraph-operator.kubernetesName" -}}
-{{- printf "%s-kubernetes" (include "costgraph-operator.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- define "costgraph-operator.componentLabels" -}}
+helm.sh/chart: {{ include "costgraph-operator.chart" .ctx }}
+{{ include "costgraph-operator.componentSelectorLabels" . }}
+{{- with .ctx.Chart.AppVersion }}
+app.kubernetes.io/version: {{ . | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .ctx.Release.Service }}
 {{- end }}
 
-{{- define "costgraph-operator.kubernetesLabels" -}}
-helm.sh/chart: {{ include "costgraph-operator.chart" . }}
-{{ include "costgraph-operator.kubernetesSelectorLabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- end }}
-
-{{- define "costgraph-operator.kubernetesSelectorLabels" -}}
-app.kubernetes.io/name: {{ include "costgraph-operator.kubernetesName" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/component: operator-kubernetes
+{{- define "costgraph-operator.componentSelectorLabels" -}}
+{{- include "costgraph.selectorLabels" (dict "ctx" .ctx "name" (required "componentSelectorLabels: name is required" .name) "component" (required "componentSelectorLabels: component is required" .component)) -}}
 {{- end }}
 
 {{/*
-------------------------------------------------------------------------------
-costgraph-operator-prometheus helpers
-------------------------------------------------------------------------------
+Turn stakater's env map into the list a PodSpec takes.
+
+The map form is what the application chart accepts, so keeping it here is what
+lets every component in this chart be configured the same way. String values
+are templated, again matching stakater, so a value can reach back into the
+release.
 */}}
-{{- define "costgraph-operator.prometheusName" -}}
-{{- printf "%s-prometheus" (include "costgraph-operator.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- define "costgraph-operator.env" -}}
+{{- $ctx := required "env: ctx is required" .ctx -}}
+{{- range $name, $spec := .env }}
+- name: {{ $name }}
+{{- if kindIs "map" $spec }}
+{{- if hasKey $spec "valueFrom" }}
+  valueFrom:
+    {{- toYaml $spec.valueFrom | nindent 4 }}
+{{- else }}
+  value: {{ tpl (toString $spec.value) $ctx | quote }}
 {{- end }}
-
-{{- define "costgraph-operator.prometheusLabels" -}}
-helm.sh/chart: {{ include "costgraph-operator.chart" . }}
-{{ include "costgraph-operator.prometheusSelectorLabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- else }}
+  value: {{ tpl (toString $spec) $ctx | quote }}
 {{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
-
-{{- define "costgraph-operator.prometheusSelectorLabels" -}}
-app.kubernetes.io/name: {{ include "costgraph-operator.prometheusName" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/component: operator-prometheus
-{{- end }}
-
-{{/*
-------------------------------------------------------------------------------
-costgraph-operator-flowtrace helpers
-------------------------------------------------------------------------------
-*/}}
-{{- define "costgraph-operator.flowtraceName" -}}
-{{- printf "%s-flowtrace" (include "costgraph-operator.fullname" .) | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{- define "costgraph-operator.flowtraceLabels" -}}
-helm.sh/chart: {{ include "costgraph-operator.chart" . }}
-{{ include "costgraph-operator.flowtraceSelectorLabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- end }}
-
-{{- define "costgraph-operator.flowtraceSelectorLabels" -}}
-app.kubernetes.io/name: {{ include "costgraph-operator.flowtraceName" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/component: flowtrace
 {{- end }}
 
 {{/*
@@ -240,6 +215,78 @@ them separate, or excluding a new vendor group would break the discovery check.
 {{- end }}
 
 {{/*
+Read rules for the built-in Kubernetes resources CostGraph collects.
+
+The single source for both the ClusterRole rules and the set of groups the
+discovered custom-resource grant must not re-widen. core/v1 is deliberately
+absent: it is enumerated separately because it holds Secrets, ConfigMaps and
+ServiceAccounts, which must never be granted.
+*/}}
+{{- define "costgraph-operator.builtinRules" -}}
+- apiGroups: ["apps"]
+  resources: ["daemonsets", "deployments", "replicasets", "statefulsets"]
+- apiGroups: ["autoscaling"]
+  resources: ["horizontalpodautoscalers"]
+- apiGroups: ["batch"]
+  resources: ["cronjobs", "jobs"]
+- apiGroups: ["discovery.k8s.io"]
+  resources: ["endpointslices"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingressclasses", "ingresses", "networkpolicies"]
+- apiGroups: ["policy"]
+  resources: ["poddisruptionbudgets"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["csidrivers", "csinodes", "storageclasses", "volumeattachments", "volumeattributesclasses"]
+{{- end }}
+
+{{/*
+The API groups covered by builtinRules, derived so the two cannot drift.
+*/}}
+{{- define "costgraph-operator.builtinAPIGroups" -}}
+{{- $groups := list -}}
+{{- range include "costgraph-operator.builtinRules" . | fromYamlArray -}}
+{{- $groups = concat $groups .apiGroups -}}
+{{- end -}}
+{{- $groups | uniq | sortAlpha | toYaml -}}
+{{- end }}
+
+{{/*
+API groups that ship with Kubernetes itself.
+
+Helm's built-in capability set contains exactly these, so seeing nothing
+outside this list means .Capabilities.APIVersions was never populated from a
+cluster. Entries here intentionally repeat names in rbac.excludeAPIGroups: this
+list answers "what does upstream ship", not "what may CostGraph read". Keep
+them separate, or excluding a new vendor group would break the discovery check.
+*/}}
+{{- define "costgraph-operator.kubernetesAPIGroups" -}}
+- admissionregistration.k8s.io
+- apiextensions.k8s.io
+- apiregistration.k8s.io
+- apps
+- authentication.k8s.io
+- authorization.k8s.io
+- autoscaling
+- batch
+- certificates.k8s.io
+- coordination.k8s.io
+- discovery.k8s.io
+- events.k8s.io
+- extensions
+- flowcontrol.apiserver.k8s.io
+- internal.apiserver.k8s.io
+- networking.k8s.io
+- node.k8s.io
+- policy
+- rbac.authorization.k8s.io
+- resource.k8s.io
+- scheduling.k8s.io
+- storage.k8s.io
+- storagemigration.k8s.io
+{{- end }}
+
+{{/*
+
 Every API group the cluster serves, minus core. Returned as a YAML array.
 
 Capabilities carries both "group/version" and "group/version/Kind", so a core
@@ -299,3 +346,8 @@ is whether a group appeared that Kubernetes itself does not ship.
 {{- end -}}
 {{- end -}}
 {{- end }}
+
+
+{{- define "costgraph-operator.remoteWriteURL" -}}
+{{- coalesce .component .root.Values.global.remoteWriteURL "https://tsdb.costgraph.ai" -}}
+{{- end -}}

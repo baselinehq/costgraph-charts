@@ -1,0 +1,33 @@
+{{- if and .Values.global.postgres.runMigrations (not .Values.global.postgres.bundled.enabled) }}
+{{ include "costgraph.job" (dict
+    "ctx" $
+    "name" (printf "%s-migrate" (include "costgraph-selfhosted.fullname" .))
+    "labels" (include "costgraph-selfhosted.componentLabels" (dict "ctx" . "component" "migrate") | fromYaml)
+    "podLabels" (include "costgraph-selfhosted.componentSelectorLabels" (dict "ctx" . "component" "migrate") | fromYaml)
+    "annotations" (dict
+        "helm.sh/hook" "pre-upgrade"
+        "helm.sh/hook-weight" "-4"
+        "helm.sh/hook-delete-policy" "before-hook-creation,hook-succeeded")
+    "backoffLimit" 0
+    "restartPolicy" "Never"
+    "imagePullSecrets" (include "costgraph-selfhosted.imagePullSecrets" . | fromYamlArray)
+    "podSecurityContext" .Values.global.podSecurityContext
+    "containerSecurityContext" .Values.global.securityContext
+    "containerName" "migrate"
+    "image" (include "costgraph-selfhosted.image" .)
+    "imagePullPolicy" .Values.backend.deployment.image.pullPolicy
+    "env" (list
+        (dict "name" "MIGRATE" "value" "1")
+        (dict "name" "MIGRATE_ONLY" "value" "1")
+        (dict "name" "DB_URL" "valueFrom" (dict "secretKeyRef" (dict "name" (include "costgraph-selfhosted.postgresSecretName" .) "key" "postgres-url")))
+        (dict "name" "DB_PASSWORD" "valueFrom" (dict "secretKeyRef" (dict "name" (include "costgraph-selfhosted.postgresSecretName" .) "key" "postgres-password" "optional" true)))
+        (dict "name" "REDIS_URL" "valueFrom" (dict "secretKeyRef" (dict "name" (include "costgraph-selfhosted.redisSecretName" .) "key" "redis-url")))
+        (dict "name" "CONTROL_PLANE_API_KEY" "valueFrom" (dict "secretKeyRef" (dict "name" (include "costgraph-selfhosted.secretName" .) "key" "control-plane-api-key")))
+        (dict "name" "PRICING_API_KEY" "valueFrom" (dict "secretKeyRef" (dict "name" (include "costgraph-selfhosted.secretName" .) "key" "pricing-api-key")))
+        (dict "name" "API_KEY_SECRET" "valueFrom" (dict "secretKeyRef" (dict "name" (include "costgraph-selfhosted.generatedSecretName" .) "key" "api-key-secret")))
+        (dict "name" "INTEGRATIONS_ENCRYPTION_KEY" "valueFrom" (dict "secretKeyRef" (dict "name" (include "costgraph-selfhosted.generatedSecretName" .) "key" "integrations-encryption-key"))))
+    "envFrom" (list
+        (dict "configMapRef" (dict "name" (include "costgraph-selfhosted.fullname" .))))
+    "resources" .Values.backend.deployment.resources
+) }}
+{{- end }}

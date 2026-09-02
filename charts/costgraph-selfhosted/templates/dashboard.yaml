@@ -1,0 +1,8 @@
+{{- if .Values.dashboard.enabled }}
+{{ include "costgraph.configMap" (dict
+    "ctx" $
+    "name" (printf "%s-dashboard" (include "costgraph-selfhosted.fullname" .))
+    "labels" (include "costgraph-selfhosted.componentLabels" (dict "ctx" . "component" "dashboard") | fromYaml)
+    "data" (dict "config.json" (printf "%s\n" (include "costgraph-selfhosted.dashboardConfig" .)))
+) }}
+{{- end }}
