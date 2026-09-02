@@ -170,7 +170,7 @@ aiGatewayScraper:
     enabled: true
     image:
       repository: ghcr.io/baselinehq/costgraph-operator-prometheus
-      tag: "v0.4.0"
+      tag: "v0.4.1"
       pullPolicy: IfNotPresent
     # This should always be 1
     replicas: 1
@@ -259,7 +259,7 @@ operatorKubernetes:
     imagePullSecrets: []
     image:
       repository: ghcr.io/baselinehq/costgraph-operator-kubernetes
-      tag: "v0.1.0"
+      tag: "v0.1.1"
       pullPolicy: IfNotPresent
     # This should always be 1
     replicas: 1
@@ -296,7 +296,7 @@ operatorPrometheus:
     enabled: true
     image:
       repository: ghcr.io/baselinehq/costgraph-operator-prometheus
-      tag: "v0.4.0"
+      tag: "v0.4.1"
       pullPolicy: IfNotPresent
     # This should always be 1
     replicas: 1
@@ -401,7 +401,7 @@ flowtrace:
     enabled: true
     image:
       repository: ghcr.io/baselinehq/costgraph-operator-prometheus
-      tag: "v0.4.0"
+      tag: "v0.4.1"
       pullPolicy: IfNotPresent
     containerSecurityContext:
       privileged: true
