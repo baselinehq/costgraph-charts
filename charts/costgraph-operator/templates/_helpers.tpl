@@ -215,78 +215,6 @@ them separate, or excluding a new vendor group would break the discovery check.
 {{- end }}
 
 {{/*
-Read rules for the built-in Kubernetes resources CostGraph collects.
-
-The single source for both the ClusterRole rules and the set of groups the
-discovered custom-resource grant must not re-widen. core/v1 is deliberately
-absent: it is enumerated separately because it holds Secrets, ConfigMaps and
-ServiceAccounts, which must never be granted.
-*/}}
-{{- define "costgraph-operator.builtinRules" -}}
-- apiGroups: ["apps"]
-  resources: ["daemonsets", "deployments", "replicasets", "statefulsets"]
-- apiGroups: ["autoscaling"]
-  resources: ["horizontalpodautoscalers"]
-- apiGroups: ["batch"]
-  resources: ["cronjobs", "jobs"]
-- apiGroups: ["discovery.k8s.io"]
-  resources: ["endpointslices"]
-- apiGroups: ["networking.k8s.io"]
-  resources: ["ingressclasses", "ingresses", "networkpolicies"]
-- apiGroups: ["policy"]
-  resources: ["poddisruptionbudgets"]
-- apiGroups: ["storage.k8s.io"]
-  resources: ["csidrivers", "csinodes", "storageclasses", "volumeattachments", "volumeattributesclasses"]
-{{- end }}
-
-{{/*
-The API groups covered by builtinRules, derived so the two cannot drift.
-*/}}
-{{- define "costgraph-operator.builtinAPIGroups" -}}
-{{- $groups := list -}}
-{{- range include "costgraph-operator.builtinRules" . | fromYamlArray -}}
-{{- $groups = concat $groups .apiGroups -}}
-{{- end -}}
-{{- $groups | uniq | sortAlpha | toYaml -}}
-{{- end }}
-
-{{/*
-API groups that ship with Kubernetes itself.
-
-Helm's built-in capability set contains exactly these, so seeing nothing
-outside this list means .Capabilities.APIVersions was never populated from a
-cluster. Entries here intentionally repeat names in rbac.excludeAPIGroups: this
-list answers "what does upstream ship", not "what may CostGraph read". Keep
-them separate, or excluding a new vendor group would break the discovery check.
-*/}}
-{{- define "costgraph-operator.kubernetesAPIGroups" -}}
-- admissionregistration.k8s.io
-- apiextensions.k8s.io
-- apiregistration.k8s.io
-- apps
-- authentication.k8s.io
-- authorization.k8s.io
-- autoscaling
-- batch
-- certificates.k8s.io
-- coordination.k8s.io
-- discovery.k8s.io
-- events.k8s.io
-- extensions
-- flowcontrol.apiserver.k8s.io
-- internal.apiserver.k8s.io
-- networking.k8s.io
-- node.k8s.io
-- policy
-- rbac.authorization.k8s.io
-- resource.k8s.io
-- scheduling.k8s.io
-- storage.k8s.io
-- storagemigration.k8s.io
-{{- end }}
-
-{{/*
-
 Every API group the cluster serves, minus core. Returned as a YAML array.
 
 Capabilities carries both "group/version" and "group/version/Kind", so a core
@@ -346,7 +274,6 @@ is whether a group appeared that Kubernetes itself does not ship.
 {{- end -}}
 {{- end -}}
 {{- end }}
-
 
 {{- define "costgraph-operator.remoteWriteURL" -}}
 {{- coalesce .component .root.Values.global.remoteWriteURL "https://tsdb.costgraph.ai" -}}
