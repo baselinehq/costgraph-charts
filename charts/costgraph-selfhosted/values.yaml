@@ -38,7 +38,7 @@ backend:
     replicas: 2
     image:
       repository: registry.costgraph.ai/backend
-      tag: sha-13ae198
+      tag: v0.2.0
       pullPolicy: IfNotPresent
     # Not templated by stakater, so global.imagePullSecrets does not reach it.
     # Replace this entry when you supply your own registry credentials.
@@ -161,7 +161,7 @@ dashboard:
     replicas: 2
     image:
       repository: registry.costgraph.ai/costgraph-dashboard
-      tag: sha-2060465
+      tag: v0.2.0
       pullPolicy: IfNotPresent
     imagePullSecrets:
       - name: costgraph-selfhosted-registry
@@ -251,7 +251,7 @@ ingestionApi:
       repository: registry.costgraph.ai/ingestion-api
       # Versioned separately from the chart, so this is pinned rather than
       # following appVersion.
-      tag: sha-5dc610b
+      tag: v0.1.0
       pullPolicy: IfNotPresent
     imagePullSecrets:
       - name: costgraph-selfhosted-registry
@@ -345,7 +345,7 @@ aggregator:
       repository: registry.costgraph.ai/aggregator
       # Versioned separately from the chart, so this is pinned rather than
       # following appVersion.
-      tag: sha-79f4b08
+      tag: v0.2.0
       pullPolicy: IfNotPresent
     imagePullSecrets:
       - name: costgraph-selfhosted-registry
