@@ -880,6 +880,51 @@ entries:
     version: 0.1.0
   costgraph-selfhosted:
   - apiVersion: v2
+    appVersion: 0.2.0
+    created: "2026-09-02T09:50:25.560370513Z"
+    dependencies:
+    - alias: redis
+      condition: global.redis.bundled.enabled
+      name: application
+      repository: https://stakater.github.io/stakater-charts
+      version: 9.3.1
+    - alias: aggregator
+      condition: aggregator.enabled
+      name: application
+      repository: https://stakater.github.io/stakater-charts
+      version: 9.3.1
+    - alias: ingestionApi
+      condition: ingestionApi.enabled
+      name: application
+      repository: https://stakater.github.io/stakater-charts
+      version: 9.3.1
+    - alias: dashboard
+      condition: dashboard.enabled
+      name: application
+      repository: https://stakater.github.io/stakater-charts
+      version: 9.3.1
+    - alias: backend
+      condition: backend.enabled
+      name: application
+      repository: https://stakater.github.io/stakater-charts
+      version: 9.3.1
+    - name: costgraph-common
+      repository: file://../costgraph-common
+      version: '*'
+    description: CostGraph running in your own infrastructure
+    digest: bfba2c9ac99a447c6d4e245889eebeae6d51a5dd1782f15a7eb774d95ff393d7
+    home: https://costgraph.ai
+    maintainers:
+    - name: Baseline
+      url: https://baselinehq.cloud
+    name: costgraph-selfhosted
+    sources:
+    - https://github.com/baselinehq/backend
+    type: application
+    urls:
+    - https://github.com/baselinehq/costgraph-charts/releases/download/costgraph-selfhosted-0.5.0/costgraph-selfhosted-0.5.0.tgz
+    version: 0.5.0
+  - apiVersion: v2
     appVersion: 0.1.0
     created: "2026-08-29T15:36:17.293597011Z"
     dependencies:
@@ -1067,4 +1112,4 @@ entries:
     urls:
     - https://github.com/baselinehq/costgraph-charts/releases/download/focus-exporter-0.1.0/focus-exporter-0.1.0.tgz
     version: 0.1.0
-generated: "2026-08-31T18:45:11.430272586Z"
+generated: "2026-09-02T09:50:25.560472243Z"
