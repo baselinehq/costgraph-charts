@@ -401,7 +401,7 @@ flowtrace:
     enabled: true
     image:
       repository: ghcr.io/baselinehq/costgraph-operator-prometheus
-      tag: "v0.4.1"
+      tag: "v0.5.0"
       pullPolicy: IfNotPresent
     containerSecurityContext:
       privileged: true
