@@ -1,6 +1,6 @@
 # costgraph-operator
 
-![Version: 0.6.1](https://img.shields.io/badge/Version-0.6.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.4.0](https://img.shields.io/badge/AppVersion-0.4.0-informational?style=flat-square)
+![Version: 0.6.2](https://img.shields.io/badge/Version-0.6.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.5.0](https://img.shields.io/badge/AppVersion-0.5.0-informational?style=flat-square)
 
 A Helm chart for the Costgraph operator
 
@@ -22,7 +22,7 @@ A Helm chart for the Costgraph operator
 | aiGatewayScraper | object | `{"applicationName":"costgraph-operator-ai-gateway","config":{"httpTimeout":"30s","remoteWritePath":"/api/v1/write/short","remoteWriteURL":""},"deployment":{"enabled":true,"image":{"pullPolicy":"IfNotPresent","repository":"ghcr.io/baselinehq/costgraph-operator-prometheus","tag":"v0.4.1"},"replicas":1,"resources":{"requests":{"cpu":"100m","memory":"64Mi"}}},"enabled":false}` | ------------------------------------------------------------------------ |
 | cadvisor | object | `{"enabled":true,"image":{"registry":"ghcr.io","repository":"baselinehq/cadvisor","tag":"0.56.3-baseline"},"resources":{"requests":{"cpu":"100m","memory":"100Mi"}},"tolerations":[{"operator":"Exists"}]}` | ------------------------------------------------------------------------ |
 | dcgm-exporter | object | `{"enabled":false,"nodeSelector":{"accelerator":"nvidia"},"podAnnotations":{},"podLabels":{},"resources":{"requests":{"cpu":"100m","memory":"100Mi"}},"serviceMonitor":{"enabled":false},"tolerations":[]}` | ------------------------------------------------------------------------ |
-| flowtrace | object | `{"applicationName":"costgraph-operator-flowtrace","config":{"httpTimeout":"30s","includeHostFlows":false,"pushInterval":"4m","remoteWritePath":"/api/v1/write/short","remoteWriteURL":""},"daemonSet":{"automountServiceAccountToken":false,"containerSecurityContext":{"privileged":true,"runAsUser":0},"enabled":true,"image":{"pullPolicy":"IfNotPresent","repository":"ghcr.io/baselinehq/costgraph-operator-prometheus","tag":"v0.4.1"},"priorityClassName":"","resources":{"limits":{"memory":"256Mi"},"requests":{"cpu":"50m","memory":"64Mi"}},"tolerations":[{"operator":"Exists"}]},"enabled":true,"maxUnavailable":1}` | ------------------------------------------------------------------------ |
+| flowtrace | object | `{"applicationName":"costgraph-operator-flowtrace","config":{"httpTimeout":"30s","includeHostFlows":false,"pushInterval":"4m","remoteWritePath":"/api/v1/write/short","remoteWriteURL":""},"daemonSet":{"automountServiceAccountToken":false,"containerSecurityContext":{"privileged":true,"runAsUser":0},"enabled":true,"image":{"pullPolicy":"IfNotPresent","repository":"ghcr.io/baselinehq/costgraph-operator-prometheus","tag":"v0.5.0"},"priorityClassName":"","resources":{"limits":{"memory":"256Mi"},"requests":{"cpu":"50m","memory":"64Mi"}},"tolerations":[{"operator":"Exists"}]},"enabled":true,"maxUnavailable":1}` | ------------------------------------------------------------------------ |
 | fullnameOverride | string | `""` |  |
 | global.apiKey | string | `""` |  |
 | global.backendURL | string | `"https://api.costgraph.ai"` |  |
