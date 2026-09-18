@@ -184,6 +184,40 @@ aiGatewayScraper:
     httpTimeout: "30s"
 
 # --------------------------------------------------------------------------
+# openCostApi presents the OpenCost API inside the cluster, so tools that reach
+# a Kubernetes Service rather than a URL keep working. kubectl cost --opencost
+# looks for a Service named opencost on port 9003 in the opencost namespace.
+# Requests are scoped to global.clusterName, so a tool run here reports this
+# cluster rather than every cluster on the account.
+# --------------------------------------------------------------------------
+openCostApi:
+  enabled: false
+  applicationName: opencost
+  service:
+    name: opencost
+    port: 9003
+  kubecostCompat:
+    enabled: false
+    name: kubecost-cost-analyzer
+    port: 9090
+  config:
+    apiHost: api.costgraph.ai
+    basePath: /api/v1/tenant/opencost
+    resolver: kube-dns.kube-system.svc.cluster.local
+  deployment:
+    image:
+      repository: nginx
+      tag: "1.27-alpine"
+      pullPolicy: IfNotPresent
+    replicas: 1
+    resources:
+      requests:
+        cpu: 10m
+        memory: 16Mi
+      limits:
+        memory: 64Mi
+
+# --------------------------------------------------------------------------
 # dcgm-exporter (subchart from NVIDIA)
 # See: https://github.com/NVIDIA/dcgm-exporter/tree/main/deployment/chart
 # Enable this when GPU nodes are present in the cluster. The exporter runs

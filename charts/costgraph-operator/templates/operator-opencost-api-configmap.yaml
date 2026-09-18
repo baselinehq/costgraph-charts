@@ -1,0 +1,36 @@
+{{- $c := .Values.openCostApi }}
+{{- if $c.enabled }}
+{{- $w := $c.deployment }}
+{{- $name := required "openCostApi.applicationName is required" $c.applicationName }}
+{{- $component := "operator-opencost-api" }}
+{{- $labels := fromYaml (include "costgraph-operator.componentLabels" (dict "ctx" $ "name" $name "component" $component)) }}
+{{- $selectorLabels := fromYaml (include "costgraph-operator.componentSelectorLabels" (dict "ctx" $ "name" $name "component" $component)) }}
+{{- $host := trimPrefix "https://" (trimPrefix "http://" (required "openCostApi.config.apiHost is required" $c.config.apiHost)) }}
+{{- $listen := printf "listen %d;" (int $c.service.port) }}
+{{- if $c.kubecostCompat.enabled }}
+{{- $listen = printf "%s\n  listen %d;" $listen (int $c.kubecostCompat.port) }}
+{{- end }}
+{{- $proxy := printf `proxy_set_header X-API-Key "${API_KEY}";
+    proxy_set_header Host %s;
+    proxy_ssl_server_name on;
+    set $backend "https://%s";` $host $host }}
+{{- $conf := printf `server {
+  %s
+  resolver %s ipv6=off;
+  location / {
+    %s
+    proxy_pass $backend%s$uri?$args&filter=cluster:%%22${CLUSTER_NAME}%%22;
+  }
+  location ~ ^/model/(?<kubecostPath>.*)$ {
+    %s
+    proxy_pass $backend%s/$kubecostPath?$args&filter=cluster:%%22${CLUSTER_NAME}%%22;
+  }
+}
+` $listen $c.config.resolver $proxy $c.config.basePath $proxy $c.config.basePath }}
+{{- include "costgraph.configMap" (dict
+    "ctx"    $
+    "name"   (printf "%s-conf" $name)
+    "labels" $labels
+    "data"   (dict "default.conf.template" $conf)
+) }}
+{{- end }}

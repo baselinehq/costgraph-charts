@@ -1,0 +1,16 @@
+{{- $c := .Values.openCostApi }}
+{{- if $c.enabled }}
+{{- $w := $c.deployment }}
+{{- $name := required "openCostApi.applicationName is required" $c.applicationName }}
+{{- $component := "operator-opencost-api" }}
+{{- $labels := fromYaml (include "costgraph-operator.componentLabels" (dict "ctx" $ "name" $name "component" $component)) }}
+{{- $selectorLabels := fromYaml (include "costgraph-operator.componentSelectorLabels" (dict "ctx" $ "name" $name "component" $component)) }}
+{{- $host := trimPrefix "https://" (trimPrefix "http://" (required "openCostApi.config.apiHost is required" $c.config.apiHost)) }}
+{{- include "costgraph.service" (dict
+    "ctx"            $
+    "name"           $c.service.name
+    "labels"         $labels
+    "selectorLabels" $selectorLabels
+    "ports"          (list (dict "name" "http" "port" (int $c.service.port) "targetPort" (int $c.service.port)))
+) }}
+{{- end }}

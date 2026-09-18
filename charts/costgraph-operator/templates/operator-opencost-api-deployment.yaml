@@ -1,0 +1,40 @@
+{{- $c := .Values.openCostApi }}
+{{- if $c.enabled }}
+{{- $w := $c.deployment }}
+{{- $name := required "openCostApi.applicationName is required" $c.applicationName }}
+{{- $component := "operator-opencost-api" }}
+{{- $labels := fromYaml (include "costgraph-operator.componentLabels" (dict "ctx" $ "name" $name "component" $component)) }}
+{{- $selectorLabels := fromYaml (include "costgraph-operator.componentSelectorLabels" (dict "ctx" $ "name" $name "component" $component)) }}
+{{- $host := trimPrefix "https://" (trimPrefix "http://" (required "openCostApi.config.apiHost is required" $c.config.apiHost)) }}
+{{- $env := dict
+    "CLUSTER_NAME" (dict "value" (required "Cluster name must be provided" .Values.global.clusterName))
+    "API_KEY"      (dict "valueFrom" (dict "secretKeyRef" (dict "name" (include "costgraph-operator.apiKeySecretName" .) "key" (include "costgraph-operator.apiKeySecretKey" .))))
+}}
+{{- $env = mergeOverwrite $env (deepCopy ($w.env | default dict)) }}
+{{- $args := dict
+    "ctx"                      $
+    "kind"                     "Deployment"
+    "name"                     $name
+    "containerName"            $component
+    "labels"                   $labels
+    "selectorLabels"           $selectorLabels
+    "podLabels"                (merge (deepCopy ($w.podLabels | default dict)) (deepCopy $labels))
+    "podAnnotations"           $w.podAnnotations
+    "replicas"                 $w.replicas
+    "image"                    (include "costgraph.imageRef" $w.image)
+    "imagePullPolicy"          $w.image.pullPolicy
+    "imagePullSecrets"         ($w.imagePullSecrets | default .Values.imagePullSecrets)
+    "serviceAccountName"       (include "costgraph-operator.serviceAccountName" .)
+    "podSecurityContext"       $w.podSecurityContext
+    "containerSecurityContext" $w.containerSecurityContext
+    "resources"                $w.resources
+    "ports"                    (concat (list (dict "name" "http" "containerPort" (int $c.service.port))) (ternary (list (dict "name" "kubecost" "containerPort" (int $c.kubecostCompat.port))) (list) $c.kubecostCompat.enabled))
+    "env"                      (fromYamlArray (include "costgraph-operator.env" (dict "ctx" $ "env" $env)))
+    "nodeSelector"             $w.nodeSelector
+    "tolerations"              $w.tolerations
+    "affinity"                 $w.affinity
+    "volumeMounts"             (list (dict "name" "conf" "mountPath" "/etc/nginx/templates"))
+    "volumes"                  (list (dict "name" "conf" "configMap" (dict "name" (printf "%s-conf" $name))))
+}}
+{{- include "costgraph.workload" $args }}
+{{- end }}
