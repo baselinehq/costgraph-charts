@@ -1,5 +1,5 @@
 {{- $c := .Values.openCostApi }}
-{{- if $c.enabled }}
+{{- if and $c.enabled $c.kubecostCompat.enabled }}
 {{- $w := $c.deployment }}
 {{- $name := required "openCostApi.applicationName is required" $c.applicationName }}
 {{- $component := "operator-opencost-api" }}
@@ -8,9 +8,9 @@
 {{- $host := trimPrefix "https://" (trimPrefix "http://" (required "openCostApi.config.apiHost is required" $c.config.apiHost)) }}
 {{- include "costgraph.service" (dict
     "ctx"            $
-    "name"           $c.service.name
+    "name"           $c.kubecostCompat.name
     "labels"         $labels
     "selectorLabels" $selectorLabels
-    "ports"          (list (dict "name" "http" "port" (int $c.service.port) "targetPort" (int $c.service.port)))
+    "ports"          (list (dict "name" "http" "port" (int $c.kubecostCompat.port) "targetPort" (int $c.kubecostCompat.port)))
 ) }}
 {{- end }}

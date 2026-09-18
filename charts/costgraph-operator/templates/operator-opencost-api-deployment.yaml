@@ -28,7 +28,7 @@
     "podSecurityContext"       $w.podSecurityContext
     "containerSecurityContext" $w.containerSecurityContext
     "resources"                $w.resources
-    "ports"                    (list (dict "name" "http" "containerPort" (int $c.service.port)))
+    "ports"                    (concat (list (dict "name" "http" "containerPort" (int $c.service.port))) (ternary (list (dict "name" "kubecost" "containerPort" (int $c.kubecostCompat.port))) (list) $c.kubecostCompat.enabled))
     "env"                      (fromYamlArray (include "costgraph-operator.env" (dict "ctx" $ "env" $env)))
     "nodeSelector"             $w.nodeSelector
     "tolerations"              $w.tolerations

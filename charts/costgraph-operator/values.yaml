@@ -196,6 +196,10 @@ openCostApi:
   service:
     name: opencost
     port: 9003
+  kubecostCompat:
+    enabled: false
+    name: kubecost-cost-analyzer
+    port: 9090
   config:
     apiHost: api.costgraph.ai
     basePath: /api/v1/tenant/opencost
