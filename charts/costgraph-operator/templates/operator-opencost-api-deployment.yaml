@@ -6,25 +6,6 @@
 {{- $labels := fromYaml (include "costgraph-operator.componentLabels" (dict "ctx" $ "name" $name "component" $component)) }}
 {{- $selectorLabels := fromYaml (include "costgraph-operator.componentSelectorLabels" (dict "ctx" $ "name" $name "component" $component)) }}
 {{- $host := trimPrefix "https://" (trimPrefix "http://" (required "openCostApi.config.apiHost is required" $c.config.apiHost)) }}
-{{- $conf := printf `server {
-  listen %d;
-  resolver %s ipv6=off;
-  location / {
-    proxy_set_header X-API-Key "${API_KEY}";
-    proxy_set_header Host %s;
-    proxy_ssl_server_name on;
-    set $backend "https://%s";
-    proxy_pass $backend%s$uri?$args&filter=cluster:%%22${CLUSTER_NAME}%%22;
-  }
-}
-` (int $c.service.port) $c.config.resolver $host $host $c.config.basePath }}
-{{- include "costgraph.configMap" (dict
-    "ctx"    $
-    "name"   (printf "%s-conf" $name)
-    "labels" $labels
-    "data"   (dict "default.conf.template" $conf)
-) }}
----
 {{- $env := dict
     "CLUSTER_NAME" (dict "value" (required "Cluster name must be provided" .Values.global.clusterName))
     "API_KEY"      (dict "valueFrom" (dict "secretKeyRef" (dict "name" (include "costgraph-operator.apiKeySecretName" .) "key" (include "costgraph-operator.apiKeySecretKey" .))))
@@ -56,12 +37,4 @@
     "volumes"                  (list (dict "name" "conf" "configMap" (dict "name" (printf "%s-conf" $name))))
 }}
 {{- include "costgraph.workload" $args }}
----
-{{- include "costgraph.service" (dict
-    "ctx"            $
-    "name"           $c.service.name
-    "labels"         $labels
-    "selectorLabels" $selectorLabels
-    "ports"          (list (dict "name" "http" "port" (int $c.service.port) "targetPort" (int $c.service.port)))
-) }}
 {{- end }}
