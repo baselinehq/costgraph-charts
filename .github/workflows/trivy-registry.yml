@@ -34,8 +34,8 @@ jobs:
             --set rbac.requireClusterDiscovery=false \
             --set global.apiKey=scan \
             --set global.clusterName=scan \
-            | grep -hoE '^\s*image:\s*"?[^"\s]+"?' \
-            | sed -E 's/^\s*image:\s*//; s/"//g' \
+            | grep -hoE '^[[:space:]]*image:[[:space:]]*"?[^"[:space:]]+"?' \
+            | sed -E 's/^[[:space:]]*image:[[:space:]]*//; s/"//g' \
             | sort -u > images.txt
           cat images.txt
           echo "refs=$(jq -R -s -c 'split("\n") | map(select(length > 0))' images.txt)" >> "$GITHUB_OUTPUT"
