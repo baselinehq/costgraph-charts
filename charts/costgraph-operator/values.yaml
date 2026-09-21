@@ -149,6 +149,9 @@ cadvisor:
       memory: 100Mi
   tolerations:
     - operator: Exists
+  networkPolicy:
+    ingressPodMatchLabels:
+      app.kubernetes.io/name: costgraph-operator-kubernetes
 
 
 # --------------------------------------------------------------------------
