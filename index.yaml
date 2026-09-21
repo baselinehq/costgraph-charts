@@ -295,6 +295,41 @@ entries:
   costgraph-operator:
   - apiVersion: v2
     appVersion: 0.5.0
+    created: "2026-09-21T13:17:39.303467891Z"
+    dependencies:
+    - alias: operatorKubernetes
+      condition: operatorKubernetes.enabled
+      name: application
+      repository: https://stakater.github.io/stakater-charts
+      version: 9.3.1
+    - condition: kube-state-metrics.enabled
+      name: kube-state-metrics
+      repository: https://prometheus-community.github.io/helm-charts
+      version: 5.27.*
+    - condition: cadvisor.enabled
+      name: cadvisor
+      repository: https://charts.bitnami.com/bitnami
+      version: 0.1.*
+    - condition: dcgm-exporter.enabled
+      name: dcgm-exporter
+      repository: https://nvidia.github.io/dcgm-exporter/helm-charts
+      version: 3.*
+    - condition: prometheus-node-exporter.enabled
+      name: prometheus-node-exporter
+      repository: https://prometheus-community.github.io/helm-charts
+      version: 4.*
+    - name: costgraph-common
+      repository: file://../costgraph-common
+      version: '*'
+    description: A Helm chart for the Costgraph operator
+    digest: fe7cef75a11a623021c376ec14b29bb3167b707ea1cbe4b343d272fff3582314
+    name: costgraph-operator
+    type: application
+    urls:
+    - https://github.com/baselinehq/costgraph-charts/releases/download/costgraph-operator-0.6.6/costgraph-operator-0.6.6.tgz
+    version: 0.6.6
+  - apiVersion: v2
+    appVersion: 0.5.0
     created: "2026-09-20T13:21:03.623824839Z"
     dependencies:
     - alias: operatorKubernetes
@@ -1252,4 +1287,4 @@ entries:
     urls:
     - https://github.com/baselinehq/costgraph-charts/releases/download/focus-exporter-0.1.0/focus-exporter-0.1.0.tgz
     version: 0.1.0
-generated: "2026-09-20T13:21:03.624066269Z"
+generated: "2026-09-21T13:17:39.30379889Z"
