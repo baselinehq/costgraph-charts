@@ -292,12 +292,14 @@ dcgm-exporter:
 # --------------------------------------------------------------------------
 prometheus-node-exporter:
   enabled: true
-  # Defaults to 9101 because the subchart binds hostPort, so the upstream
-  # default of 9100 collides with a node exporter the cluster already runs.
-  # The operator scrape target follows this port, so set it here only.
+  # Binds a hostPort under hostNetwork, which node exporter needs to read the
+  # host's own /proc/net, so the port has to be one nothing else on the node
+  # claims. 9100 is the upstream default and 9101 is the obvious second guess,
+  # so this sits well clear of both. The operator scrape target follows this
+  # port, so set it here only.
   service:
-    port: 9101
-    targetPort: 9101
+    port: 19101
+    targetPort: 19101
   extraArgs:
     - --collector.cpu.info
     - --collector.cpu.info.flags-include=^(avx512.*|amx.*|sve.*)$
