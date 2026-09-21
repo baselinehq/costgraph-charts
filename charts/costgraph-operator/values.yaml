@@ -151,7 +151,9 @@ cadvisor:
     - operator: Exists
   networkPolicy:
     ingressPodMatchLabels:
-      app.kubernetes.io/name: costgraph-operator-kubernetes
+      app.kubernetes.io/name: costgraph-operator-prometheus
+  extraArgs:
+    - -disable_metrics=memory_numa,tcp,udp,advtcp,sched,process,hugetlb,referenced_memory,resctrl,cpuset
 
 
 # --------------------------------------------------------------------------
@@ -256,6 +258,10 @@ dcgm-exporter:
     DCGM_FI_PROF_SM_ACTIVE,          gauge, The ratio of cycles an SM has at least 1 warp assigned.
     DCGM_FI_PROF_SM_OCCUPANCY,       gauge, The ratio of number of warps resident on an SM.
     DCGM_FI_PROF_PIPE_FP32_ACTIVE,   gauge, Ratio of cycles the fp32 pipes are active.
+    DCGM_FI_DEV_ENFORCED_POWER_LIMIT, gauge, Effective power limit the driver enforces (in W).
+    DCGM_FI_DEV_ECC_CURRENT,          gauge, Whether ECC is currently enabled.
+    DCGM_FI_DEV_MIG_MODE,             gauge, Whether MIG mode is currently enabled.
+    DCGM_FI_DEV_PCIE_LINK_GEN_MAX,    gauge, Maximum PCIe link generation the device supports.
 
   serviceMonitor:
     # Set to true if you have the Prometheus Operator installed and want
@@ -292,6 +298,9 @@ prometheus-node-exporter:
   service:
     port: 9101
     targetPort: 9101
+  extraArgs:
+    - --collector.cpu.info
+    - --collector.cpu.info.flags-include=^(avx512.*|amx.*|sve.*)$
   resources:
     requests:
       cpu: 100m
