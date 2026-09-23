@@ -267,16 +267,49 @@ dcgm-exporter:
     # Set to true if you have the Prometheus Operator installed and want
     # automatic scrape config generated.
     enabled: false
-  # Restrict the DaemonSet to GPU nodes only.
-  nodeSelector:
-    accelerator: nvidia
-  # GPU nodes are commonly tainted — add matching tolerations here.
-  tolerations: []
-  # Example toleration for the standard NVIDIA GPU taint:
-  # tolerations:
-  #   - key: nvidia.com/gpu
-  #     operator: Exists
-  #     effect: NoSchedule
+  # The exporter matches a GPU to the pod holding it by asking the device
+  # plugin. It defaults to matching on GPU UUID, and GKE's plugin reports
+  # device names instead, so every match fails and the pod, container and
+  # namespace labels are simply absent - with no error, and the exporter still
+  # logging that Kubernetes metrics are enabled. Those labels are what ties an
+  # accelerator to the workload holding it, so without this the GPU series
+  # cannot be attributed to anything.
+  extraEnv:
+    - name: DCGM_EXPORTER_KUBERNETES_GPU_ID_TYPE
+      value: device-name
+
+  # Restrict the DaemonSet to nodes that actually hold a GPU. The terms are
+  # alternatives: GKE labels its accelerator nodes, the GPU operator and node
+  # feature discovery each label theirs differently, and `accelerator: nvidia`
+  # is the older convention. A node matching any one of them gets the exporter.
+  nodeSelector: {}
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: cloud.google.com/gke-accelerator
+                operator: Exists
+          - matchExpressions:
+              - key: nvidia.com/gpu.present
+                operator: In
+                values: ["true"]
+          - matchExpressions:
+              - key: feature.node.kubernetes.io/pci-10de.present
+                operator: In
+                values: ["true"]
+          - matchExpressions:
+              - key: accelerator
+                operator: In
+                values: ["nvidia"]
+
+  # GPU nodes are commonly tainted so that only GPU work lands on them. GKE
+  # applies this taint by default, and without the toleration the exporter
+  # never schedules on the nodes it exists to read.
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
   resources:
     requests:
       cpu: 100m
