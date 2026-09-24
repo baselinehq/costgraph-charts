@@ -308,6 +308,13 @@ dcgm-exporter:
               - key: accelerator
                 operator: In
                 values: ["nvidia"]
+          # EKS carries none of the four above unless the GPU operator or node
+          # feature discovery is installed, and Karpenter provisions the EKS
+          # fleet. Exists rather than a value comparison: the label carries a
+          # card count, and any count means the node has a GPU.
+          - matchExpressions:
+              - key: karpenter.k8s.aws/instance-gpu-count
+                operator: Exists
 
   # GPU nodes are commonly tainted so that only GPU work lands on them. GKE
   # applies this taint by default, and without the toleration the exporter
@@ -385,6 +392,13 @@ dcgmProfiling:
               - key: accelerator
                 operator: In
                 values: ["nvidia"]
+          # EKS carries none of the four above unless the GPU operator or node
+          # feature discovery is installed, and Karpenter provisions the EKS
+          # fleet. Exists rather than a value comparison: the label carries a
+          # card count, and any count means the node has a GPU.
+          - matchExpressions:
+              - key: karpenter.k8s.aws/instance-gpu-count
+                operator: Exists
   tolerations:
     - key: nvidia.com/gpu
       operator: Exists
