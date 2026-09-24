@@ -230,25 +230,20 @@ openCostApi:
 # --------------------------------------------------------------------------
 dcgm-exporter:
   enabled: false
-  # The DCGM_FI_PROF_* fields below come from DCGM's profiling module. Ampere
-  # and newer report them; Turing cards (T4) cannot, and the exporter does not
-  # skip what it cannot read - it exits:
+  # DCGM_FI_DEV_* fields only, and deliberately so. A DCGM_FI_PROF_ line added
+  # here is not one more metric: it is a fleet-wide outage waiting for the
+  # first card whose driver refuses profiling. The exporter does not skip a
+  # field it cannot read - it exits:
   #
   #   Failed to watch metrics: Error watching fields:
   #   The third-party Profiling module returned an unrecoverable error
   #
-  # so a T4 in the cluster gets no GPU metrics at all, not merely no profiling
-  # ones. They are kept on by default because DCGM_FI_PROF_GR_ENGINE_ACTIVE is
-  # the only utilisation signal a MIG slice has, and it is what stops a busy
-  # card reading as idle.
+  # so that node loses utilisation, memory and power too, and because one
+  # DaemonSet serves every GPU node, the rollout stalls on it and the rest of
+  # the fleet keeps the old config.
   #
-  # On a cluster whose GPUs cannot profile, override this value with the same
-  # list minus every DCGM_FI_PROF_ line:
-  #
-  #   helm upgrade ... --set-file dcgm-exporter.customMetrics=no-profiling.csv
-  #
-  # A cluster mixing both needs the reduced list, since one DaemonSet serves
-  # every GPU node and the exporter dies on the cards that cannot profile.
+  # Profiling counters are collected by the separate dcgmProfiling DaemonSet,
+  # where a refusing card crash-loops alone. See the dcgmProfiling block.
   customMetrics: |
     DCGM_FI_DEV_SM_CLOCK,  gauge, SM clock frequency (in MHz).
     DCGM_FI_DEV_MEM_CLOCK, gauge, Memory clock frequency (in MHz).
@@ -269,14 +264,6 @@ dcgm-exporter:
     DCGM_FI_DEV_UNCORRECTABLE_REMAPPED_ROWS, counter, Number of remapped rows for uncorrectable errors
     DCGM_FI_DEV_CORRECTABLE_REMAPPED_ROWS,   counter, Number of remapped rows for correctable errors
     DCGM_FI_DEV_ROW_REMAP_FAILURE,           gauge,   Whether remapping of rows has failed
-    DCGM_FI_PROF_GR_ENGINE_ACTIVE,   gauge, Ratio of time the graphics engine is active.
-    DCGM_FI_PROF_PIPE_TENSOR_ACTIVE, gauge, Ratio of cycles the tensor (HMMA) pipe is active.
-    DCGM_FI_PROF_DRAM_ACTIVE,        gauge, Ratio of cycles the device memory interface is active sending or receiving data.
-    DCGM_FI_PROF_PCIE_TX_BYTES,      counter, The number of bytes of active pcie tx data including both header and payload.
-    DCGM_FI_PROF_PCIE_RX_BYTES,      counter, The number of bytes of active pcie rx data including both header and payload.
-    DCGM_FI_PROF_SM_ACTIVE,          gauge, The ratio of cycles an SM has at least 1 warp assigned.
-    DCGM_FI_PROF_SM_OCCUPANCY,       gauge, The ratio of number of warps resident on an SM.
-    DCGM_FI_PROF_PIPE_FP32_ACTIVE,   gauge, Ratio of cycles the fp32 pipes are active.
     DCGM_FI_DEV_ENFORCED_POWER_LIMIT, gauge, Effective power limit the driver enforces (in W).
     DCGM_FI_DEV_ECC_CURRENT,          gauge, Whether ECC is currently enabled.
     DCGM_FI_DEV_MIG_MODE,             gauge, Whether MIG mode is currently enabled.
