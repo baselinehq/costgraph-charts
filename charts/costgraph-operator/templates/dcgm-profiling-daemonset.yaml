@@ -1,0 +1,85 @@
+{{- $c := .Values.dcgmProfiling }}
+{{- if $c.enabled }}
+{{- $name := required "dcgmProfiling.applicationName is required" $c.applicationName }}
+{{- $component := "dcgm-profiling" }}
+{{- $labels := fromYaml (include "costgraph-operator.componentLabels" (dict "ctx" $ "name" $name "component" $component)) }}
+{{- $sub := index .Values "dcgm-exporter" }}
+{{- /*
+The counters file is named once: the exporter reads it through -f and the
+volumeMount places it there. A mismatch between the two is not a render error -
+the exporter falls back to its built-in field set, which is the one thing this
+workload must never collect.
+*/}}
+{{- $countersPath := "/etc/dcgm-exporter/profiling-metrics.csv" }}
+{{- $podResourcesPath := "/var/lib/kubelet/pod-resources" }}
+{{- /*
+DCGM_EXPORTER_KUBERNETES, NODE_NAME and the pod-resources mount are what turn a
+GPU series into an attributable one. Without all three the exporter emits no
+pod, container or namespace label and logs nothing about it, so every profiling
+series arrives unattributable and looks like a query problem instead.
+*/}}
+{{- $env := dict
+    "DCGM_EXPORTER_LISTEN"     (dict "value" (printf ":%v" (required "dcgmProfiling.port is required" $c.port)))
+    "DCGM_EXPORTER_KUBERNETES" (dict "value" "true")
+    "NODE_NAME"                (dict "valueFrom" (dict "fieldRef" (dict "fieldPath" "spec.nodeName")))
+}}
+{{- /*
+The subchart's extraEnv carries the driver's library and binary paths and the
+GPU-id type GKE's device plugin needs. Both exporters read the same node, so
+these are inherited rather than restated: a driver path corrected for one is
+corrected for both. A key set above wins, so the listen address cannot be
+overridden into a collision with the shared exporter.
+*/}}
+{{- range ($sub.extraEnv | default list) }}
+{{- if not (hasKey $env .name) }}
+{{- $_ := set $env .name (omit . "name") }}
+{{- end }}
+{{- end }}
+{{- $volumes := list
+    (dict "name" "profiling-metrics" "configMap" (dict "name" $name "items" (list (dict "key" "metrics" "path" "profiling-metrics.csv"))))
+    (dict "name" "pod-resources" "hostPath" (dict "path" $podResourcesPath "type" "Directory")) }}
+{{- range ($sub.extraHostVolumes | default list) }}
+{{- $volumes = append $volumes (dict "name" .name "hostPath" (dict "path" .hostPath)) }}
+{{- end }}
+{{- $volumeMounts := concat
+    (list
+      (dict "name" "profiling-metrics" "mountPath" $countersPath "subPath" "profiling-metrics.csv" "readOnly" true)
+      (dict "name" "pod-resources" "mountPath" $podResourcesPath "readOnly" true))
+    ($sub.extraVolumeMounts | default list) }}
+{{- /*
+maxUnavailable 100%: a card whose driver refuses profiling never becomes ready,
+and at the default of one the rollout stops on it while every other GPU keeps
+the old config. Here a refusing node crash-loops alone.
+
+No livenessProbe: the exporter exits on a profiling refusal, which is both
+faster and more legible in the pod's state than a probe failing 45s later.
+
+No serviceAccountName and no token: the counters file is mounted rather than
+read from the API server, and pod attribution comes from the kubelet's
+pod-resources socket, so a privileged per-node pod stays off the chart's
+cluster-wide read ClusterRole.
+*/}}
+{{- include "costgraph.workload" (dict
+    "ctx"                          $
+    "kind"                         "DaemonSet"
+    "name"                         $name
+    "containerName"                "exporter"
+    "labels"                       $labels
+    "selectorLabels"               (fromYaml (include "costgraph-operator.componentSelectorLabels" (dict "ctx" $ "name" $name "component" $component)))
+    "strategy"                     (dict "type" "RollingUpdate" "rollingUpdate" (dict "maxUnavailable" "100%"))
+    "image"                        (include "costgraph.imageRef" $c.image)
+    "imagePullPolicy"              $c.image.pullPolicy
+    "imagePullSecrets"             .Values.imagePullSecrets
+    "automountServiceAccountToken" false
+    "priorityClassName"            $c.priorityClassName
+    "containerSecurityContext"     (dict "privileged" true "runAsNonRoot" false "runAsUser" 0 "capabilities" (dict "add" (list "SYS_ADMIN")))
+    "args"                         (list "-f" $countersPath)
+    "env"                          (fromYamlArray (include "costgraph-operator.env" (dict "ctx" $ "env" $env)))
+    "ports"                        (list (dict "name" "metrics" "containerPort" (int $c.port) "protocol" "TCP"))
+    "resources"                    $c.resources
+    "volumes"                      $volumes
+    "volumeMounts"                 $volumeMounts
+    "nodeSelector"                 $c.nodeSelector
+    "tolerations"                  $c.tolerations
+    "affinity"                     $c.affinity) }}
+{{- end }}
