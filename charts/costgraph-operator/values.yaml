@@ -280,6 +280,13 @@ dcgm-exporter:
   # logging that Kubernetes metrics are enabled. Those labels are what ties an
   # accelerator to the workload holding it, so without this the GPU series
   # cannot be attributed to anything.
+  #
+  # device-name is right for GKE and wrong for the standard NVIDIA device
+  # plugin, which reports UUIDs, so a cluster running that plugin must override
+  # this to uuid. No single value serves both, and the affinity below now also
+  # matches Karpenter-provisioned EKS nodes, where that plugin is the usual
+  # one. The failure is silent either way: series arrive carrying no pod, which
+  # reads as an unattributed GPU rather than as a misconfigured exporter.
   extraEnv:
     - name: DCGM_EXPORTER_KUBERNETES_GPU_ID_TYPE
       value: device-name
@@ -418,8 +425,8 @@ dcgmProfiling:
     DCGM_FI_PROF_GR_ENGINE_ACTIVE, gauge, Ratio of time the graphics engine is active.
     DCGM_FI_PROF_SM_ACTIVE,        gauge, The ratio of cycles an SM has at least 1 warp assigned.
     DCGM_FI_PROF_SM_OCCUPANCY,     gauge, The ratio of number of warps resident on an SM.
-    DCGM_FI_PROF_PCIE_TX_BYTES,    counter, Bytes of active PCIe tx data including header and payload.
-    DCGM_FI_PROF_PCIE_RX_BYTES,    counter, Bytes of active PCIe rx data including header and payload.
+    DCGM_FI_PROF_PCIE_TX_BYTES,    gauge, Rate of active PCIe tx data including header and payload.
+    DCGM_FI_PROF_PCIE_RX_BYTES,    gauge, Rate of active PCIe rx data including header and payload.
 
 # --------------------------------------------------------------------------
 # prometheus-node-exporter (subchart from prometheus-community)
