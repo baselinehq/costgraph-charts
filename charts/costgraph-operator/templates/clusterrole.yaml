@@ -1,3 +1,4 @@
+{{- include "costgraph-operator.assertGPUIDType" . }}
 {{- if .Values.serviceAccount.create -}}
 {{- include "costgraph-operator.assertClusterDiscovery" . }}
 apiVersion: rbac.authorization.k8s.io/v1
