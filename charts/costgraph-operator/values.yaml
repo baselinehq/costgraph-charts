@@ -337,6 +337,90 @@ dcgm-exporter:
   podLabels: {}
 
 # --------------------------------------------------------------------------
+# costgraph dcgm profiling daemonset
+#
+# A second, isolated DCGM exporter carrying only the DCGM_FI_PROF_* counters.
+#
+# The profiling module is not a per-field opt-out: the exporter watches the
+# whole counter set or exits. Asking the shared exporter for a PROF field on a
+# card whose driver refuses profiling kills that exporter outright -
+#
+#   Failed to watch metrics: Error watching fields:
+#   The third-party Profiling module returned an unrecoverable error
+#
+# - so the node loses utilisation, memory and power too. Worse, a DaemonSet
+# rolls node by node: the refusing pod never becomes ready, the rollout stalls,
+# and every other GPU keeps the old config. One card costs the whole fleet.
+#
+# Which cards can serve profiling is discoverable only at runtime. It is not a
+# model list: NVIDIA's docs show `dcgmi profile -l` working on a T4, and the
+# error class is attributed to the profiling context being held elsewhere, or
+# to the driver restricting profiling to privileged callers
+# (NVreg_RestrictProfilingToAdminUsers), which GKE's managed nodes do not let
+# you set. Enable it, see who reports, narrow with nodeSelector if you must.
+#
+# The driver mounts and the GPU-id env come from the dcgm-exporter subchart's
+# extraHostVolumes / extraVolumeMounts / extraEnv, so both exporters see the
+# node identically and a driver path corrected in one place is corrected for
+# both.
+# --------------------------------------------------------------------------
+dcgmProfiling:
+  enabled: false
+  applicationName: costgraph-operator-dcgm-profiling
+  image:
+    repository: nvcr.io/nvidia/k8s/dcgm-exporter
+    tag: 3.3.9-3.6.1-ubuntu22.04
+    pullPolicy: IfNotPresent
+  # 9400 is the shared exporter's. Both land on the same node, so sharing a
+  # port is a bind failure, not a preference.
+  port: 9401
+  priorityClassName: ""
+  nodeSelector: {}
+  # The same alternatives the shared exporter uses: a node that can collect
+  # base metrics must be able to collect profiling, or the two views disagree
+  # about which GPUs exist.
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: cloud.google.com/gke-accelerator
+                operator: Exists
+          - matchExpressions:
+              - key: nvidia.com/gpu.present
+                operator: In
+                values: ["true"]
+          - matchExpressions:
+              - key: feature.node.kubernetes.io/pci-10de.present
+                operator: In
+                values: ["true"]
+          - matchExpressions:
+              - key: accelerator
+                operator: In
+                values: ["nvidia"]
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+  # Only PROF fields. Everything else arrives from the shared exporter, and
+  # duplicating one here would produce two series differing only by scrape
+  # port.
+  #
+  # GR_ENGINE_ACTIVE has to be here: it is the only utilisation signal a MIG
+  # partition has. SM_ACTIVE and SM_OCCUPANCY separate "claimed" from
+  # "computing".
+  customMetrics: |
+    DCGM_FI_PROF_GR_ENGINE_ACTIVE, gauge, Ratio of time the graphics engine is active.
+    DCGM_FI_PROF_SM_ACTIVE,        gauge, The ratio of cycles an SM has at least 1 warp assigned.
+    DCGM_FI_PROF_SM_OCCUPANCY,     gauge, The ratio of number of warps resident on an SM.
+    DCGM_FI_PROF_PCIE_TX_BYTES,    counter, Bytes of active PCIe tx data including header and payload.
+    DCGM_FI_PROF_PCIE_RX_BYTES,    counter, Bytes of active PCIe rx data including header and payload.
+
+# --------------------------------------------------------------------------
 # prometheus-node-exporter (subchart from prometheus-community)
 # See: https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-node-exporter
 # Runs as a DaemonSet exposing host-level metrics (CPU, memory, disk, network)
