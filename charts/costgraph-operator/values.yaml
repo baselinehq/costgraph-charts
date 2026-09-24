@@ -606,7 +606,7 @@ operatorPrometheus:
     dcgm-profiling:
       enabled: false
       namespace: "{{ include \"costgraph-operator.namespace\" . }}"
-      labelSelector: "app.kubernetes.io/name={{ .Values.dcgmProfiling.applicationName }}"
+      labelSelector: "app.kubernetes.io/name={{ .Values.dcgmProfiling.applicationName }},app.kubernetes.io/instance={{ .Release.Name }}"
       port: '{{ .Values.dcgmProfiling.port }}'
       nodeMetrics: true
     node-exporter:

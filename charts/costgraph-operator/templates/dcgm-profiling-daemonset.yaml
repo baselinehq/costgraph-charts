@@ -2,6 +2,7 @@
 {{- if $c.enabled }}
 {{- $name := required "dcgmProfiling.applicationName is required" $c.applicationName }}
 {{- $component := "dcgm-profiling" }}
+{{- $objectName := printf "%s-%s" .Release.Name $component | trunc 63 | trimSuffix "-" }}
 {{- $labels := fromYaml (include "costgraph-operator.componentLabels" (dict "ctx" $ "name" $name "component" $component)) }}
 {{- $sub := index .Values "dcgm-exporter" }}
 {{- /*
@@ -36,7 +37,7 @@ overridden into a collision with the shared exporter.
 {{- end }}
 {{- end }}
 {{- $volumes := list
-    (dict "name" "profiling-metrics" "configMap" (dict "name" $name "items" (list (dict "key" "metrics" "path" "profiling-metrics.csv"))))
+    (dict "name" "profiling-metrics" "configMap" (dict "name" $objectName "items" (list (dict "key" "metrics" "path" "profiling-metrics.csv"))))
     (dict "name" "pod-resources" "hostPath" (dict "path" $podResourcesPath "type" "Directory")) }}
 {{- range ($sub.extraHostVolumes | default list) }}
 {{- $volumes = append $volumes (dict "name" .name "hostPath" (dict "path" .hostPath)) }}
@@ -67,7 +68,7 @@ rewrites the ConfigMap and changes nothing that is running.
 {{- include "costgraph.workload" (dict
     "ctx"                          $
     "kind"                         "DaemonSet"
-    "name"                         $name
+    "name"                         $objectName
     "containerName"                "exporter"
     "labels"                       $labels
     "selectorLabels"               (fromYaml (include "costgraph-operator.componentSelectorLabels" (dict "ctx" $ "name" $name "component" $component)))

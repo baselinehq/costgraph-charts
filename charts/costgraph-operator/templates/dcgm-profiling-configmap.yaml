@@ -1,9 +1,10 @@
 {{- $c := .Values.dcgmProfiling }}
 {{- if $c.enabled }}
 {{- $name := required "dcgmProfiling.applicationName is required" $c.applicationName }}
+{{- $objectName := printf "%s-%s" .Release.Name "dcgm-profiling" | trunc 63 | trimSuffix "-" }}
 {{- include "costgraph.configMap" (dict
     "ctx"    $
-    "name"   $name
+    "name"   $objectName
     "labels" (fromYaml (include "costgraph-operator.componentLabels" (dict "ctx" $ "name" $name "component" "dcgm-profiling")))
     "data"   (dict "metrics" (required "dcgmProfiling.customMetrics is required" $c.customMetrics))) }}
 {{- end }}
