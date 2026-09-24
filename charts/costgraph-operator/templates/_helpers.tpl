@@ -278,3 +278,30 @@ is whether a group appeared that Kubernetes itself does not ship.
 {{- define "costgraph-operator.remoteWriteURL" -}}
 {{- coalesce .component .root.Values.global.remoteWriteURL "https://tsdb.costgraph.ai" -}}
 {{- end -}}
+
+{{/*
+The device plugin decides how a GPU is named in the kubelet's pod-resources
+API, and the exporter must ask for the same kind of name or every match fails
+and the pod, container and namespace labels are absent - with no error, and the
+exporter still reporting that Kubernetes metrics are enabled. GKE's plugin
+reports device names; the standard NVIDIA plugin reports UUIDs. An unset or
+misspelled value is therefore not a default, it is silent unattributed
+telemetry, so reject it at render time.
+*/}}
+{{- define "costgraph-operator.assertGPUIDType" -}}
+{{- $sub := index .Values "dcgm-exporter" -}}
+{{- if $sub.enabled -}}
+{{- $found := "" -}}
+{{- range ($sub.extraEnv | default list) -}}
+{{- if eq .name "DCGM_EXPORTER_KUBERNETES_GPU_ID_TYPE" -}}
+{{- $found = .value | toString -}}
+{{- end -}}
+{{- end -}}
+{{- if not $found -}}
+{{- fail "costgraph-operator: dcgm-exporter.extraEnv must set DCGM_EXPORTER_KUBERNETES_GPU_ID_TYPE. Use uuid for the standard NVIDIA device plugin, or device-name for GKE. Without it the exporter cannot match a GPU to the pod holding it and every GPU series arrives unattributed." -}}
+{{- end -}}
+{{- if not (has $found (list "uuid" "device-name")) -}}
+{{- fail (printf "costgraph-operator: DCGM_EXPORTER_KUBERNETES_GPU_ID_TYPE must be uuid or device-name, got %q. Use uuid for the standard NVIDIA device plugin, or device-name for GKE." $found) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}

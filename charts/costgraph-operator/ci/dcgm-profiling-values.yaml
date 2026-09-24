@@ -1,0 +1,45 @@
+global:
+  clusterName: ci
+  apiKey: ci
+
+# `helm template` has no cluster to discover CRDs from, and the ClusterRole
+# template refuses to render silently-narrow rules rather than install an
+# operator that collects nothing. A fixture is exactly that case.
+rbac:
+  requireClusterDiscovery: false
+
+dcgmProfiling:
+  enabled: true
+
+# Both exporters serve metrics to nobody until the operator is told to scrape
+# them, so the fixture mirrors a real install and turns both targets on.
+operatorPrometheus:
+  scrapeTargets:
+    dcgm-exporter:
+      enabled: true
+    dcgm-profiling:
+      enabled: true
+
+# The profiling exporter inherits its driver mounts and GPU-id env from the
+# subchart, so a fixture that renders it without these would assert against a
+# pod that could never see a GPU on a real node.
+dcgm-exporter:
+  enabled: true
+  extraEnv:
+    - name: DCGM_EXPORTER_KUBERNETES_GPU_ID_TYPE
+      value: device-name
+    - name: LD_LIBRARY_PATH
+      value: /usr/local/nvidia/lib64
+    - name: PATH
+      value: /usr/local/nvidia/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  extraHostVolumes:
+    - name: nvidia-install-dir-host
+      hostPath: /home/kubernetes/bin/nvidia
+    - name: host-dev
+      hostPath: /dev
+  extraVolumeMounts:
+    - name: nvidia-install-dir-host
+      mountPath: /usr/local/nvidia
+      readOnly: true
+    - name: host-dev
+      mountPath: /dev

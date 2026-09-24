@@ -175,7 +175,7 @@ aiGatewayScraper:
     enabled: true
     image:
       repository: ghcr.io/baselinehq/costgraph-operator-prometheus
-      tag: "v0.4.1"
+      tag: "sha-47ddb2c"
       pullPolicy: IfNotPresent
     # This should always be 1
     replicas: 1
@@ -230,6 +230,20 @@ openCostApi:
 # --------------------------------------------------------------------------
 dcgm-exporter:
   enabled: false
+  # DCGM_FI_DEV_* fields only, and deliberately so. A DCGM_FI_PROF_ line added
+  # here is not one more metric: it is a fleet-wide outage waiting for the
+  # first card whose driver refuses profiling. The exporter does not skip a
+  # field it cannot read - it exits:
+  #
+  #   Failed to watch metrics: Error watching fields:
+  #   The third-party Profiling module returned an unrecoverable error
+  #
+  # so that node loses utilisation, memory and power too, and because one
+  # DaemonSet serves every GPU node, the rollout stalls on it and the rest of
+  # the fleet keeps the old config.
+  #
+  # Profiling counters are collected by the separate dcgmProfiling DaemonSet,
+  # where a refusing card crash-loops alone. See the dcgmProfiling block.
   customMetrics: |
     DCGM_FI_DEV_SM_CLOCK,  gauge, SM clock frequency (in MHz).
     DCGM_FI_DEV_MEM_CLOCK, gauge, Memory clock frequency (in MHz).
@@ -250,14 +264,6 @@ dcgm-exporter:
     DCGM_FI_DEV_UNCORRECTABLE_REMAPPED_ROWS, counter, Number of remapped rows for uncorrectable errors
     DCGM_FI_DEV_CORRECTABLE_REMAPPED_ROWS,   counter, Number of remapped rows for correctable errors
     DCGM_FI_DEV_ROW_REMAP_FAILURE,           gauge,   Whether remapping of rows has failed
-    DCGM_FI_PROF_GR_ENGINE_ACTIVE,   gauge, Ratio of time the graphics engine is active.
-    DCGM_FI_PROF_PIPE_TENSOR_ACTIVE, gauge, Ratio of cycles the tensor (HMMA) pipe is active.
-    DCGM_FI_PROF_DRAM_ACTIVE,        gauge, Ratio of cycles the device memory interface is active sending or receiving data.
-    DCGM_FI_PROF_PCIE_TX_BYTES,      counter, The number of bytes of active pcie tx data including both header and payload.
-    DCGM_FI_PROF_PCIE_RX_BYTES,      counter, The number of bytes of active pcie rx data including both header and payload.
-    DCGM_FI_PROF_SM_ACTIVE,          gauge, The ratio of cycles an SM has at least 1 warp assigned.
-    DCGM_FI_PROF_SM_OCCUPANCY,       gauge, The ratio of number of warps resident on an SM.
-    DCGM_FI_PROF_PIPE_FP32_ACTIVE,   gauge, Ratio of cycles the fp32 pipes are active.
     DCGM_FI_DEV_ENFORCED_POWER_LIMIT, gauge, Effective power limit the driver enforces (in W).
     DCGM_FI_DEV_ECC_CURRENT,          gauge, Whether ECC is currently enabled.
     DCGM_FI_DEV_MIG_MODE,             gauge, Whether MIG mode is currently enabled.
@@ -274,6 +280,13 @@ dcgm-exporter:
   # logging that Kubernetes metrics are enabled. Those labels are what ties an
   # accelerator to the workload holding it, so without this the GPU series
   # cannot be attributed to anything.
+  #
+  # device-name is right for GKE and wrong for the standard NVIDIA device
+  # plugin, which reports UUIDs, so a cluster running that plugin must override
+  # this to uuid. No single value serves both, and the affinity below now also
+  # matches Karpenter-provisioned EKS nodes, where that plugin is the usual
+  # one. The failure is silent either way: series arrive carrying no pod, which
+  # reads as an unattributed GPU rather than as a misconfigured exporter.
   extraEnv:
     - name: DCGM_EXPORTER_KUBERNETES_GPU_ID_TYPE
       value: device-name
@@ -302,6 +315,13 @@ dcgm-exporter:
               - key: accelerator
                 operator: In
                 values: ["nvidia"]
+          # EKS carries none of the four above unless the GPU operator or node
+          # feature discovery is installed, and Karpenter provisions the EKS
+          # fleet. Exists rather than a value comparison: the label carries a
+          # card count, and any count means the node has a GPU.
+          - matchExpressions:
+              - key: karpenter.k8s.aws/instance-gpu-count
+                operator: Exists
 
   # GPU nodes are commonly tainted so that only GPU work lands on them. GKE
   # applies this taint by default, and without the toleration the exporter
@@ -316,6 +336,97 @@ dcgm-exporter:
       memory: 100Mi
   podAnnotations: {}
   podLabels: {}
+
+# --------------------------------------------------------------------------
+# costgraph dcgm profiling daemonset
+#
+# A second, isolated DCGM exporter carrying only the DCGM_FI_PROF_* counters.
+#
+# The profiling module is not a per-field opt-out: the exporter watches the
+# whole counter set or exits. Asking the shared exporter for a PROF field on a
+# card whose driver refuses profiling kills that exporter outright -
+#
+#   Failed to watch metrics: Error watching fields:
+#   The third-party Profiling module returned an unrecoverable error
+#
+# - so the node loses utilisation, memory and power too. Worse, a DaemonSet
+# rolls node by node: the refusing pod never becomes ready, the rollout stalls,
+# and every other GPU keeps the old config. One card costs the whole fleet.
+#
+# Which cards can serve profiling is discoverable only at runtime. It is not a
+# model list: NVIDIA's docs show `dcgmi profile -l` working on a T4, and the
+# error class is attributed to the profiling context being held elsewhere, or
+# to the driver restricting profiling to privileged callers
+# (NVreg_RestrictProfilingToAdminUsers), which GKE's managed nodes do not let
+# you set. Enable it, see who reports, narrow with nodeSelector if you must.
+#
+# The driver mounts and the GPU-id env come from the dcgm-exporter subchart's
+# extraHostVolumes / extraVolumeMounts / extraEnv, so both exporters see the
+# node identically and a driver path corrected in one place is corrected for
+# both.
+# --------------------------------------------------------------------------
+dcgmProfiling:
+  enabled: false
+  applicationName: costgraph-operator-dcgm-profiling
+  image:
+    repository: nvcr.io/nvidia/k8s/dcgm-exporter
+    tag: 3.3.9-3.6.1-ubuntu22.04
+    pullPolicy: IfNotPresent
+  # 9400 is the shared exporter's. Both land on the same node, so sharing a
+  # port is a bind failure, not a preference.
+  port: 9401
+  priorityClassName: ""
+  nodeSelector: {}
+  # The same alternatives the shared exporter uses: a node that can collect
+  # base metrics must be able to collect profiling, or the two views disagree
+  # about which GPUs exist.
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: cloud.google.com/gke-accelerator
+                operator: Exists
+          - matchExpressions:
+              - key: nvidia.com/gpu.present
+                operator: In
+                values: ["true"]
+          - matchExpressions:
+              - key: feature.node.kubernetes.io/pci-10de.present
+                operator: In
+                values: ["true"]
+          - matchExpressions:
+              - key: accelerator
+                operator: In
+                values: ["nvidia"]
+          # EKS carries none of the four above unless the GPU operator or node
+          # feature discovery is installed, and Karpenter provisions the EKS
+          # fleet. Exists rather than a value comparison: the label carries a
+          # card count, and any count means the node has a GPU.
+          - matchExpressions:
+              - key: karpenter.k8s.aws/instance-gpu-count
+                operator: Exists
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+  # Only PROF fields. Everything else arrives from the shared exporter, and
+  # duplicating one here would produce two series differing only by scrape
+  # port.
+  #
+  # GR_ENGINE_ACTIVE has to be here: it is the only utilisation signal a MIG
+  # partition has. SM_ACTIVE and SM_OCCUPANCY separate "claimed" from
+  # "computing".
+  customMetrics: |
+    DCGM_FI_PROF_GR_ENGINE_ACTIVE, gauge, Ratio of time the graphics engine is active.
+    DCGM_FI_PROF_SM_ACTIVE,        gauge, The ratio of cycles an SM has at least 1 warp assigned.
+    DCGM_FI_PROF_SM_OCCUPANCY,     gauge, The ratio of number of warps resident on an SM.
+    DCGM_FI_PROF_PCIE_TX_BYTES,    gauge, Rate of active PCIe tx data including header and payload.
+    DCGM_FI_PROF_PCIE_RX_BYTES,    gauge, Rate of active PCIe rx data including header and payload.
 
 # --------------------------------------------------------------------------
 # prometheus-node-exporter (subchart from prometheus-community)
@@ -373,7 +484,14 @@ operatorKubernetes:
       pullPolicy: IfNotPresent
     # This should always be 1
     replicas: 1
-    containerSecurityContext: null
+    containerSecurityContext:
+      # The image sets USER to the name nonroot, and kubelet cannot verify a
+      # non-numeric user against runAsNonRoot, so it refuses to start the
+      # container. 65532 is that user's uid.
+      runAsNonRoot: true
+      runAsUser: 65532
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
     automountServiceAccountToken: true
     ports:
       - name: pprof
@@ -406,7 +524,7 @@ operatorPrometheus:
     enabled: true
     image:
       repository: ghcr.io/baselinehq/costgraph-operator-prometheus
-      tag: "v0.4.1"
+      tag: "sha-47ddb2c"
       pullPolicy: IfNotPresent
     # This should always be 1
     replicas: 1
@@ -479,6 +597,17 @@ operatorPrometheus:
       namespace: "{{ include \"costgraph-operator.namespace\" . }}"
       labelSelector: "app.kubernetes.io/name=dcgm-exporter"
       port: 9400
+      nodeMetrics: true
+    # The isolated profiling exporter. `enabled` is read before tpl, so a
+    # template string here would always be truthy - it is set literally and
+    # turned on in the same overlay that sets dcgmProfiling.enabled. The
+    # selector and port do go through tpl, so they are derived from
+    # dcgmProfiling and cannot drift from the DaemonSet they scrape.
+    dcgm-profiling:
+      enabled: false
+      namespace: "{{ include \"costgraph-operator.namespace\" . }}"
+      labelSelector: "app.kubernetes.io/name={{ .Values.dcgmProfiling.applicationName }},app.kubernetes.io/instance={{ .Release.Name }}"
+      port: '{{ .Values.dcgmProfiling.port }}'
       nodeMetrics: true
     node-exporter:
       enabled: true
