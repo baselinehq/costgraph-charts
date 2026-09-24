@@ -11,6 +11,15 @@ rbac:
 dcgmProfiling:
   enabled: true
 
+# Both exporters serve metrics to nobody until the operator is told to scrape
+# them, so the fixture mirrors a real install and turns both targets on.
+operatorPrometheus:
+  scrapeTargets:
+    dcgm-exporter:
+      enabled: true
+    dcgm-profiling:
+      enabled: true
+
 # The profiling exporter inherits its driver mounts and GPU-id env from the
 # subchart, so a fixture that renders it without these would assert against a
 # pod that could never see a GPU on a real node.

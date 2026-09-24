@@ -590,6 +590,17 @@ operatorPrometheus:
       labelSelector: "app.kubernetes.io/name=dcgm-exporter"
       port: 9400
       nodeMetrics: true
+    # The isolated profiling exporter. `enabled` is read before tpl, so a
+    # template string here would always be truthy - it is set literally and
+    # turned on in the same overlay that sets dcgmProfiling.enabled. The
+    # selector and port do go through tpl, so they are derived from
+    # dcgmProfiling and cannot drift from the DaemonSet they scrape.
+    dcgm-profiling:
+      enabled: false
+      namespace: "{{ include \"costgraph-operator.namespace\" . }}"
+      labelSelector: "app.kubernetes.io/name={{ .Values.dcgmProfiling.applicationName }}"
+      port: '{{ .Values.dcgmProfiling.port }}'
+      nodeMetrics: true
     node-exporter:
       enabled: true
       namespace: "{{ include \"costgraph-operator.namespace\" . }}"
