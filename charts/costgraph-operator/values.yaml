@@ -175,7 +175,7 @@ aiGatewayScraper:
     enabled: true
     image:
       repository: ghcr.io/baselinehq/costgraph-operator-prometheus
-      tag: "v0.4.1"
+      tag: "sha-47ddb2c"
       pullPolicy: IfNotPresent
     # This should always be 1
     replicas: 1
@@ -373,7 +373,14 @@ operatorKubernetes:
       pullPolicy: IfNotPresent
     # This should always be 1
     replicas: 1
-    containerSecurityContext: null
+    containerSecurityContext:
+      # The image sets USER to the name nonroot, and kubelet cannot verify a
+      # non-numeric user against runAsNonRoot, so it refuses to start the
+      # container. 65532 is that user's uid.
+      runAsNonRoot: true
+      runAsUser: 65532
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
     automountServiceAccountToken: true
     ports:
       - name: pprof
@@ -406,7 +413,7 @@ operatorPrometheus:
     enabled: true
     image:
       repository: ghcr.io/baselinehq/costgraph-operator-prometheus
-      tag: "v0.4.1"
+      tag: "sha-47ddb2c"
       pullPolicy: IfNotPresent
     # This should always be 1
     replicas: 1
