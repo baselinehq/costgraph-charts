@@ -58,6 +58,11 @@ No serviceAccountName and no token: the counters file is mounted rather than
 read from the API server, and pod attribution comes from the kubelet's
 pod-resources socket, so a privileged per-node pod stays off the chart's
 cluster-wide read ClusterRole.
+
+The counters checksum is a pod annotation so that editing customMetrics rolls
+the DaemonSet. A subPath mount is a one-off copy the kubelet never refreshes,
+and the exporter reads the file once at startup, so without this an upgrade
+rewrites the ConfigMap and changes nothing that is running.
 */}}
 {{- include "costgraph.workload" (dict
     "ctx"                          $
@@ -66,6 +71,7 @@ cluster-wide read ClusterRole.
     "containerName"                "exporter"
     "labels"                       $labels
     "selectorLabels"               (fromYaml (include "costgraph-operator.componentSelectorLabels" (dict "ctx" $ "name" $name "component" $component)))
+    "podAnnotations"               (dict "checksum/counters" (sha256sum $c.customMetrics))
     "strategy"                     (dict "type" "RollingUpdate" "rollingUpdate" (dict "maxUnavailable" "100%"))
     "image"                        (include "costgraph.imageRef" $c.image)
     "imagePullPolicy"              $c.image.pullPolicy
