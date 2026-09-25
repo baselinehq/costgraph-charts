@@ -1,0 +1,81 @@
+{{- $c := .Values.gpuExporter }}
+{{- if $c.enabled }}
+{{- $name := required "gpuExporter.applicationName is required" $c.applicationName }}
+{{- $component := "gpu-exporter" }}
+{{- $objectName := printf "%s-%s" .Release.Name $component | trunc 63 | trimSuffix "-" }}
+{{- $labels := fromYaml (include "costgraph-operator.componentLabels" (dict "ctx" $ "name" $name "component" $component)) }}
+{{- $port := required "gpuExporter.port is required" $c.port }}
+{{- $procMount := "/host/proc" }}
+{{- $driverMount := "/usr/local/nvidia" }}
+{{- $env := dict
+    "NODE_NAME" (dict "valueFrom" (dict "fieldRef" (dict "fieldPath" "spec.nodeName")))
+}}
+{{- $volumes := list
+    (dict "name" "proc" "hostPath" (dict "path" "/proc" "type" "Directory"))
+    (dict "name" "host-dev" "hostPath" (dict "path" "/dev" "type" "Directory")) }}
+{{- $volumeMounts := list
+    (dict "name" "proc" "mountPath" $procMount "readOnly" true)
+    (dict "name" "host-dev" "mountPath" "/dev") }}
+{{- with $c.driverInstallDir }}
+{{- $_ := set $env "LD_LIBRARY_PATH" (dict "value" (printf "%s/lib64" $driverMount)) }}
+{{- $volumes = append $volumes (dict "name" "nvidia-install-dir-host" "hostPath" (dict "path" . "type" "Directory")) }}
+{{- $volumeMounts = append $volumeMounts (dict "name" "nvidia-install-dir-host" "mountPath" $driverMount "readOnly" true) }}
+{{- end }}
+{{- $env = mergeOverwrite $env (deepCopy ($c.env | default dict)) }}
+{{- include "costgraph.workload" (dict
+    "ctx"                          $
+    "kind"                         "DaemonSet"
+    "name"                         $objectName
+    "containerName"                "exporter"
+    "labels"                       $labels
+    "selectorLabels"               (fromYaml (include "costgraph-operator.componentSelectorLabels" (dict "ctx" $ "name" $name "component" $component)))
+    "podAnnotations"               $c.podAnnotations
+    "strategy"                     (dict "type" "RollingUpdate" "rollingUpdate" (dict "maxUnavailable" $c.maxUnavailable))
+    "image"                        (include "costgraph.imageRef" $c.image)
+    "imagePullPolicy"              $c.image.pullPolicy
+    "imagePullSecrets"             .Values.imagePullSecrets
+    "serviceAccountName"           $objectName
+    "automountServiceAccountToken" true
+    "hostPID"                      true
+    "priorityClassName"            $c.priorityClassName
+    "terminationGracePeriodSeconds" 30
+    "containerSecurityContext"     $c.containerSecurityContext
+    "args"                         (list "--port" (printf "%v" $port) "--procfs" $procMount)
+    "env"                          (fromYamlArray (include "costgraph-operator.env" (dict "ctx" $ "env" $env)))
+    "ports"                        (list (dict "name" "metrics" "containerPort" (int $port) "protocol" "TCP"))
+    "readinessProbe"               (dict "httpGet" (dict "path" "/healthz" "port" "metrics") "periodSeconds" 10)
+    "resources"                    $c.resources
+    "volumes"                      $volumes
+    "volumeMounts"                 $volumeMounts
+    "nodeSelector"                 $c.nodeSelector
+    "tolerations"                  $c.tolerations
+    "affinity"                     ($c.affinity | default (fromYaml (include "costgraph-operator.gpuNodeAffinity" $)))) }}
+---
+{{ include "costgraph.serviceAccount" (dict "ctx" $ "name" $objectName "labels" $labels "automount" true) }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $objectName }}
+  labels:
+    {{- toYaml $labels | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $objectName }}
+  labels:
+    {{- toYaml $labels | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $objectName }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $objectName }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

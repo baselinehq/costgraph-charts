@@ -380,32 +380,7 @@ dcgmProfiling:
   # The same alternatives the shared exporter uses: a node that can collect
   # base metrics must be able to collect profiling, or the two views disagree
   # about which GPUs exist.
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: cloud.google.com/gke-accelerator
-                operator: Exists
-          - matchExpressions:
-              - key: nvidia.com/gpu.present
-                operator: In
-                values: ["true"]
-          - matchExpressions:
-              - key: feature.node.kubernetes.io/pci-10de.present
-                operator: In
-                values: ["true"]
-          - matchExpressions:
-              - key: accelerator
-                operator: In
-                values: ["nvidia"]
-          # EKS carries none of the four above unless the GPU operator or node
-          # feature discovery is installed, and Karpenter provisions the EKS
-          # fleet. Exists rather than a value comparison: the label carries a
-          # card count, and any count means the node has a GPU.
-          - matchExpressions:
-              - key: karpenter.k8s.aws/instance-gpu-count
-                operator: Exists
+  affinity: {}
   tolerations:
     - key: nvidia.com/gpu
       operator: Exists
@@ -609,6 +584,12 @@ operatorPrometheus:
       labelSelector: "app.kubernetes.io/name={{ .Values.dcgmProfiling.applicationName }},app.kubernetes.io/instance={{ .Release.Name }}"
       port: '{{ .Values.dcgmProfiling.port }}'
       nodeMetrics: true
+    gpu-exporter:
+      enabled: false
+      namespace: "{{ include \"costgraph-operator.namespace\" . }}"
+      labelSelector: "app.kubernetes.io/name={{ .Values.gpuExporter.applicationName }},app.kubernetes.io/instance={{ .Release.Name }}"
+      port: '{{ .Values.gpuExporter.port }}'
+      nodeMetrics: true
     node-exporter:
       enabled: true
       namespace: "{{ include \"costgraph-operator.namespace\" . }}"
@@ -622,6 +603,36 @@ operatorPrometheus:
       nodeMetrics: true
       metricNamePrefixes:
         - kubelet_
+gpuExporter:
+  enabled: false
+  applicationName: costgraph-operator-gpu-exporter
+  image:
+    repository: ghcr.io/baselinehq/costgraph-gpu-exporter
+    tag: "v1.5.22"
+    pullPolicy: IfNotPresent
+  port: 9405
+  driverInstallDir: /home/kubernetes/bin/nvidia
+  containerSecurityContext:
+    runAsUser: 0
+    runAsNonRoot: false
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: ["ALL"]
+  priorityClassName: ""
+  nodeSelector: {}
+  affinity: {}
+  tolerations:
+    - operator: Exists
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 256Mi
+  maxUnavailable: "100%"
+  env: {}
+  podAnnotations: {}
+
 # --------------------------------------------------------------------------
 # costgraph flowtrace daemonset (eBPF network flow tracing)
 # Runs the flowtrace binary from the costgraph-operator-prometheus image on

@@ -305,3 +305,30 @@ telemetry, so reject it at render time.
 {{- end -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "costgraph-operator.gpuNodeAffinity" -}}
+nodeAffinity:
+  requiredDuringSchedulingIgnoredDuringExecution:
+    nodeSelectorTerms:
+      - matchExpressions:
+          - key: cloud.google.com/gke-accelerator
+            operator: Exists
+      - matchExpressions:
+          - key: nvidia.com/gpu.present
+            operator: In
+            values: ["true"]
+      - matchExpressions:
+          - key: feature.node.kubernetes.io/pci-10de.present
+            operator: In
+            values: ["true"]
+      - matchExpressions:
+          - key: accelerator
+            operator: In
+            values: ["nvidia"]
+      - matchExpressions:
+          - key: karpenter.k8s.aws/instance-gpu-count
+            operator: Exists
+          - key: karpenter.k8s.aws/instance-gpu-manufacturer
+            operator: In
+            values: ["nvidia"]
+{{- end -}}
