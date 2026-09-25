@@ -480,7 +480,7 @@ operatorKubernetes:
     imagePullSecrets: []
     image:
       repository: ghcr.io/baselinehq/costgraph-operator-kubernetes
-      tag: "v0.1.1"
+      tag: "v0.1.2"
       pullPolicy: IfNotPresent
     # This should always be 1
     replicas: 1
