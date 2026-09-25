@@ -175,7 +175,7 @@ aiGatewayScraper:
     enabled: true
     image:
       repository: ghcr.io/baselinehq/costgraph-operator-prometheus
-      tag: "sha-47ddb2c"
+      tag: "sha-bcbf77b"
       pullPolicy: IfNotPresent
     # This should always be 1
     replicas: 1
@@ -524,7 +524,7 @@ operatorPrometheus:
     enabled: true
     image:
       repository: ghcr.io/baselinehq/costgraph-operator-prometheus
-      tag: "sha-47ddb2c"
+      tag: "sha-bcbf77b"
       pullPolicy: IfNotPresent
     # This should always be 1
     replicas: 1
