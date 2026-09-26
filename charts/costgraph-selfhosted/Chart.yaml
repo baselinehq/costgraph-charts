@@ -2,7 +2,7 @@ apiVersion: v2
 name: costgraph-selfhosted
 description: CostGraph running in your own infrastructure
 type: application
-version: 0.5.3
+version: 0.5.4
 appVersion: "0.3.1"
 home: https://costgraph.ai
 sources:
