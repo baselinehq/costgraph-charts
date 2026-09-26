@@ -5,6 +5,9 @@ name: Chart Version
 on:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   version-bump:
     name: Chart version bumped
@@ -21,7 +24,8 @@ jobs:
           rc=0
           # README.md is excluded: helm-docs regenerates and pushes it into the
           # PR branch, so counting it would demand a bump for docs-only changes.
-          charts=$(git diff --name-only "$BASE_SHA" HEAD -- charts/ ':!charts/*/README.md' \
+          # ci/ is excluded too: render fixtures are not shipped in the chart.
+          charts=$(git diff --name-only "$BASE_SHA" HEAD -- charts/ ':!charts/*/README.md' ':!charts/*/ci/**' \
             | awk -F/ 'NF > 2 { print $1 "/" $2 }' | sort -u)
 
           for chart in $charts; do
@@ -45,6 +49,36 @@ jobs:
               rc=1
             else
               echo "$chart: $base -> $head"
+            fi
+          done
+          exit $rc
+
+  render:
+    name: Charts render
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4
+
+      - run: |
+          set -euo pipefail
+          rc=0
+          for values in charts/*/ci/render-values.yaml; do
+            [ -e "$values" ] || continue
+            chart=$(dirname "$(dirname "$values")")
+            # Only dependency repositories: Chart.yaml also carries home and
+            # sources, which are not chart repositories. Named by a digest of
+            # the URL so charts sharing a repository do not collide.
+            for repo in $(yq -r '.dependencies[]?.repository // ""' "$chart/Chart.yaml" | grep -E '^https?://' | sort -u); do
+              helm repo add --force-update "dep-$(printf '%s' "$repo" | md5sum | cut -c1-10)" "$repo" >/dev/null
+            done
+            helm dependency build "$chart" >/dev/null
+            if helm template render-check "$chart" -f "$values" >/dev/null; then
+              echo "$chart renders"
+            else
+              echo "::error file=$chart/Chart.yaml::$chart does not render with $values"
+              rc=1
             fi
           done
           exit $rc

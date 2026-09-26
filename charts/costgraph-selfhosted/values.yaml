@@ -345,7 +345,7 @@ aggregator:
       repository: registry.costgraph.ai/aggregator
       # Versioned separately from the chart, so this is pinned rather than
       # following appVersion.
-      tag: v0.2.0
+      tag: v0.3.0
       pullPolicy: IfNotPresent
     imagePullSecrets:
       - name: costgraph-selfhosted-registry
