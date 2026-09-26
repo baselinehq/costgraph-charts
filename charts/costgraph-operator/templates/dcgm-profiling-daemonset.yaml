@@ -88,5 +88,5 @@ rewrites the ConfigMap and changes nothing that is running.
     "volumeMounts"                 $volumeMounts
     "nodeSelector"                 $c.nodeSelector
     "tolerations"                  $c.tolerations
-    "affinity"                     $c.affinity) }}
+    "affinity"                     ($c.affinity | default (fromYaml (include "costgraph-operator.gpuNodeAffinity" $)))) }}
 {{- end }}
