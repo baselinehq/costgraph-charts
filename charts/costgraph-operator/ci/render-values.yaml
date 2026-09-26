@@ -1,0 +1,7 @@
+# The smallest set of values that renders the chart, so CI fails on a template
+# error rather than leaving it to the first install that tries these paths.
+global:
+  apiKey: render-check
+  clusterName: render-check
+rbac:
+  requireClusterDiscovery: false

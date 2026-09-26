@@ -1,0 +1,15 @@
+# The smallest set of values that renders the chart, so CI fails on a template
+# error rather than leaving it to the first install that tries these paths.
+global:
+  appBaseURL: http://costgraph.render-check.invalid
+  controlPlane:
+    apiKey: render-check
+  postgres:
+    bundled:
+      enabled: true
+  redis:
+    bundled:
+      enabled: true
+  metricsStore:
+    bundled:
+      enabled: true

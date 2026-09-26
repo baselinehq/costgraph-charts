@@ -48,3 +48,32 @@ jobs:
             fi
           done
           exit $rc
+
+  render:
+    name: Charts render
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4
+
+      - run: |
+          set -euo pipefail
+          rc=0
+          for values in charts/*/ci/render-values.yaml; do
+            [ -e "$values" ] || continue
+            chart=$(dirname "$(dirname "$values")")
+            i=0
+            for repo in $(grep -oE 'https://[^ ]+' "$chart/Chart.yaml" | sort -u); do
+              i=$((i + 1))
+              helm repo add "dep$i" "$repo" >/dev/null
+            done
+            helm dependency build "$chart" >/dev/null
+            if helm template render-check "$chart" -f "$values" >/dev/null; then
+              echo "$chart renders"
+            else
+              echo "::error file=$chart/Chart.yaml::$chart does not render with $values"
+              rc=1
+            fi
+          done
+          exit $rc

@@ -76,6 +76,14 @@ set, so an evaluation install needs no addresses.
 {{- .Values.global.metricsStore.url -}}
 {{- else if .Values.global.metricsStore.bundled.enabled -}}
 {{- printf "http://%s-victoria-metrics:8428" (include "costgraph-selfhosted.fullname" .) -}}
+{{- else -}}
+{{/*
+Hand back to validation rather than failing here. Templates are not rendered in
+a fixed order, so without this the first consumer of this helper reports the
+internal field it was filling and buries the value the reader has to set.
+Validation names that value, and names a missing credential ahead of it.
+*/}}
+{{- include "costgraph-selfhosted.validate" . -}}
 {{- end -}}
 {{- end -}}
 
