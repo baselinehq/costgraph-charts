@@ -267,7 +267,7 @@ dcgm-exporter:
     DCGM_FI_DEV_ENFORCED_POWER_LIMIT, gauge, Effective power limit the driver enforces (in W).
     DCGM_FI_DEV_ECC_CURRENT,          gauge, Whether ECC is currently enabled.
     DCGM_FI_DEV_MIG_MODE,             gauge, Whether MIG mode is currently enabled.
-    DCGM_FI_DEV_PCIE_LINK_GEN_MAX,    gauge, Maximum PCIe link generation the device supports.
+    DCGM_FI_DEV_PCIE_MAX_LINK_GEN,    gauge, Maximum PCIe link generation the device supports.
 
   serviceMonitor:
     # Set to true if you have the Prometheus Operator installed and want
