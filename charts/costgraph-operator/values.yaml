@@ -154,6 +154,17 @@ cadvisor:
       app.kubernetes.io/name: costgraph-operator-prometheus
   extraArgs:
     - -disable_metrics=memory_numa,tcp,udp,advtcp,sched,process,hugetlb,referenced_memory,resctrl,cpuset
+  defaultMounts:
+    rootfs: false
+  extraVolumes:
+    - name: rootfs
+      hostPath:
+        path: /
+  extraVolumeMounts:
+    - name: rootfs
+      mountPath: /rootfs
+      readOnly: true
+      mountPropagation: HostToContainer
 
 
 # --------------------------------------------------------------------------
